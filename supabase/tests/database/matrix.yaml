@@ -1,0 +1,25 @@
+# pgTAP matrix manifest (docs/07 §11, careos-db-schema-rls checklist item 7)
+# Every table in public/audit MUST have an entry; scripts/check-matrix.sh fails CI
+# on any table missing from this file. Expected access is per role at AAL2 unless
+# stated; "rpc" means mutations happen only through the Lane-B RPC catalog.
+tables:
+  public.tenant:            { authenticated: select-own-tenant, writes: none }
+  public.app_user:          { authenticated: select-self-or-user.read, writes: rpc }
+  public.permission:        { authenticated: select, writes: none }
+  public.role:              { authenticated: select-tenant, writes: rpc }
+  public.role_permission:   { authenticated: select-tenant, writes: rpc }
+  public.user_role:         { authenticated: select-self-or-user.read, writes: rpc }
+  public.care_team_assignment: { authenticated: select-self-or-careteam.read, writes: rpc }
+  public.client:            { authenticated: select-team-or-client.read.all-aal2, insert: client.write-aal2, update: client.write-aal2, delete: none }
+  public.form_template:     { authenticated: select-tenant, writes: rpc }
+  public.form_instance:     { authenticated: select-scoped-aal2, writes: rpc }
+  public.form_version:      { authenticated: select-scoped-aal2, writes: rpc, append_only: true }
+  public.signature:         { authenticated: select-scoped-aal2, writes: rpc, append_only: true }
+  audit.audit_event:        { authenticated: none, writes: definer-only, append_only: true }
+  audit.audit_anchor:       { authenticated: none, writes: anchor-job, append_only: true }
+tests:
+  - 001_schema_invariants.sql
+  - 002_rls_matrix.sql
+  - 003_append_only.sql
+  - 004_audit_chain.sql
+  - 005_rpc_guards.sql
