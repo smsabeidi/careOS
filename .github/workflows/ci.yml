@@ -1,0 +1,30 @@
+name: CI
+# ST-002 · PR → checks; pgTAP is the crown-jewel stage (docs/12 §3, docs/13 §4)
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  db-tests:
+    name: migrations + pgTAP compliance suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start local database (applies migrations)
+        run: supabase db start
+      - name: Run pgTAP suite
+        run: supabase test db
+
+  spec-drift-gate:
+    name: spec-corpus drift gate (E4 / ST-103, D-010)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Drift gate
+        run: bash scripts/spec-drift-gate.sh "${{ github.event.pull_request.base.sha || 'HEAD~1' }}..HEAD"
