@@ -2,18 +2,49 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { supabaseServer } from "@/lib/supabase/server";
+import { getProfile } from "@/lib/profile";
 import { StatusChip, Avatar } from "./ui";
 import {
-  IconUsers, IconClipboard, IconActivity, IconHome, IconHeart, IconLogOut, IconShield,
+  IconUsers, IconClipboard, IconActivity, IconHome, IconHeart, IconLogOut,
+  IconShield, IconPen,
 } from "./icons";
 
-const NAV = [
-  { href: "/office/clients", label: "Clients", icon: <IconUsers /> },
-  { href: "/office/forms", label: "Forms", icon: <IconClipboard /> },
-  { href: "/today", label: "Today", icon: <IconHome /> },
-  { href: "/exec", label: "Command", icon: <IconActivity /> },
-  { href: "/family", label: "Family", icon: <IconHeart /> },
-];
+type NavItem = { href: string; label: string; icon: ReactNode };
+
+/** Each persona gets its own surface set — ≤5 items (docs/10 §2). */
+function navFor(roles: string[]): NavItem[] {
+  if (roles.includes("owner") || roles.includes("admin")) {
+    return [
+      { href: "/exec", label: "Command", icon: <IconActivity /> },
+      { href: "/office/clients", label: "Clients", icon: <IconUsers /> },
+      { href: "/office/staff", label: "Staff", icon: <IconShield /> },
+      { href: "/clinical", label: "Clinical", icon: <IconPen /> },
+      { href: "/office/forms", label: "Forms", icon: <IconClipboard /> },
+    ];
+  }
+  if (roles.includes("coordinator") || roles.includes("hr")) {
+    return [
+      { href: "/office/clients", label: "Clients", icon: <IconUsers /> },
+      { href: "/office/staff", label: "Staff", icon: <IconShield /> },
+      { href: "/office/forms", label: "Forms", icon: <IconClipboard /> },
+    ];
+  }
+  if (roles.includes("rn")) {
+    return [
+      { href: "/clinical", label: "Clinical", icon: <IconPen /> },
+      { href: "/office/clients", label: "Clients", icon: <IconUsers /> },
+      { href: "/office/forms", label: "Forms", icon: <IconClipboard /> },
+    ];
+  }
+  if (roles.includes("caregiver")) {
+    return [
+      { href: "/today", label: "Today", icon: <IconHome /> },
+      { href: "/office/clients", label: "My clients", icon: <IconUsers /> },
+      { href: "/office/forms", label: "My notes", icon: <IconClipboard /> },
+    ];
+  }
+  return [{ href: "/family", label: "Family", icon: <IconHeart /> }];
+}
 
 async function signOut() {
   "use server";
@@ -29,20 +60,12 @@ export async function AppShell({
   children: ReactNode;
   active: string;
 }) {
-  const supabase = await supabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: profile } = await supabase
-    .from("app_user")
-    .select("full_name")
-    .eq("id", user?.id ?? "")
-    .maybeSingle();
-  const name = profile?.full_name ?? user?.email ?? "Signed in";
+  const profile = await getProfile();
+  const name = profile?.name ?? "Signed in";
+  const nav = navFor(profile?.roles ?? []);
 
   return (
     <div className="flex min-h-dvh">
-      {/* Left rail — ≤5 items per persona (docs/10 §2) */}
       <aside
         className="hidden w-60 shrink-0 flex-col border-r px-3 py-5 md:flex hairline"
         style={{ background: "var(--panel)" }}
@@ -58,7 +81,7 @@ export async function AppShell({
         </Link>
 
         <nav className="flex flex-col gap-1" aria-label="Primary">
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -89,7 +112,6 @@ export async function AppShell({
         </div>
       </aside>
 
-      {/* Mobile top bar */}
       <div className="flex min-w-0 flex-1 flex-col">
         <header
           className="flex h-14 items-center justify-between border-b px-4 md:hidden hairline"
@@ -107,18 +129,17 @@ export async function AppShell({
 
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 md:px-8">{children}</main>
 
-        {/* Mobile bottom tabs (docs/10 §2) */}
         <nav
           className="sticky bottom-0 z-10 flex border-t md:hidden hairline"
           style={{ background: "var(--panel)" }}
           aria-label="Primary"
         >
-          {NAV.slice(0, 4).map((item) => (
+          {nav.slice(0, 4).map((item) => (
             <Link
               key={item.href}
               href={item.href}
               data-active={active === item.href}
-              className="flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium"
+              className="flex min-h-14 flex-1 flex-col items-center justify-center gap-1 py-2 text-[11px] font-medium"
               style={{ color: active === item.href ? "var(--accent)" : "var(--text-muted)" }}
             >
               {item.icon}

@@ -17,8 +17,19 @@ export default function MfaPage() {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const inFlight = useRef(false);
 
   const bootstrap = useCallback(async () => {
+    if (inFlight.current) return; // strict-mode double-invoke guard: one enrollment, not two
+    inFlight.current = true;
+    try {
+      await bootstrapInner();
+    } finally {
+      inFlight.current = false;
+    }
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+
+  const bootstrapInner = useCallback(async () => {
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (aal?.currentLevel === "aal2") {
       router.replace("/office/clients");
