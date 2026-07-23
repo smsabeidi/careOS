@@ -8,3 +8,4 @@ supabase/.branches/
 dist/
 .next/
 .claude/settings.local.json
+*.tsbuildinfo
