@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/shell";
-import { Avatar, EmptyState, PageHeader, StatusChip } from "@/components/ui";
-import { IconChevronRight, IconClipboard, IconPlus } from "@/components/icons";
+import { Avatar, EmptyState, SectionTitle, StatusChip, TintTile } from "@/components/ui";
+import { IconChevronRight, IconClipboard, IconMapPin, IconPlus } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +32,7 @@ export default async function ClientChart({ params }: { params: Promise<{ id: st
     .order("updated_at", { ascending: false });
 
   const name = `${client.first_name} ${client.last_name}`;
+  const address = [client.address_line1, client.city, client.state].filter(Boolean).join(", ");
 
   return (
     <AppShell active="/office/clients">
@@ -42,16 +43,19 @@ export default async function ClientChart({ params }: { params: Promise<{ id: st
           <span style={{ color: "var(--text-secondary)" }}>{name}</span>
         </nav>
 
-        <div className="card mb-6 p-6">
+        {/* Hero identity — Apple Health chart header */}
+        <div className="card mb-6 p-6 sm:p-7"
+             style={{ background: "linear-gradient(180deg, var(--accent-soft) 0%, var(--panel) 116px)" }}>
           <div className="flex flex-wrap items-center gap-5">
-            <Avatar name={name} size={56} />
+            <Avatar name={name} size={64} />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-xl font-semibold tracking-[-0.01em]">{name}</h1>
+                <h1 className="title-lg text-[28px] sm:text-[32px]">{name}</h1>
                 <StatusChip status={client.status} />
               </div>
-              <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
-                {[client.address_line1, client.city, client.state].filter(Boolean).join(", ") || "Address on file"}
+              <p className="mt-1.5 flex items-center gap-1.5 text-[15px]" style={{ color: "var(--text-muted)" }}>
+                <IconMapPin width={15} height={15} />
+                {address || "Address on file"}
               </p>
             </div>
             <Link href={`/office/clients/${id}/new`} className="btn btn-primary">
@@ -60,27 +64,34 @@ export default async function ClientChart({ params }: { params: Promise<{ id: st
             </Link>
           </div>
 
-          <dl className="mt-6 grid grid-cols-2 gap-x-8 gap-y-4 border-t pt-5 text-sm hairline sm:grid-cols-4">
+          <dl className="mt-6 grid grid-cols-2 gap-x-8 gap-y-5 border-t pt-6 hairline sm:grid-cols-4">
             <div>
-              <dt className="label mb-0.5">Date of birth</dt>
-              <dd className="tabular">{fmtDate(client.dob)}</dd>
+              <dt className="label mb-1">Date of birth</dt>
+              <dd className="tabular text-[15px] font-medium">{fmtDate(client.dob)}</dd>
             </div>
             <div>
-              <dt className="label mb-0.5">Admitted</dt>
-              <dd className="tabular">{fmtDate(client.admitted_on)}</dd>
+              <dt className="label mb-1">Admitted</dt>
+              <dd className="tabular text-[15px] font-medium">{fmtDate(client.admitted_on)}</dd>
             </div>
             <div>
-              <dt className="label mb-0.5">Language</dt>
-              <dd>{client.primary_language === "es" ? "Spanish" : "English"}</dd>
+              <dt className="label mb-1">Language</dt>
+              <dd className="text-[15px] font-medium">{client.primary_language === "es" ? "Spanish" : "English"}</dd>
             </div>
             <div>
-              <dt className="label mb-0.5">Payer</dt>
-              <dd className="capitalize">{client.payer_type?.replace("_", " ") ?? "—"}</dd>
+              <dt className="label mb-1">Payer</dt>
+              <dd className="text-[15px] font-medium capitalize">{client.payer_type?.replace("_", " ") ?? "—"}</dd>
             </div>
           </dl>
         </div>
 
-        <h2 className="mb-3 text-[15px] font-semibold">Records</h2>
+        <SectionTitle icon={<IconClipboard width={16} height={16} />}>
+          Records
+          {forms?.length ? (
+            <span className="ml-auto tabular text-[13px] font-normal" style={{ color: "var(--text-muted)" }}>
+              {forms.length} on file
+            </span>
+          ) : null}
+        </SectionTitle>
         {!forms?.length ? (
           <EmptyState
             icon={<IconClipboard />}
@@ -94,15 +105,12 @@ export default async function ClientChart({ params }: { params: Promise<{ id: st
             }
           />
         ) : (
-          <div className="card divide-y hairline overflow-hidden">
+          <div className="card stagger divide-y hairline overflow-hidden">
             {forms.map((f) => {
               const template = Array.isArray(f.form_template) ? f.form_template[0] : f.form_template;
               return (
                 <Link key={f.id} href={`/office/forms/${f.id}`} className="row-link group">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg"
-                       style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
-                    <IconClipboard />
-                  </div>
+                  <TintTile icon={<IconClipboard />} size={40} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[15px] font-medium">{template?.title ?? "Form"}</p>
                     <p className="mt-0.5 text-[13px]" style={{ color: "var(--text-muted)" }}>

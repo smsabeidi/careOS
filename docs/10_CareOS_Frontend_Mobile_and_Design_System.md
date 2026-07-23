@@ -1,6 +1,8 @@
 # CareOS — Frontend, Mobile & Design System Specification
 
-**Client:** American Care Team (Maryland) · **Document:** 10 of 15 · **Version:** 1.0 (Draft) · **Prepared by:** OCTSERVICES LLC
+**Client:** American Care Team (Maryland) · **Document:** 10 of 15 · **Version:** 1.1 (Draft) · **Prepared by:** OCTSERVICES LLC
+
+> **Change note (v1.1, Jul 23 2026):** §3 design tokens rebranded to the "Apple 2026" visual language per **D-012** (Instrument Serif/Sans, Apple system blue on systemGray, frosted materials, spring-feel CSS motion, **light-only**). Prior Inter / teal-700 / warm-neutral tokens and day-one dark mode are superseded; the night-shift dark-mode rationale is retained as an open item for founder sign-off.
 **Implements:** Doc 01 personas & P4 ("built for non-technical hands") · Doc 06 §4 · Doc 08 (lanes) · Doc 05 experience surfaces.
 
 > **Purpose.** The experience contract. CareOS wins adoption or dies here: the primary users are nurses and caregivers, often on a phone, sometimes offline, in someone's living room. Every decision below is subordinate to one test — **if it isn't obvious to a non-technical caregiver on a mid-tier Android in a basement, it's wrong.**
@@ -30,10 +32,10 @@ Navigation: bottom tabs (mobile) / left rail (desktop), ≤5 items per persona; 
 
 ## 3. Design system
 
-- **Tokens.** Type: Inter (UI) at a 1.25 modular scale, 16 px base (17 px mobile field surfaces); tabular numerals for schedules. Spacing: 4-pt grid. Radius: 8/12. Elevation: 2 shadow levels max. Color: warm neutral surface ramp; accent **teal-700 #0F766E** (trustworthy, not hospital-cold); semantic set — success green, warning amber, danger red, info blue — each with AA-verified pairs; **compliance states are color + icon + label, never color alone.**
-- **Dark mode:** supported from day one (night-shift caregivers); PHI-visibility unaffected.
+- **Tokens (rebranded — D-012, "Apple 2026").** Type: **Instrument Serif** (display only: large titles & hero numerals) + **Instrument Sans** (all UI, 400/500/600) at a 16 px base (17 px mobile field surfaces); tabular numerals for schedules. Spacing: 4-pt grid. Radius: continuous-corner scale 6/8/12/16/22/28. Elevation: soft Apple shadows; frosted translucent chrome (sidebar/bars) via `backdrop-filter`. Color: **Apple systemGray** cool surface ramp (`#f2f2f7` grouped canvas, white panels); accent **Apple system blue `#007AFF`** (AA small-text variant `#0058b8`); semantic set — success green, warning orange, danger red, info blue — each **WCAG AA-verified** (muted tertiary darkened to clear AA on both canvas and cards); **compliance states are color + icon + label, never color alone.** *(Supersedes prior Inter / teal-700 #0F766E / warm-neutral tokens.)*
+- **Dark mode:** **removed in the D-012 rebrand — light-only** (`color-scheme: light` locked). The original night-shift-caregiver rationale is preserved as an open item for founder sign-off; restorable as a first-class Apple dark theme. PHI-visibility unaffected either way.
 - **Components.** shadcn/ui + Radix primitives as the accessible base, wrapped as CareOS components with locked variants: `StatusChip`, `PersonCard`, `VisitCard`, `ComplianceBadge`, `AIAssistLabel`, `SignatureBlock`, `OfflineBanner`, `ConflictResolver`, `ApprovalCard`, `EmptyState`. Storybook is the contract; visual-regression snapshots in CI (Doc 12 §4).
-- **Motion:** 150–200 ms ease-out micro-transitions only; `prefers-reduced-motion` honored.
+- **Motion (D-012):** spring-feel **CSS-only** transitions (transform/opacity), sub-300 ms for UI, with gentle page-enter/stagger; no motion library on field surfaces (JS budgets intact). `prefers-reduced-motion` and `prefers-reduced-transparency` honored (frost → solid; motion → static).
 - **Voice & tone:** encouraging, specific, blame-free ("Couldn't reach the server — your note is saved on this phone and will send automatically."). Error messages always say what happened + what's saved + what to do.
 
 ## 4. The forms runtime (the make-or-break component)

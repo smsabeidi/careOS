@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AppShell } from "@/components/shell";
 import { Avatar, EmptyState, PageHeader, StatusChip } from "@/components/ui";
-import { IconChevronRight, IconUsers } from "@/components/icons";
+import { IconChevronRight, IconSearch, IconUsers } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export const metadata = { title: "Clients" };
@@ -65,31 +65,38 @@ export default async function ClientsPage({
           <form method="get" action="/office/clients" className="min-w-56 flex-1">
             {status && <input type="hidden" name="status" value={status} />}
             <label htmlFor="client-search" className="sr-only">Search clients by name</label>
-            <input
-              id="client-search"
-              type="search"
-              name="q"
-              defaultValue={q}
-              placeholder="Search by name…"
-              className="input"
-            />
+            <div className="relative">
+              <IconSearch
+                width={17}
+                height={17}
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2"
+                style={{ color: "var(--text-muted)" }}
+              />
+              <input
+                id="client-search"
+                type="search"
+                name="q"
+                defaultValue={q}
+                placeholder="Search by name…"
+                className="input"
+                style={{ paddingLeft: "2.5rem" }}
+              />
+            </div>
           </form>
           <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by status">
-            {STATUS_FILTERS.map((f) => (
-              <Link
-                key={f.key}
-                href={pageHref(q, f.key, 1)}
-                aria-current={status === f.key ? "true" : undefined}
-                className="chip"
-                style={
-                  status === f.key
-                    ? { background: "var(--accent-soft)", color: "var(--accent)", borderColor: "var(--accent-soft-border)" }
-                    : { background: "var(--panel)", color: "var(--text-muted)", borderColor: "var(--border)" }
-                }
-              >
-                {f.label}
-              </Link>
-            ))}
+            {STATUS_FILTERS.map((f) => {
+              const isActive = status === f.key;
+              return (
+                <Link
+                  key={f.key}
+                  href={pageHref(q, f.key, 1)}
+                  aria-current={isActive ? "true" : undefined}
+                  className={`btn btn-sm btn-pill ${isActive ? "btn-tinted" : "btn-white"}`}
+                >
+                  {f.label}
+                </Link>
+              );
+            })}
           </div>
         </div>
 
@@ -116,7 +123,7 @@ export default async function ClientsPage({
           />
         ) : (
           <>
-            <div className="card divide-y hairline overflow-hidden">
+            <div className="card divide-y hairline overflow-hidden stagger">
               {clients.map((c) => (
                 <Link key={c.id} href={`/office/clients/${c.id}`} className="row-link group">
                   <Avatar name={`${c.first_name} ${c.last_name}`} />
@@ -133,7 +140,7 @@ export default async function ClientsPage({
                   </div>
                   <StatusChip status={c.status} />
                   <IconChevronRight
-                    className="opacity-0 transition-opacity duration-150 group-hover:opacity-60"
+                    className="shrink-0 opacity-40 transition-opacity duration-150 group-hover:opacity-70"
                     style={{ color: "var(--text-muted)" }}
                   />
                 </Link>

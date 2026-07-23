@@ -1,5 +1,7 @@
-/** CareOS component set — docs/10 §3. Locked variants; extend here, never inline. */
-import type { ReactNode } from "react";
+/** CareOS component set — Apple 2026 language. Locked variants; extend here, never inline.
+ *  Server-safe (no "use client"): imported by server components. Interactive controls use the
+ *  `.switch` / `.segmented` CSS primitives from globals.css inside client files. */
+import { cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { IconAlert, IconCheck, IconLock, IconSparkle } from "./icons";
 
 /* ── StatusChip: color + icon + label, never color alone ── */
@@ -47,6 +49,44 @@ export function StatusChip({ status, label }: { status: string; label?: string }
   );
 }
 
+/* ── TintTile: rounded "app-icon" glyph on a soft accent field ── */
+export function TintTile({
+  icon,
+  size = 40,
+  tone = "accent",
+}: {
+  icon: ReactNode;
+  size?: number;
+  tone?: "accent" | "success" | "warning" | "danger" | "neutral";
+}) {
+  const bg =
+    tone === "success" ? "var(--color-success-50)"
+    : tone === "warning" ? "var(--color-warning-50)"
+    : tone === "danger" ? "var(--color-danger-50)"
+    : tone === "neutral" ? "var(--color-surface-100)"
+    : "var(--accent-soft)";
+  const fg =
+    tone === "success" ? "var(--color-success-700)"
+    : tone === "warning" ? "var(--color-warning-700)"
+    : tone === "danger" ? "var(--color-danger-700)"
+    : tone === "neutral" ? "var(--text-secondary)"
+    : "var(--accent)";
+  // Normalize glyph to 50% of the tile so every TintTile reads at the same optical weight.
+  const g = Math.round(size * 0.5);
+  const glyph = isValidElement(icon)
+    ? cloneElement(icon as ReactElement<{ width?: number; height?: number }>, { width: g, height: g })
+    : icon;
+  return (
+    <span
+      aria-hidden
+      className="flex shrink-0 items-center justify-center"
+      style={{ width: size, height: size, borderRadius: size * 0.3, background: bg, color: fg }}
+    >
+      {glyph}
+    </span>
+  );
+}
+
 /* ── EmptyState: friendly explanation + primary action (docs/10 §8) ── */
 export function EmptyState({
   icon,
@@ -60,15 +100,10 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="card flex flex-col items-center text-center px-8 py-14 gap-3">
-      {icon && (
-        <div className="flex size-12 items-center justify-center rounded-full"
-             style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
-          {icon}
-        </div>
-      )}
-      <h3 className="text-base font-semibold">{title}</h3>
-      <p className="max-w-sm text-sm" style={{ color: "var(--text-muted)" }}>{body}</p>
+    <div className="card flex flex-col items-center gap-3 px-8 py-16 text-center">
+      {icon && <TintTile icon={icon} size={52} />}
+      <h3 className="mt-1 text-[17px] font-semibold tracking-[-0.01em]">{title}</h3>
+      <p className="max-w-sm text-[15px] leading-relaxed" style={{ color: "var(--text-muted)" }}>{body}</p>
       {action && <div className="mt-2">{action}</div>}
     </div>
   );
@@ -77,19 +112,16 @@ export function EmptyState({
 /* ── ErrorState: what happened + what's preserved + what to do ── */
 export function ErrorState({ title, body, retry }: { title: string; body: string; retry?: ReactNode }) {
   return (
-    <div className="card flex flex-col items-center text-center px-8 py-12 gap-3" role="alert">
-      <div className="flex size-12 items-center justify-center rounded-full"
-           style={{ background: "var(--color-danger-50)", color: "var(--color-danger-600)" }}>
-        <IconAlert />
-      </div>
-      <h3 className="text-base font-semibold">{title}</h3>
-      <p className="max-w-sm text-sm" style={{ color: "var(--text-muted)" }}>{body}</p>
+    <div className="card flex flex-col items-center gap-3 px-8 py-14 text-center" role="alert">
+      <TintTile icon={<IconAlert />} size={52} tone="danger" />
+      <h3 className="mt-1 text-[17px] font-semibold tracking-[-0.01em]">{title}</h3>
+      <p className="max-w-sm text-[15px] leading-relaxed" style={{ color: "var(--text-muted)" }}>{body}</p>
       {retry && <div className="mt-2">{retry}</div>}
     </div>
   );
 }
 
-/* ── Avatar (initials) ── */
+/* ── Avatar (initials, soft gradient) ── */
 export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
   const initials = name
     .split(/\s+/)
@@ -106,9 +138,10 @@ export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
         width: size,
         height: size,
         fontSize: size * 0.36,
-        background: "var(--accent-soft)",
-        color: "var(--accent)",
+        background: "linear-gradient(160deg, var(--color-accent-100), var(--accent-soft))",
+        color: "var(--accent-text)",
         border: "1px solid var(--accent-soft-border)",
+        letterSpacing: "-0.02em",
       }}
     >
       {initials}
@@ -116,7 +149,7 @@ export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
   );
 }
 
-/* ── PageHeader ── */
+/* ── PageHeader — serif large title (the brand voice) ── */
 export function PageHeader({
   title,
   sub,
@@ -127,13 +160,26 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <h1 className="text-[22px] font-semibold tracking-[-0.01em]">{title}</h1>
-        {sub && <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>{sub}</p>}
+    <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
+      <div className="min-w-0">
+        <h1 className="title-lg text-[30px] sm:text-[34px]">{title}</h1>
+        {sub && <p className="mt-1.5 text-[15px]" style={{ color: "var(--text-muted)" }}>{sub}</p>}
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}
     </div>
+  );
+}
+
+/* ── SectionTitle — quiet, consistent section header (glyph normalized to 16px) ── */
+export function SectionTitle({ children, icon }: { children: ReactNode; icon?: ReactNode }) {
+  const glyph = isValidElement(icon)
+    ? cloneElement(icon as ReactElement<{ width?: number; height?: number }>, { width: 16, height: 16 })
+    : icon;
+  return (
+    <h2 className="mb-3 flex items-center gap-2 text-[15px] font-semibold tracking-[-0.01em]">
+      {icon && <span className="flex" style={{ color: "var(--accent)" }}>{glyph}</span>}
+      {children}
+    </h2>
   );
 }
 
@@ -155,12 +201,12 @@ export function SkeletonRows({ rows = 4 }: { rows?: number }) {
   );
 }
 
-/* ── Stat tile ── */
+/* ── Stat tile — big value in Instrument Serif, tabular ── */
 export function Stat({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
     <div className="card px-5 py-4">
       <p className="text-[13px] font-medium" style={{ color: "var(--text-muted)" }}>{label}</p>
-      <p className="tabular mt-1 text-[28px] font-semibold leading-tight tracking-[-0.02em]">{value}</p>
+      <p className="title-lg tabular mt-1 text-[34px]">{value}</p>
       {hint && <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>{hint}</p>}
     </div>
   );

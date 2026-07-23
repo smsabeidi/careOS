@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { IconLock } from "@/components/icons";
+import { IconAlert, IconLock } from "@/components/icons";
+import { TintTile } from "@/components/ui";
 
 type Mode = "loading" | "enroll" | "challenge" | "error";
 
@@ -99,58 +100,57 @@ export default function MfaPage() {
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center px-4">
+    <div className="flex min-h-dvh items-center justify-center px-4 py-10">
       <div className="rise w-full max-w-sm">
-        <div className="mb-8 flex flex-col items-center gap-3 text-center">
-          <span className="flex size-12 items-center justify-center rounded-xl shadow-1"
-                style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
-            <IconLock width={22} height={22} />
-          </span>
+        <div className="mb-8 flex flex-col items-center gap-4 text-center">
+          <TintTile icon={<IconLock width={26} height={26} />} size={56} tone="accent" />
           <div>
-            <h1 className="text-xl font-semibold tracking-[-0.01em]">
+            <h1 className="title-lg text-[28px]">
               {mode === "enroll" ? "Set up your authenticator" : "Verify it's you"}
             </h1>
-            <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
-              Patient records open only in a verified session.
+            <p className="mx-auto mt-2 max-w-xs text-[15px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+              Just one quick step — patient records open only in a verified session.
             </p>
           </div>
         </div>
 
         {mode === "loading" && (
-          <div className="card space-y-3 p-6" aria-busy="true" aria-label="Checking your security setup">
+          <div className="card flex flex-col gap-4 p-7" aria-busy="true" aria-label="Checking your security setup">
             <div className="skeleton h-4 w-3/4" />
-            <div className="skeleton h-40 w-full" />
-            <div className="skeleton h-11 w-full" />
+            <div className="skeleton mx-auto size-40 rounded-[var(--radius-lg)]" />
+            <div className="skeleton h-14 w-full rounded-[var(--radius-md)]" />
+            <div className="skeleton h-[52px] w-full rounded-[var(--radius-lg)]" />
           </div>
         )}
 
         {mode === "error" && (
-          <div className="card p-6 text-center" role="alert">
-            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{error}</p>
-            <button className="btn btn-secondary mt-4" onClick={() => { setMode("loading"); void bootstrap(); }}>
+          <div className="card flex flex-col items-center gap-3 p-7 text-center" role="alert">
+            <TintTile icon={<IconAlert width={24} height={24} />} size={52} tone="danger" />
+            <p className="text-[15px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>{error}</p>
+            <button className="btn btn-secondary mt-2" onClick={() => { setMode("loading"); void bootstrap(); }}>
               Try again
             </button>
           </div>
         )}
 
         {(mode === "enroll" || mode === "challenge") && (
-          <form onSubmit={verify} className="card flex flex-col gap-4 p-6">
+          <form onSubmit={verify} className="card flex flex-col gap-5 p-7">
             {mode === "enroll" && (
               <>
-                <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                <p className="text-[15px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                   Scan this with any authenticator app (1Password, Google Authenticator, Authy), then
                   enter the 6-digit code it shows.
                 </p>
                 {qr && (
-                  <div className="mx-auto rounded-lg border p-3 hairline" style={{ background: "#fff" }}>
+                  <div className="mx-auto rounded-[var(--radius-lg)] border p-3.5 hairline" style={{ background: "#fff" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={qr} alt="Authenticator enrollment QR code" width={168} height={168} />
                   </div>
                 )}
                 {secret && (
-                  <p className="text-center text-xs" style={{ color: "var(--text-muted)" }}>
+                  <p className="text-center text-[13px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                     Can't scan? Enter this key manually:{" "}
-                    <code data-testid="totp-secret" className="tabular font-medium tracking-wide">{secret}</code>
+                    <code data-testid="totp-secret" className="tabular font-medium tracking-wide" style={{ color: "var(--text)" }}>{secret}</code>
                   </p>
                 )}
               </>
@@ -166,7 +166,7 @@ export default function MfaPage() {
                 required
                 autoFocus
                 autoComplete="one-time-code"
-                className="input tabular text-center text-lg tracking-[0.4em]"
+                className="input tabular h-14 text-center text-2xl font-medium tracking-[0.4em]"
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                 placeholder="000000"
@@ -174,13 +174,14 @@ export default function MfaPage() {
             </div>
 
             {error && (
-              <p role="alert" className="rounded-md px-3 py-2 text-[13px]"
+              <p role="alert" className="flex items-start gap-2 rounded-[var(--radius-md)] px-3 py-2.5 text-[13px] leading-relaxed"
                  style={{ background: "var(--color-danger-50)", color: "var(--color-danger-700)" }}>
-                {error}
+                <IconAlert width={16} height={16} className="mt-0.5 shrink-0" />
+                <span>{error}</span>
               </p>
             )}
 
-            <button className="btn btn-primary btn-lg" disabled={busy || code.length !== 6} type="submit">
+            <button className="btn btn-primary btn-lg btn-block" disabled={busy || code.length !== 6} type="submit">
               {busy ? "Verifying…" : "Verify and continue"}
             </button>
           </form>

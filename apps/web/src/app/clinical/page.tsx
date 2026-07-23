@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AppShell } from "@/components/shell";
-import { Avatar, EmptyState, PageHeader, StatusChip } from "@/components/ui";
-import { IconCheck, IconChevronRight, IconPen, IconUsers } from "@/components/icons";
+import { Avatar, EmptyState, PageHeader, SectionTitle, StatusChip, TintTile } from "@/components/ui";
+import { IconCheck, IconChevronRight, IconClipboard, IconPen, IconUsers } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/profile";
 
@@ -66,23 +66,24 @@ export default async function ClinicalPage() {
         />
 
         <section className="mb-8">
-          <h2 className="mb-3 flex items-center gap-2 text-[15px] font-semibold">
-            <IconPen width={16} height={16} style={{ color: "var(--accent)" }} />
+          <SectionTitle icon={<IconPen width={16} height={16} />}>
             Needs your signature
-          </h2>
+          </SectionTitle>
           {!queue.length ? (
-            <div className="card flex items-center gap-3 px-5 py-5 text-sm"
-                 style={{ color: "var(--text-secondary)" }}>
-              <IconCheck style={{ color: "var(--color-success-600)" }} />
-              All caught up — new assessments land here the moment they're drafted.
+            <div className="card flex items-center gap-3.5 px-5 py-4">
+              <TintTile icon={<IconCheck width={20} height={20} />} tone="success" size={40} />
+              <p className="text-[15px]" style={{ color: "var(--text-secondary)" }}>
+                All caught up — new assessments land here the moment they&apos;re drafted.
+              </p>
             </div>
           ) : (
-            <div className="card divide-y hairline overflow-hidden">
+            <div className="card stagger divide-y hairline overflow-hidden">
               {queue.slice(0, 25).map((q) => {
                 const t = Array.isArray(q.form_template) ? q.form_template[0] : q.form_template;
                 const c = Array.isArray(q.client) ? q.client[0] : q.client;
                 return (
-                  <Link key={q.id} href={`/office/forms/${q.id}`} className="row-link group">
+                  <Link key={q.id} href={`/office/forms/${q.id}`} className="row-link">
+                    <TintTile icon={<IconClipboard width={20} height={20} />} size={40} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[15px] font-medium">
                         {t?.title ?? "Record"}
@@ -95,10 +96,10 @@ export default async function ClinicalPage() {
                       </p>
                     </div>
                     <StatusChip status={q.status} />
-                    <IconChevronRight
-                      className="opacity-0 transition-opacity duration-150 group-hover:opacity-60"
-                      style={{ color: "var(--text-muted)" }}
-                    />
+                    <span className="btn btn-primary btn-sm shrink-0">
+                      <IconPen width={14} height={14} />
+                      Review &amp; sign
+                    </span>
                   </Link>
                 );
               })}
@@ -112,10 +113,9 @@ export default async function ClinicalPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 flex items-center gap-2 text-[15px] font-semibold">
-            <IconUsers width={16} height={16} style={{ color: "var(--accent)" }} />
+          <SectionTitle icon={<IconUsers width={16} height={16} />}>
             My caseload
-          </h2>
+          </SectionTitle>
           {!caseClients.length ? (
             <EmptyState
               icon={<IconUsers />}
@@ -123,12 +123,12 @@ export default async function ClinicalPage() {
               body="Clients you case-manage appear here once your coordinator assigns them."
             />
           ) : (
-            <div className="card divide-y hairline overflow-hidden sm:columns-1">
+            <div className="card stagger divide-y hairline overflow-hidden">
               {caseClients.map((c) => (
                 <Link key={c.id} href={`/office/clients/${c.id}`} className="row-link group">
-                  <Avatar name={`${c.first_name} ${c.last_name}`} size={36} />
+                  <Avatar name={`${c.first_name} ${c.last_name}`} size={40} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[14.5px] font-medium">
+                    <p className="truncate text-[15px] font-medium">
                       {c.first_name} {c.last_name}
                     </p>
                     <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>{c.city ?? "—"}</p>

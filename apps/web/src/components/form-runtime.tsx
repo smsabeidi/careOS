@@ -245,7 +245,7 @@ export function FormRuntime(props: {
       <div className="min-w-0">
         {/* ── Conflict: keep-both, never overwrite ── */}
         {conflict && (
-          <div className="card mb-5 overflow-hidden border-2" role="alertdialog"
+          <div className="card rise mb-5 overflow-hidden border-2" role="alertdialog"
                aria-label="Two versions of this form exist"
                style={{ borderColor: "var(--color-warning-600)" }}>
             <div className="flex items-center gap-2 px-5 py-3 text-sm font-medium"
@@ -315,7 +315,7 @@ export function FormRuntime(props: {
         )}
 
         {correcting && (
-          <div className="card mb-5 p-5" style={{ borderColor: "var(--accent-soft-border)" }}>
+          <div className="card rise mb-5 p-5" style={{ borderColor: "var(--accent-soft-border)" }}>
             <p className="text-sm font-medium">Correction reason</p>
             <p className="mt-0.5 text-[13px]" style={{ color: "var(--text-muted)" }}>
               Becomes part of the permanent record — say what was wrong, plainly.
@@ -372,12 +372,13 @@ export function FormRuntime(props: {
                       <input
                         id={`f-${f.key}`}
                         type="checkbox"
-                        className="size-5 accent-[var(--accent)]"
+                        role="switch"
+                        className="switch"
                         disabled={disabled}
                         checked={Boolean(value)}
                         onChange={(e) => { setField(f.key, e.target.checked); flush(); }}
                       />
-                      Yes
+                      <span style={{ color: "var(--text-secondary)" }}>{Boolean(value) ? "Yes" : "No"}</span>
                     </label>
                   ) : (
                     <input
@@ -398,15 +399,16 @@ export function FormRuntime(props: {
         </div>
 
         {error && (
-          <p role="alert" className="mt-4 rounded-md px-4 py-3 text-sm"
+          <p role="alert" className="mt-4 flex items-start gap-2 rounded-[var(--radius-md)] px-4 py-3 text-sm"
              style={{ background: "var(--color-danger-50)", color: "var(--color-danger-700)" }}>
-            {error}
+            <IconAlert width={16} height={16} className="mt-0.5 shrink-0" />
+            <span>{error}</span>
           </p>
         )}
 
         {/* ── Finalize review ── */}
         {finalizeOpen && (
-          <div className="card mt-5 p-5" role="dialog" aria-label="Finalize this record"
+          <div className="card rise mt-5 p-5" role="dialog" aria-label="Finalize this record"
                style={{ borderColor: "var(--accent-soft-border)" }}>
             <p className="text-[15px] font-semibold">Finalize as a permanent record</p>
             <p className="mt-1 text-sm" style={{ color: "var(--text-secondary)" }}>

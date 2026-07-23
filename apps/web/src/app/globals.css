@@ -1,267 +1,398 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   CareOS design tokens — docs/10 §3
-   Inter · 1.25 modular scale · 4-pt grid · radius 8/12 · two shadow levels
-   Warm neutral surfaces · teal-700 accent · AA-verified semantic pairs
-   Compliance states are ALWAYS color + icon + label, never color alone.
+   CareOS design system — "Apple 2026" language (rebrand)
+   ───────────────────────────────────────────────────────────────────────────
+   Instrument Serif (display) · Instrument Sans (UI) · 4-pt grid · continuous corners
+   Apple systemGray canvas · one confident system-blue accent · soft depth · frosted chrome
+   Light mode only. AA contrast enforced. Compliance states are ALWAYS color + icon + label.
+   Motion is CSS-only (transform/opacity), spring-feel, and fully reduced-motion-safe.
+   Token NAMES are preserved from the previous system so every surface re-skins at once;
+   VALUES are Apple. Add here, never inline.
 ──────────────────────────────────────────────────────────────────────────── */
 
 @theme {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  /* ── Type: serif for display, Instrument Sans for all functional UI ── */
+  --font-sans: var(--font-instrument-sans), -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", system-ui, sans-serif;
+  --font-serif: var(--font-instrument-serif), ui-serif, "New York", Georgia, "Times New Roman", serif;
 
-  /* Warm neutrals (stone-leaning, calm enterprise) */
-  --color-surface-25: #fcfbfa;
-  --color-surface-50: #faf9f7;
-  --color-surface-100: #f4f2ef;
-  --color-surface-150: #eceae5;
-  --color-surface-200: #e5e2dc;
-  --color-surface-300: #d4d0c8;
-  --color-surface-400: #a8a29a;
-  --color-surface-500: #78716c;
-  --color-surface-600: #57534e;
-  --color-surface-700: #44403c;
-  --color-surface-800: #292524;
-  --color-surface-850: #211e1c;
-  --color-surface-900: #1c1917;
-  --color-surface-950: #141210;
+  /* ── Surface ramp — Apple systemGray (cool, neutral; replaces warm stone) ── */
+  --color-surface-25: #fdfdfd;
+  --color-surface-50: #f9f9fb;
+  --color-surface-100: #f2f2f7; /* systemGray6 — the grouped canvas */
+  --color-surface-150: #ececf1;
+  --color-surface-200: #e5e5ea; /* systemGray5 — hairline-strong */
+  --color-surface-300: #d1d1d6; /* systemGray4 */
+  --color-surface-400: #c7c7cc; /* systemGray3 */
+  --color-surface-500: #aeaeb2; /* systemGray2 */
+  --color-surface-600: #8e8e93; /* systemGray  — muted label */
+  --color-surface-700: #636366; /* secondary label-ish */
+  --color-surface-800: #48484a;
+  --color-surface-850: #3a3a3c;
+  --color-surface-900: #1c1c1e; /* primary label (near-black) */
+  --color-surface-950: #0a0a0b;
 
-  /* Accent — trustworthy teal, not hospital-cold */
-  --color-accent-50: #f0fdfa;
-  --color-accent-100: #ccfbf1;
-  --color-accent-200: #99f6e4;
-  --color-accent-300: #5eead4;
-  --color-accent-500: #14b8a6;
-  --color-accent-600: #0d9488;
-  --color-accent-700: #0f766e;
-  --color-accent-800: #115e59;
-  --color-accent-900: #134e4a;
+  /* ── Accent ramp — Apple system blue ── */
+  --color-accent-50: #eaf3ff;
+  --color-accent-100: #d6e8ff;
+  --color-accent-200: #b3d4ff;
+  --color-accent-300: #7db8ff;
+  --color-accent-400: #3f97ff;
+  --color-accent-500: #0a84ff; /* iOS vivid blue */
+  --color-accent-600: #007aff; /* THE Apple light blue — primary fill */
+  --color-accent-700: #0069d9;
+  --color-accent-800: #0058b8; /* AA text-on-white blue (≈5:1) */
+  --color-accent-900: #003f87;
 
-  --color-success-50: #f0fdf4;
-  --color-success-600: #16a34a;
-  --color-success-700: #15803d;
-  --color-warning-50: #fffbeb;
-  --color-warning-600: #d97706;
-  --color-warning-700: #b45309;
-  --color-danger-50: #fef2f2;
-  --color-danger-600: #dc2626;
-  --color-danger-700: #b91c1c;
-  --color-info-50: #eff6ff;
-  --color-info-600: #2563eb;
-  --color-info-700: #1d4ed8;
+  /* ── Semantic (Apple hues) — tint 50 · fill 600 · text 700 (AA) ── */
+  --color-success-50: #e7f9ed;
+  --color-success-600: #34c759; /* systemGreen */
+  --color-success-700: #248a3d;
+  --color-warning-50: #fff4e5;
+  --color-warning-600: #ff9500; /* systemOrange */
+  --color-warning-700: #b25e00;
+  --color-danger-50: #ffecea;
+  --color-danger-600: #ff3b30; /* systemRed */
+  --color-danger-700: #d70015;
+  --color-info-50: #eaf3ff;
+  --color-info-600: #007aff;
+  --color-info-700: #0058b8;
 
-  --radius-md: 0.5rem;   /* 8px */
-  --radius-lg: 0.75rem;  /* 12px */
+  /* ── Radius — continuous-corner feel, larger than before ── */
+  --radius-xs: 0.375rem; /* 6  */
+  --radius-sm: 0.5rem;   /* 8  */
+  --radius-md: 0.75rem;  /* 12 — inputs/buttons */
+  --radius-lg: 1rem;     /* 16 — cards */
+  --radius-xl: 1.375rem; /* 22 — large cards */
+  --radius-2xl: 1.75rem; /* 28 — sheets/hero */
+  --radius-pill: 980px;
 
-  --shadow-1: 0 1px 2px rgb(28 25 23 / 0.05), 0 1px 3px rgb(28 25 23 / 0.07);
-  --shadow-2: 0 2px 4px rgb(28 25 23 / 0.04), 0 8px 24px rgb(28 25 23 / 0.09);
+  /* ── Soft Apple elevation (utility-facing) ── */
+  --shadow-sm: 0 1px 2px rgb(17 24 39 / 0.04), 0 1px 3px rgb(17 24 39 / 0.06);
+  --shadow-md: 0 4px 16px rgb(17 24 39 / 0.06), 0 1px 4px rgb(17 24 39 / 0.05);
+  --shadow-lg: 0 16px 48px rgb(17 24 39 / 0.12), 0 4px 12px rgb(17 24 39 / 0.06);
 }
 
-/* Semantic layer — light */
+/* ── Semantic layer (light only) + motion + material ── */
 :root {
-  --bg: var(--color-surface-50);
+  color-scheme: light;
+
+  --bg: var(--color-surface-100);       /* grouped systemGray6 canvas */
   --panel: #ffffff;
   --panel-raised: #ffffff;
-  --border: var(--color-surface-200);
+  --border: #e6e6eb;                    /* hairline */
   --border-strong: var(--color-surface-300);
-  --text: var(--color-surface-900);
-  --text-secondary: var(--color-surface-600);
-  --text-muted: var(--color-surface-500);
-  --accent: var(--color-accent-700);
-  --accent-hover: var(--color-accent-800);
-  --accent-soft: var(--color-accent-50);
-  --accent-soft-border: var(--color-accent-200);
-  --ring: var(--color-accent-500);
-}
+  --separator: rgb(60 60 67 / 0.12);    /* iOS list separator */
 
-/* Semantic layer — dark (night-shift caregivers, docs/10 §3) */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: var(--color-surface-950);
-    --panel: var(--color-surface-900);
-    --panel-raised: var(--color-surface-850);
-    --border: var(--color-surface-800);
-    --border-strong: var(--color-surface-700);
-    --text: var(--color-surface-100);
-    --text-secondary: var(--color-surface-300);
-    --text-muted: var(--color-surface-400);
-    --accent: var(--color-accent-500);
-    --accent-hover: var(--color-accent-300);
-    --accent-soft: rgb(19 78 74 / 0.35);
-    --accent-soft-border: var(--color-accent-800);
-    --ring: var(--color-accent-500);
-  }
+  --text: var(--color-surface-900);     /* #1c1c1e primary label */
+  --text-secondary: #5b5b60;            /* AA on white/canvas (~6.4:1) */
+  --text-muted: #6b6b70;                /* tertiary — darkened from #8e8e93 to clear WCAG AA
+                                           (5.3:1 white / 4.75:1 on #f2f2f7 canvas) */
+
+  --accent: var(--color-accent-600);        /* #007aff — fills, active, focus, icon accents */
+  --accent-hover: var(--color-accent-700);
+  --accent-active: var(--color-accent-800);
+  --accent-text: var(--color-accent-800);   /* AA blue for small text on white */
+  --accent-soft: var(--color-accent-50);    /* tint bg */
+  --accent-soft-border: var(--color-accent-100);
+  --ring: var(--color-accent-600);
+
+  /* Translucent chrome (frosted materials) */
+  --material: rgb(255 255 255 / 0.72);
+  --material-strong: rgb(255 255 255 / 0.85);
+  --material-blur: saturate(180%) blur(20px);
+  --material-edge: rgb(255 255 255 / 0.5); /* bright top edge = light catching glass */
+
+  /* Elevation aliases (kept for existing refs) */
+  --shadow-xs: 0 1px 2px rgb(17 24 39 / 0.05);
+  --shadow-1: var(--shadow-sm);
+  --shadow-2: var(--shadow-md);
+
+  /* Motion — strong custom curves (emil) + a subtle spring, all CSS */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --spring: linear(
+    0, 0.006, 0.025, 0.056, 0.097, 0.148, 0.208, 0.276, 0.35, 0.429, 0.512, 0.596,
+    0.68, 0.761, 0.837, 0.905, 0.964, 1.012, 1.048, 1.072, 1.083, 1.083, 1.074,
+    1.059, 1.041, 1.024, 1.009, 0.999, 0.994, 0.994, 0.997, 1
+  );
+  --dur-fast: 140ms;
+  --dur: 200ms;
+  --dur-slow: 320ms;
+  --dur-sheet: 460ms;
 }
 
 @layer base {
+  /* Default every border/divider to the Apple hairline (Tailwind v4 defaults to
+     currentColor, which renders dark). Explicit border-<color>/inline styles still win. */
+  *, ::before, ::after { border-color: var(--border); }
+
   html {
+    font-family: var(--font-sans);
     font-feature-settings: "cv11", "ss01";
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     background: var(--bg);
     color: var(--text);
     font-size: 16px;
     line-height: 1.5;
+    letter-spacing: -0.006em; /* Apple UI type sits a hair tight */
   }
-  ::selection {
-    background: var(--color-accent-200);
-    color: var(--color-surface-900);
-  }
+  h1, h2, h3, h4 { letter-spacing: -0.02em; }
+  ::selection { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--text); }
   :focus-visible {
-    outline: 2px solid var(--ring);
+    outline: 2.5px solid var(--ring);
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: 6px;
   }
+
+  /* Reduced motion — robust: strip transforms/decorative motion; keep it calm */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
     }
+    .rise, .stagger > *, .sheet, .popover {
+      animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  }
+  /* Reduced transparency — frost becomes solid (apple-design §14) */
+  @media (prefers-reduced-transparency: reduce) {
+    .material, .material-strong {
+      background: #ffffff !important;
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+    }
+  }
+  /* High contrast — defined borders */
+  @media (prefers-contrast: more) {
+    :root { --border: var(--color-surface-400); --text-secondary: #3a3a3c; --text-muted: #48484a; }
   }
 }
 
 @layer components {
-  /* ── Buttons — 150–200ms ease-out micro-transitions only ── */
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium
-           px-4 h-10 select-none whitespace-nowrap;
-    transition: background-color 160ms ease-out, border-color 160ms ease-out,
-                color 160ms ease-out, box-shadow 160ms ease-out, transform 120ms ease-out;
+  /* ── Frosted chrome — translucent functional layer; content scrolls under ── */
+  .material {
+    background: var(--material);
+    -webkit-backdrop-filter: var(--material-blur);
+    backdrop-filter: var(--material-blur);
   }
-  .btn:active { transform: translateY(0.5px); }
-  .btn:disabled { opacity: 0.5; pointer-events: none; }
-  .btn-primary {
-    background: var(--accent);
-    color: #ffffff;
-    box-shadow: var(--shadow-1);
+  .material-strong {
+    background: var(--material-strong);
+    -webkit-backdrop-filter: saturate(180%) blur(30px);
+    backdrop-filter: saturate(180%) blur(30px);
   }
-  .btn-primary:hover { background: var(--accent-hover); }
-  .btn-secondary {
-    background: var(--panel);
-    color: var(--text);
-    border: 1px solid var(--border-strong);
+  /* Soft fade where content meets floating chrome (scroll edge, not hard divider) */
+  .scroll-edge { position: relative; }
+  .scroll-edge::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: -16px; height: 16px;
+    background: linear-gradient(var(--panel), transparent); pointer-events: none;
   }
-  .btn-secondary:hover { border-color: var(--text-muted); background: var(--bg); }
-  .btn-ghost { color: var(--text-secondary); }
-  .btn-ghost:hover { background: var(--color-surface-100); color: var(--text); }
-  @media (prefers-color-scheme: dark) {
-    .btn-ghost:hover { background: var(--color-surface-800); }
-  }
-  .btn-danger {
-    background: var(--color-danger-600);
-    color: #fff;
-  }
-  .btn-danger:hover { background: var(--color-danger-700); }
-  .btn-lg { @apply h-12 px-6 text-base; }   /* 48dp+ touch targets in the field */
-  .btn-sm { @apply h-8 px-3 text-xs; }
 
-  /* ── Panels ── */
+  /* ── Buttons — press feedback, custom easing, ≥44px targets ── */
+  .btn {
+    @apply inline-flex select-none items-center justify-center gap-2 whitespace-nowrap
+           rounded-[var(--radius-md)] text-[15px] font-medium;
+    height: 2.75rem; padding-inline: 1.125rem; min-width: 2.75rem;
+    letter-spacing: -0.01em;
+    transition: background-color var(--dur) var(--ease-out),
+                border-color var(--dur) var(--ease-out),
+                color var(--dur) var(--ease-out),
+                box-shadow var(--dur) var(--ease-out),
+                transform var(--dur-fast) var(--ease-out),
+                filter var(--dur) var(--ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-secondary:hover { background: #ffffff; border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+    .btn-white:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+    .btn-tinted:hover { background: color-mix(in srgb, var(--accent) 16%, #fff); }
+    .btn-ghost:hover, .btn-plain:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+    .btn-danger:hover { background: var(--color-danger-700); }
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.42; pointer-events: none; }
+  .btn-primary { background: var(--accent); color: #fff; box-shadow: var(--shadow-sm); }
+  .btn-secondary { background: var(--color-surface-100); color: var(--text); border: 1px solid var(--border); }
+  /* White pill — for controls sitting directly on the gray grouped canvas (filters, toolbars) */
+  .btn-white { background: var(--panel); color: var(--text-secondary); border: 1px solid var(--border); box-shadow: var(--shadow-xs); }
+  .btn-tinted { background: var(--accent-soft); color: var(--accent-text); }
+  .btn-ghost, .btn-plain { background: transparent; color: var(--accent-text); }
+  .btn-danger { background: var(--color-danger-600); color: #fff; box-shadow: var(--shadow-sm); }
+  .btn-lg { height: 3.25rem; padding-inline: 1.5rem; font-size: 1.0625rem; border-radius: var(--radius-lg); } /* 52px field */
+  .btn-sm { height: 2.25rem; padding-inline: 0.875rem; font-size: 0.8125rem; border-radius: var(--radius-sm); }
+  .btn-pill { border-radius: var(--radius-pill, 980px); }
+  .btn-block { width: 100%; }
+
+  /* ── Cards / grouped surfaces ── */
   .card {
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-1);
+    box-shadow: var(--shadow-sm);
   }
-  .card-flat {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+  .card-flat { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg); }
+  .card-inset { background: var(--color-surface-100); border: 1px solid var(--border); border-radius: var(--radius-md); }
+  .card-interactive {
+    transition: box-shadow var(--dur) var(--ease-out), transform var(--dur-fast) var(--ease-out),
+                border-color var(--dur) var(--ease-out);
   }
+  @media (hover: hover) and (pointer: fine) {
+    .card-interactive:hover { box-shadow: var(--shadow-md); border-color: var(--border-strong); }
+  }
+  .card-interactive:active { transform: scale(0.994); }
 
-  /* ── Status chips — color + icon + label, never color alone ── */
+  /* ── Status chips — capsule; color + icon + label, never color alone ── */
   .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full text-xs font-medium
-           px-2.5 py-1 border;
-    letter-spacing: 0.01em;
+    @apply inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] border
+           px-2.5 py-1 text-xs font-medium;
+    letter-spacing: 0.002em;
   }
-  .chip-neutral  { background: var(--color-surface-100); color: var(--color-surface-700); border-color: var(--color-surface-200); }
-  .chip-accent   { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-soft-border); }
-  .chip-success  { background: var(--color-success-50); color: var(--color-success-700); border-color: #bbf7d0; }
-  .chip-warning  { background: var(--color-warning-50); color: var(--color-warning-700); border-color: #fde68a; }
-  .chip-danger   { background: var(--color-danger-50); color: var(--color-danger-700); border-color: #fecaca; }
-  .chip-info     { background: var(--color-info-50); color: var(--color-info-700); border-color: #bfdbfe; }
-  @media (prefers-color-scheme: dark) {
-    .chip-neutral { background: var(--color-surface-800); color: var(--color-surface-300); border-color: var(--color-surface-700); }
-    .chip-success { background: rgb(20 83 45 / 0.3); color: #86efac; border-color: rgb(22 101 52 / 0.6); }
-    .chip-warning { background: rgb(120 53 15 / 0.3); color: #fcd34d; border-color: rgb(146 64 14 / 0.6); }
-    .chip-danger  { background: rgb(127 29 29 / 0.3); color: #fca5a5; border-color: rgb(153 27 27 / 0.6); }
-    .chip-info    { background: rgb(30 58 138 / 0.3); color: #93c5fd; border-color: rgb(30 64 175 / 0.6); }
-  }
+  .chip-neutral { background: var(--color-surface-100); color: var(--color-surface-700); border-color: var(--color-surface-200); }
+  .chip-accent  { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent-soft-border); }
+  .chip-success { background: var(--color-success-50); color: var(--color-success-700); border-color: #b7ecc4; }
+  .chip-warning { background: var(--color-warning-50); color: var(--color-warning-700); border-color: #ffdca6; }
+  .chip-danger  { background: var(--color-danger-50); color: var(--color-danger-700); border-color: #ffc9c4; }
+  .chip-info    { background: var(--color-info-50); color: var(--color-info-700); border-color: var(--accent-soft-border); }
 
-  /* ── Form fields ── */
+  /* ── Form fields — Apple grouped-field, blue focus glow, ≥44px ── */
   .label {
-    @apply block text-[13px] font-medium mb-1.5;
-    color: var(--text-secondary);
-    letter-spacing: 0.01em;
+    @apply mb-1.5 block text-[13px] font-medium;
+    color: var(--text-secondary); letter-spacing: -0.005em;
   }
   .input, .textarea, .select {
-    @apply w-full rounded-md text-[15px] px-3.5;
+    @apply w-full rounded-[var(--radius-md)] px-3.5 text-[16px];
     background: var(--panel);
     border: 1px solid var(--border-strong);
     color: var(--text);
-    transition: border-color 160ms ease-out, box-shadow 160ms ease-out;
+    transition: border-color var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out),
+                background-color var(--dur) var(--ease-out);
   }
-  .input, .select { height: 2.75rem; }
-  .textarea { @apply py-2.5 min-h-28 leading-relaxed; }
-  .input:hover, .textarea:hover, .select:hover { border-color: var(--text-muted); }
+  .input, .select { height: 2.875rem; } /* 46px */
+  .textarea { @apply min-h-28 py-2.5 leading-relaxed; }
+  @media (hover: hover) and (pointer: fine) {
+    .input:hover, .textarea:hover, .select:hover { border-color: var(--color-surface-400); }
+  }
   .input:focus, .textarea:focus, .select:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 22%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--ring) 18%, transparent);
   }
   .input::placeholder, .textarea::placeholder { color: var(--text-muted); }
 
-  /* ── Skeletons — layout-mirroring, no spinner walls (docs/10 §8) ── */
-  .skeleton {
-    border-radius: var(--radius-md);
-    background: linear-gradient(100deg,
-      var(--color-surface-150) 40%, var(--color-surface-100) 50%, var(--color-surface-150) 60%);
-    background-size: 200% 100%;
-    animation: shimmer 1.4s ease-in-out infinite;
+  /* ── iOS switch (booleans) — green when on ── */
+  .switch {
+    appearance: none; -webkit-appearance: none; cursor: pointer;
+    position: relative; width: 3.25rem; height: 2rem; flex: none;
+    border-radius: var(--radius-pill, 980px);
+    background: var(--color-surface-300);
+    transition: background-color var(--dur) var(--ease-out);
   }
-  @media (prefers-color-scheme: dark) {
-    .skeleton {
-      background: linear-gradient(100deg,
-        var(--color-surface-800) 40%, var(--color-surface-850) 50%, var(--color-surface-800) 60%);
-      background-size: 200% 100%;
-    }
+  .switch::after {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 1.75rem; height: 1.75rem;
+    border-radius: 50%; background: #fff; box-shadow: var(--shadow-sm);
+    transition: transform var(--dur) var(--spring);
+  }
+  .switch:checked { background: var(--color-success-600); }
+  .switch:checked::after { transform: translateX(1.25rem); }
+  .switch:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Segmented control (iOS) ── */
+  .segmented {
+    display: inline-flex; padding: 2px; gap: 2px;
+    background: var(--color-surface-100); border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+  }
+  .segmented > button {
+    appearance: none; border: 0; cursor: pointer; background: transparent;
+    padding: 0.375rem 0.875rem; border-radius: calc(var(--radius-md) - 3px);
+    font-size: 0.8125rem; font-weight: 500; color: var(--text-secondary);
+    transition: background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out),
+                box-shadow var(--dur) var(--ease-out);
+  }
+  .segmented > button[data-active="true"] { background: #fff; color: var(--text); box-shadow: var(--shadow-sm); }
+
+  /* ── Skeletons — layout-mirroring shimmer (no spinner walls) ── */
+  .skeleton {
+    border-radius: var(--radius-sm);
+    background: linear-gradient(100deg,
+      var(--color-surface-150) 38%, var(--color-surface-100) 50%, var(--color-surface-150) 62%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
   }
   @keyframes shimmer { to { background-position: -200% 0; } }
 
-  /* ── Left rail ── */
+  /* ── Left rail (macOS-style sidebar item) ── */
   .rail-link {
-    @apply flex items-center gap-3 rounded-md px-3 h-10 text-sm font-medium;
-    color: var(--text-secondary);
-    transition: background-color 160ms ease-out, color 160ms ease-out;
+    @apply flex items-center gap-3 rounded-[var(--radius-md)] px-3 text-[14px] font-medium;
+    height: 2.375rem; color: var(--text-secondary);
+    transition: background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out),
+                transform var(--dur-fast) var(--ease-out);
   }
-  .rail-link:hover { background: var(--color-surface-100); color: var(--text); }
-  .rail-link[data-active="true"] {
-    background: var(--accent-soft);
-    color: var(--accent);
+  @media (hover: hover) and (pointer: fine) {
+    .rail-link:hover { background: color-mix(in srgb, var(--color-surface-600) 12%, transparent); color: var(--text); }
   }
-  @media (prefers-color-scheme: dark) {
-    .rail-link:hover { background: var(--color-surface-800); }
-  }
+  .rail-link:active { transform: scale(0.98); }
+  .rail-link[data-active="true"] { background: var(--accent-soft); color: var(--accent-text); }
+  .rail-link[data-active="true"] svg { color: var(--accent); }
 
-  /* ── Data rows ── */
+  /* ── Grouped-list row ── */
   .row-link {
     @apply flex items-center gap-4 px-5 py-4;
-    transition: background-color 140ms ease-out;
+    transition: background-color var(--dur-fast) var(--ease-out);
   }
-  .row-link:hover { background: var(--color-surface-25); }
-  @media (prefers-color-scheme: dark) {
-    .row-link:hover { background: var(--color-surface-850); }
+  @media (hover: hover) and (pointer: fine) {
+    .row-link:hover { background: var(--color-surface-50); }
   }
+  .row-link:active { background: var(--color-surface-100); }
 
   .tabular { font-variant-numeric: tabular-nums; }
   .hairline { border-color: var(--border); }
+  .title-lg {
+    font-family: var(--font-serif); font-weight: 400;
+    letter-spacing: -0.02em; line-height: 1.05;
+  }
+
+  /* ── Overlays ── */
+  .scrim { background: rgb(0 0 0 / 0.32); -webkit-backdrop-filter: blur(1px); backdrop-filter: blur(1px); }
+  .sheet {
+    background: var(--panel); border-radius: var(--radius-2xl); box-shadow: var(--shadow-lg);
+    animation: sheet-in var(--dur-sheet) var(--ease-drawer) both;
+  }
+  .popover {
+    background: var(--material-strong);
+    -webkit-backdrop-filter: saturate(180%) blur(30px); backdrop-filter: saturate(180%) blur(30px);
+    border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+    transform-origin: var(--transform-origin, top center);
+    animation: popover-in var(--dur) var(--ease-out) both;
+  }
 }
 
-/* Page-enter: one gentle rise, 180ms, honors reduced motion via base rule */
-@keyframes rise {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.rise { animation: rise 180ms ease-out both; }
+/* ── Motion utilities (all reduced-motion-safe via base rule) ── */
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise var(--dur-slow) var(--ease-out) both; }
+
+@keyframes stagger-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.stagger > * { animation: stagger-in var(--dur-slow) var(--ease-out) both; }
+.stagger > *:nth-child(1) { animation-delay: 20ms; }
+.stagger > *:nth-child(2) { animation-delay: 70ms; }
+.stagger > *:nth-child(3) { animation-delay: 120ms; }
+.stagger > *:nth-child(4) { animation-delay: 170ms; }
+.stagger > *:nth-child(5) { animation-delay: 220ms; }
+.stagger > *:nth-child(6) { animation-delay: 270ms; }
+.stagger > *:nth-child(7) { animation-delay: 320ms; }
+.stagger > *:nth-child(8) { animation-delay: 370ms; }
+.stagger > *:nth-child(n+9) { animation-delay: 410ms; }
+
+@keyframes sheet-in { from { opacity: 0; transform: translateY(12px) scale(0.985); } to { opacity: 1; transform: none; } }
+@keyframes popover-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }

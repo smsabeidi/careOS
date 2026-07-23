@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AppShell } from "@/components/shell";
-import { EmptyState, PageHeader, StatusChip } from "@/components/ui";
+import { EmptyState, PageHeader, StatusChip, TintTile } from "@/components/ui";
 import { IconChevronRight, IconClipboard } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -29,19 +29,16 @@ export default async function FormsPage() {
             body="Records you create or are assigned to review will appear here. Start one from a client's chart."
           />
         ) : (
-          <div className="card divide-y hairline overflow-hidden">
+          <div className="card divide-y hairline overflow-hidden stagger">
             {forms.map((f) => {
               const template = Array.isArray(f.form_template) ? f.form_template[0] : f.form_template;
               const client = Array.isArray(f.client) ? f.client[0] : f.client;
               return (
                 <Link key={f.id} href={`/office/forms/${f.id}`} className="row-link group">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg"
-                       style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
-                    <IconClipboard />
-                  </div>
+                  <TintTile icon={<IconClipboard />} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[15px] font-medium">{template?.title ?? "Form"}</p>
-                    <p className="mt-0.5 truncate text-[13px]" style={{ color: "var(--text-muted)" }}>
+                    <p className="truncate text-[15px] font-medium tracking-[-0.01em]">{template?.title ?? "Form"}</p>
+                    <p className="mt-0.5 truncate text-[13px] tabular" style={{ color: "var(--text-muted)" }}>
                       {client ? `${client.first_name} ${client.last_name} · ` : ""}
                       updated {new Date(f.updated_at).toLocaleString(undefined, {
                         month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
@@ -50,7 +47,7 @@ export default async function FormsPage() {
                   </div>
                   <StatusChip status={f.status} />
                   <IconChevronRight
-                    className="opacity-0 transition-opacity duration-150 group-hover:opacity-60"
+                    className="shrink-0 opacity-40 transition-opacity duration-150 group-hover:opacity-70"
                     style={{ color: "var(--text-muted)" }}
                   />
                 </Link>

@@ -46,6 +46,23 @@ function navFor(roles: string[]): NavItem[] {
   return [{ href: "/family", label: "Family", icon: <IconHeart /> }];
 }
 
+function BrandMark({ size = 30 }: { size?: number }) {
+  return (
+    <span
+      className="flex items-center justify-center text-white"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size * 0.3,
+        background: "linear-gradient(160deg, var(--color-accent-500), var(--accent-active))",
+        boxShadow: "var(--shadow-sm)",
+      }}
+    >
+      <IconShield width={size * 0.56} height={size * 0.56} />
+    </span>
+  );
+}
+
 async function signOut() {
   "use server";
   const supabase = await supabaseServer();
@@ -66,18 +83,13 @@ export async function AppShell({
 
   return (
     <div className="flex min-h-dvh">
+      {/* ── macOS-style frosted sidebar ── */}
       <aside
-        className="hidden w-60 shrink-0 flex-col border-r px-3 py-5 md:flex hairline"
-        style={{ background: "var(--panel)" }}
+        className="material-strong hidden w-64 shrink-0 flex-col border-r px-3.5 py-5 md:flex hairline"
       >
-        <Link href="/" className="mb-7 flex items-center gap-2.5 px-3">
-          <span
-            className="flex size-8 items-center justify-center rounded-lg text-white"
-            style={{ background: "var(--accent)" }}
-          >
-            <IconShield width={17} height={17} />
-          </span>
-          <span className="text-[17px] font-semibold tracking-[-0.01em]">CareOS</span>
+        <Link href="/" className="mb-8 flex items-center gap-3 px-2.5">
+          <BrandMark size={30} />
+          <span className="text-[19px] font-semibold tracking-[-0.02em]">CareOS</span>
         </Link>
 
         <nav className="flex flex-col gap-1" aria-label="Primary">
@@ -96,8 +108,8 @@ export async function AppShell({
         </nav>
 
         <div className="mt-auto border-t pt-4 hairline">
-          <div className="flex items-center gap-3 px-3 pb-3">
-            <Avatar name={name} size={34} />
+          <div className="flex items-center gap-3 px-2.5 pb-3">
+            <Avatar name={name} size={36} />
             <div className="min-w-0">
               <p className="truncate text-[13px] font-medium">{name}</p>
               <StatusChip status="aal2" />
@@ -113,39 +125,41 @@ export async function AppShell({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
+        {/* ── Mobile frosted top bar ── */}
         <header
-          className="flex h-14 items-center justify-between border-b px-4 md:hidden hairline"
-          style={{ background: "var(--panel)" }}
+          className="material sticky top-0 z-20 flex h-14 items-center justify-between border-b px-4 md:hidden hairline"
         >
-          <Link href="/" className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-md text-white"
-                  style={{ background: "var(--accent)" }}>
-              <IconShield width={15} height={15} />
-            </span>
-            <span className="font-semibold">CareOS</span>
+          <Link href="/" className="flex items-center gap-2.5">
+            <BrandMark size={26} />
+            <span className="text-[17px] font-semibold tracking-[-0.02em]">CareOS</span>
           </Link>
           <StatusChip status="aal2" />
         </header>
 
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 md:px-8">{children}</main>
+        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 md:px-10 md:py-10">{children}</main>
 
+        {/* ── iOS-style frosted tab bar ── */}
         <nav
-          className="sticky bottom-0 z-10 flex border-t md:hidden hairline"
-          style={{ background: "var(--panel)" }}
+          className="material sticky bottom-0 z-20 flex border-t md:hidden hairline"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
           aria-label="Primary"
         >
-          {nav.slice(0, 4).map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              data-active={active === item.href}
-              className="flex min-h-14 flex-1 flex-col items-center justify-center gap-1 py-2 text-[11px] font-medium"
-              style={{ color: active === item.href ? "var(--accent)" : "var(--text-muted)" }}
-            >
-              {item.icon}
-              {item.label}
-            </Link>
-          ))}
+          {nav.slice(0, 4).map((item) => {
+            const on = active === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                data-active={on}
+                aria-current={on ? "page" : undefined}
+                className="flex min-h-14 flex-1 flex-col items-center justify-center gap-1 py-2 text-[11px] font-medium transition-colors"
+                style={{ color: on ? "var(--accent-text)" : "var(--text-secondary)" }}
+              >
+                {item.icon}
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
       </div>
     </div>

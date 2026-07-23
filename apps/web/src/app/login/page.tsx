@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { IconShield } from "@/components/icons";
+import { IconShield, IconAlert } from "@/components/icons";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,22 +28,33 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center px-4">
-      <div className="rise w-full max-w-sm">
-        <div className="mb-8 flex flex-col items-center gap-3">
-          <span className="flex size-12 items-center justify-center rounded-xl text-white shadow-1"
-                style={{ background: "var(--accent)" }}>
-            <IconShield width={24} height={24} />
+    <div
+      className="flex min-h-dvh items-center justify-center px-5 py-12"
+      style={{ background: "var(--bg)" }}
+    >
+      <div className="rise w-full max-w-[400px]">
+        <div className="mb-9 flex flex-col items-center gap-5 text-center">
+          <span
+            className="flex items-center justify-center text-white"
+            style={{
+              width: 62,
+              height: 62,
+              borderRadius: 19,
+              background: "linear-gradient(160deg, var(--color-accent-500), var(--accent-active))",
+              boxShadow: "var(--shadow-md)",
+            }}
+          >
+            <IconShield width={34} height={34} />
           </span>
-          <div className="text-center">
-            <h1 className="text-xl font-semibold tracking-[-0.01em]">Sign in to CareOS</h1>
-            <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
-              Care operations, provably in order.
+          <div className="flex flex-col gap-2">
+            <h1 className="title-lg text-[34px]">Welcome back</h1>
+            <p className="text-[15px]" style={{ color: "var(--text-secondary)" }}>
+              Sign in to CareOS — care operations, provably in order.
             </p>
           </div>
         </div>
 
-        <form onSubmit={onSubmit} className="card flex flex-col gap-4 p-6">
+        <form onSubmit={onSubmit} className="card flex flex-col gap-5 p-7">
           <div>
             <label className="label" htmlFor="email">Work email</label>
             <input
@@ -51,7 +62,7 @@ export default function LoginPage() {
               type="email"
               autoComplete="email"
               required
-              className="input"
+              className="input h-12"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@agency.com"
@@ -64,7 +75,7 @@ export default function LoginPage() {
               type="password"
               autoComplete="current-password"
               required
-              className="input"
+              className="input h-12"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••••"
@@ -72,16 +83,20 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <p role="alert" className="rounded-md px-3 py-2 text-[13px]"
-               style={{ background: "var(--color-danger-50)", color: "var(--color-danger-700)" }}>
-              {error}
+            <p
+              role="alert"
+              className="flex items-start gap-2 rounded-[var(--radius-md)] px-3.5 py-2.5 text-[13px] leading-snug"
+              style={{ background: "var(--color-danger-50)", color: "var(--color-danger-700)" }}
+            >
+              <IconAlert width={16} height={16} className="mt-0.5 shrink-0" />
+              <span>{error}</span>
             </p>
           )}
 
-          <button className="btn btn-primary btn-lg mt-1" disabled={busy} type="submit">
+          <button className="btn btn-primary btn-lg btn-block mt-1" disabled={busy} type="submit">
             {busy ? "Signing in…" : "Continue"}
           </button>
-          <p className="text-center text-xs" style={{ color: "var(--text-muted)" }}>
+          <p className="text-center text-[13px] leading-snug" style={{ color: "var(--text-secondary)" }}>
             You'll verify with your authenticator app next — patient records require a verified session.
           </p>
         </form>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AppShell } from "@/components/shell";
-import { Avatar, EmptyState, PageHeader, StatusChip } from "@/components/ui";
+import { Avatar, EmptyState, PageHeader, SectionTitle, StatusChip, TintTile } from "@/components/ui";
 import { IconCalendar, IconChevronRight, IconClipboard } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -38,7 +38,7 @@ export default async function TodayPage() {
 
         {/* Visits — honest state until scheduling ships (S4) */}
         <section className="mb-6">
-          <h2 className="mb-3 text-[15px] font-semibold">Visits</h2>
+          <SectionTitle>Visits</SectionTitle>
           <EmptyState
             icon={<IconCalendar />}
             title="No visits scheduled here yet"
@@ -48,13 +48,13 @@ export default async function TodayPage() {
 
         {/* My clients */}
         <section className="mb-6">
-          <h2 className="mb-3 text-[15px] font-semibold">My clients</h2>
+          <SectionTitle>My clients</SectionTitle>
           {!assignments?.length ? (
             <p className="card px-5 py-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>
               Clients you're assigned to will appear here.
             </p>
           ) : (
-            <div className="card divide-y hairline overflow-hidden">
+            <div className="card stagger divide-y hairline overflow-hidden">
               {assignments.map((a) => {
                 const c = Array.isArray(a.client) ? a.client[0] : a.client;
                 if (!c) return null;
@@ -77,22 +77,19 @@ export default async function TodayPage() {
 
         {/* My open notes */}
         <section>
-          <h2 className="mb-3 text-[15px] font-semibold">My open notes</h2>
+          <SectionTitle>My open notes</SectionTitle>
           {!myDrafts?.length ? (
             <p className="card px-5 py-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>
               Drafts you're working on will wait for you here — saved automatically, never lost.
             </p>
           ) : (
-            <div className="card divide-y hairline overflow-hidden">
+            <div className="card stagger divide-y hairline overflow-hidden">
               {myDrafts.map((f) => {
                 const t = Array.isArray(f.form_template) ? f.form_template[0] : f.form_template;
                 const c = Array.isArray(f.client) ? f.client[0] : f.client;
                 return (
                   <Link key={f.id} href={`/office/forms/${f.id}`} className="row-link group min-h-14">
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-lg"
-                         style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
-                      <IconClipboard />
-                    </div>
+                    <TintTile icon={<IconClipboard />} size={40} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[15px] font-medium">{t?.title ?? "Note"}</p>
                       <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>

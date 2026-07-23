@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AppShell } from "@/components/shell";
-import { PageHeader } from "@/components/ui";
+import { PageHeader, EmptyState, TintTile } from "@/components/ui";
 import { IconChevronRight, IconClipboard } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -58,36 +58,45 @@ export default async function NewFormPage({ params }: { params: Promise<{ id: st
           sub={`For ${client.first_name} ${client.last_name}. Every save keeps its own version — nothing gets overwritten.`}
         />
 
-        <div className="flex flex-col gap-3">
-          {templates?.map((t) => (
-            <form key={t.id} action={startForm}>
-              <input type="hidden" name="template_id" value={t.id} />
-              <input type="hidden" name="client_id" value={client.id} />
-              <button
-                type="submit"
-                className="card row-link group w-full text-left"
-                style={{ borderRadius: "var(--radius-lg)" }}
-              >
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg"
-                     style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
-                  <IconClipboard />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[15px] font-medium">{t.title}</p>
-                  <p className="mt-0.5 text-[13px]" style={{ color: "var(--text-muted)" }}>
-                    {t.requires_signature_roles?.length
-                      ? `Needs a signature from: ${t.requires_signature_roles.join(", ").toUpperCase()}`
-                      : "No signature required to finalize"}
-                  </p>
-                </div>
-                <IconChevronRight
-                  className="opacity-0 transition-opacity duration-150 group-hover:opacity-60"
-                  style={{ color: "var(--text-muted)" }}
-                />
-              </button>
-            </form>
-          ))}
-        </div>
+        {templates && templates.length > 0 ? (
+          <div className="stagger flex flex-col gap-3">
+            {templates.map((t) => (
+              <form key={t.id} action={startForm}>
+                <input type="hidden" name="template_id" value={t.id} />
+                <input type="hidden" name="client_id" value={client.id} />
+                <button
+                  type="submit"
+                  className="card card-interactive row-link group w-full text-left"
+                >
+                  <TintTile icon={<IconClipboard />} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] font-medium">{t.title}</p>
+                    <p className="mt-0.5 text-[13px]" style={{ color: "var(--text-muted)" }}>
+                      {t.requires_signature_roles?.length
+                        ? `Needs a signature from: ${t.requires_signature_roles.join(", ").toUpperCase()}`
+                        : "No signature required to finalize"}
+                    </p>
+                  </div>
+                  <IconChevronRight
+                    className="shrink-0 opacity-40 transition-opacity duration-150 group-hover:opacity-70"
+                    style={{ color: "var(--text-muted)" }}
+                  />
+                </button>
+              </form>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={<IconClipboard />}
+            title="No record types to start yet"
+            body={`Once your agency publishes active form templates, they'll show up here for ${client.first_name}.`}
+            action={
+              <Link href={`/office/clients/${id}`} className="btn btn-secondary">
+                Back to profile
+              </Link>
+            }
+          />
+        )}
       </div>
     </AppShell>
   );

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/shell";
-import { StatusChip } from "@/components/ui";
+import { PageHeader, StatusChip } from "@/components/ui";
 import { FormRuntime, type TemplateField } from "@/components/form-runtime";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -64,19 +64,11 @@ export default async function FormPage({ params }: { params: Promise<{ id: strin
           )}
         </nav>
 
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-[22px] font-semibold tracking-[-0.01em]">
-              {template?.title ?? "Form"}
-            </h1>
-            {clientName && (
-              <p className="mt-0.5 text-sm" style={{ color: "var(--text-muted)" }}>
-                For {clientName}
-              </p>
-            )}
-          </div>
-          <StatusChip status={instance.status} />
-        </div>
+        <PageHeader
+          title={template?.title ?? "Form"}
+          sub={clientName ? `For ${clientName}` : undefined}
+          actions={<StatusChip status={instance.status} />}
+        />
 
         <FormRuntime
           instanceId={instance.id}

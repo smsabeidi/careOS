@@ -1,6 +1,7 @@
+import type { ReactNode } from "react";
 import { AppShell } from "@/components/shell";
-import { Avatar, EmptyState, PageHeader, StatusChip } from "@/components/ui";
-import { IconShield } from "@/components/icons";
+import { Avatar, EmptyState, PageHeader, SectionTitle, StatusChip } from "@/components/ui";
+import { IconCalendar, IconClipboard, IconHeart, IconLock, IconShield, IconUsers } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/profile";
 
@@ -15,6 +16,16 @@ const GROUPS: { key: string; title: string }[] = [
   { key: "owner", title: "Leadership" },
   { key: "admin", title: "Administrators" },
 ];
+
+/* Grouped-list section glyphs — one calm blue tint, Apple Settings section style. */
+const GROUP_ICON: Record<string, ReactNode> = {
+  rn: <IconHeart width={16} height={16} />,
+  caregiver: <IconUsers width={16} height={16} />,
+  coordinator: <IconCalendar width={16} height={16} />,
+  hr: <IconClipboard width={16} height={16} />,
+  owner: <IconShield width={16} height={16} />,
+  admin: <IconLock width={16} height={16} />,
+};
 
 type StaffRow = {
   id: string;
@@ -78,33 +89,35 @@ export default async function StaffPage() {
             body="Staff details are visible to office and leadership roles. If you should have access, your administrator can grant it."
           />
         ) : (
-          <div className="flex flex-col gap-6">
+          <div className="stagger flex flex-col gap-7">
             {grouped.map((g) => (
               <section key={g.key}>
-                <h2 className="mb-2 flex items-baseline gap-2 text-[15px] font-semibold">
+                <SectionTitle icon={GROUP_ICON[g.key]}>
                   {g.title}
-                  <span className="tabular text-[13px] font-normal" style={{ color: "var(--text-muted)" }}>
+                  <span className="ml-auto tabular text-[13px] font-normal" style={{ color: "var(--text-secondary)" }}>
                     {g.members.length}
                   </span>
-                </h2>
+                </SectionTitle>
                 <div className="card divide-y hairline overflow-hidden">
                   {g.members.map((s) => {
                     const load = loadByUser.get(s.id) ?? 0;
                     return (
                       <div key={s.id} className="row-link">
-                        <Avatar name={s.full_name} size={36} />
+                        <Avatar name={s.full_name} size={40} />
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[14.5px] font-medium">{s.full_name}</p>
+                          <p className="truncate text-[15px] font-medium tracking-[-0.01em]">{s.full_name}</p>
                           <p className="truncate text-[13px]" style={{ color: "var(--text-muted)" }}>
                             {s.work_email}
                           </p>
                         </div>
-                        {(g.key === "caregiver" || g.key === "rn") && (
-                          <span className="tabular text-[13px]" style={{ color: "var(--text-secondary)" }}>
-                            {load} {load === 1 ? "client" : "clients"}
-                          </span>
-                        )}
-                        <StatusChip status={s.status === "active" ? "active" : s.status} />
+                        <div className="flex shrink-0 items-center gap-3">
+                          {(g.key === "caregiver" || g.key === "rn") && (
+                            <span className="tabular text-[13px]" style={{ color: "var(--text-secondary)" }}>
+                              {load} {load === 1 ? "client" : "clients"}
+                            </span>
+                          )}
+                          <StatusChip status={s.status === "active" ? "active" : s.status} />
+                        </div>
                       </div>
                     );
                   })}
