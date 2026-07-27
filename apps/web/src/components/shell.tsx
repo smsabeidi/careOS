@@ -2,31 +2,52 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { supabaseServer } from "@/lib/supabase/server";
-import { getProfile } from "@/lib/profile";
+import { getProfile, homeFor } from "@/lib/profile";
 import { StatusChip, Avatar } from "./ui";
 import {
   IconUsers, IconClipboard, IconActivity, IconHome, IconHeart, IconLogOut,
-  IconShield, IconPen,
+  IconShield, IconPen, IconCalendar, IconClipboardCheck, IconBadge, IconEye, IconCheck,
 } from "./icons";
 
 type NavItem = { href: string; label: string; icon: ReactNode };
 
+/* ── Demo mode — the "View as …" persona switcher (LOCAL ONLY) ──────────────────
+ * Guarded by NODE_ENV so it can never render or run in production, matching the
+ * middleware AAL2 bypass. The switcher signs in as real seeded demo sessions
+ * (supabase/seeds/demo_users.sql) — a genuine password sign-in, no service_role. */
+const DEMO_MODE =
+  process.env.CAREOS_DEMO_MODE === "true" && process.env.NODE_ENV !== "production";
+
+type Persona = { key: string; label: string; name: string; email: string; role: string };
+const DEMO_PERSONAS: Persona[] = [
+  { key: "owner",       label: "Owner",       name: "Sarah Okafor",  email: "sarah@meadowbrook.demo",  role: "owner" },
+  { key: "coordinator", label: "Coordinator", name: "Omar Reid",     email: "omar@meadowbrook.demo",   role: "coordinator" },
+  { key: "rn",          label: "Nurse (RN)",  name: "Nina Vasquez",  email: "nina@meadowbrook.demo",   role: "rn" },
+  { key: "caregiver",   label: "Caregiver",   name: "Dee Alvarez",   email: "dee@meadowbrook.demo",    role: "caregiver" },
+  { key: "family",      label: "Family",      name: "Grace Vance",   email: "family@meadowbrook.demo", role: "family" },
+];
+
 /** Each persona gets its own surface set — ≤5 items (docs/10 §2). */
 function navFor(roles: string[]): NavItem[] {
   if (roles.includes("owner") || roles.includes("admin")) {
+    // 6-item cap: Command + Clients + the three new operating surfaces + Staff.
+    // Clinical/Forms stay reachable from client & command surfaces, not the rail.
     return [
       { href: "/exec", label: "Command", icon: <IconActivity /> },
       { href: "/office/clients", label: "Clients", icon: <IconUsers /> },
+      { href: "/schedule", label: "Schedule", icon: <IconCalendar /> },
+      { href: "/office/compliance", label: "Compliance", icon: <IconClipboardCheck /> },
+      { href: "/office/credentials", label: "Credentials", icon: <IconBadge /> },
       { href: "/office/staff", label: "Staff", icon: <IconShield /> },
-      { href: "/clinical", label: "Clinical", icon: <IconPen /> },
-      { href: "/office/forms", label: "Forms", icon: <IconClipboard /> },
     ];
   }
   if (roles.includes("coordinator") || roles.includes("hr")) {
     return [
       { href: "/office/clients", label: "Clients", icon: <IconUsers /> },
-      { href: "/office/staff", label: "Staff", icon: <IconShield /> },
+      { href: "/schedule", label: "Schedule", icon: <IconCalendar /> },
       { href: "/office/forms", label: "Forms", icon: <IconClipboard /> },
+      { href: "/office/staff", label: "Staff", icon: <IconShield /> },
+      { href: "/office/compliance", label: "Compliance", icon: <IconClipboardCheck /> },
     ];
   }
   if (roles.includes("rn")) {
@@ -70,6 +91,28 @@ async function signOut() {
   redirect("/login");
 }
 
+/** Demo-only: sign out, then sign in as the chosen seeded persona and land on
+ *  their home surface. A real password sign-in (user-scoped client, NO
+ *  service_role — invariant 6). Re-guarded here so it is inert outside demo mode. */
+async function signInAsPersona(formData: FormData) {
+  "use server";
+  if (process.env.CAREOS_DEMO_MODE !== "true" || process.env.NODE_ENV === "production") {
+    redirect("/login");
+  }
+  const email = String(formData.get("persona") ?? "");
+  const persona = DEMO_PERSONAS.find((p) => p.email === email);
+  if (!persona) redirect("/login");
+
+  const supabase = await supabaseServer();
+  await supabase.auth.signOut();
+  const { error } = await supabase.auth.signInWithPassword({
+    email: persona.email,
+    password: process.env.CAREOS_DEMO_PASSWORD ?? "Meadowbrook!demo1",
+  });
+  if (error) redirect("/login");
+  redirect(homeFor([persona.role]));
+}
+
 export async function AppShell({
   children,
   active,
@@ -107,7 +150,40 @@ export async function AppShell({
           ))}
         </nav>
 
-        <div className="mt-auto border-t pt-4 hairline">
+        {DEMO_MODE && (
+          <div className="mt-auto pt-4">
+            <p
+              className="mb-1.5 flex items-center gap-1.5 px-2.5 text-[11px] font-semibold uppercase"
+              style={{ color: "var(--text-muted)", letterSpacing: "0.04em" }}
+            >
+              <IconEye width={13} height={13} />
+              Demo · View as
+            </p>
+            <div className="flex flex-col gap-0.5">
+              {DEMO_PERSONAS.map((p) => {
+                const on = (profile?.roles ?? []).includes(p.role);
+                return (
+                  <form action={signInAsPersona} key={p.key}>
+                    <input type="hidden" name="persona" value={p.email} />
+                    <button
+                      type="submit"
+                      className="rail-link w-full"
+                      data-active={on}
+                      aria-current={on ? "true" : undefined}
+                      title={`Sign in as ${p.name}`}
+                    >
+                      <Avatar name={p.name} size={22} />
+                      <span className="min-w-0 flex-1 truncate text-left">{p.label}</span>
+                      {on && <IconCheck width={14} height={14} />}
+                    </button>
+                  </form>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className={`${DEMO_MODE ? "mt-4" : "mt-auto"} border-t pt-4 hairline`}>
           <div className="flex items-center gap-3 px-2.5 pb-3">
             <Avatar name={name} size={36} />
             <div className="min-w-0">

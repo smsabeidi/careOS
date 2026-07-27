@@ -155,3 +155,37 @@ export const IconInbox = (p: SVGProps<SVGSVGElement>) => (
     <path d="M4.5 6.5 3 12v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6l-1.5-5.5A2 2 0 0 0 17.6 5H6.4a2 2 0 0 0-1.9 1.5Z" />
   </svg>
 );
+// Credentials — award rosette (license/certification)
+export const IconBadge = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="9" r="6" />
+    <path d="m8.5 13.5-1.5 7 5-3 5 3-1.5-7" />
+    <path d="m9.5 9 1.7 1.7L15 7" />
+  </svg>
+);
+// Compliance — clipboard with a check (distinct from IconClipboard's lines)
+export const IconClipboardCheck = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <rect x="8" y="2" width="8" height="4" rx="1.4" />
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+    <path d="m9 14.5 2 2 4-4.5" />
+  </svg>
+);
+// View-as / demo persona switcher
+export const IconEye = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+// Metric trend deltas
+export const IconArrowUpRight = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M7 17 17 7M8 7h9v9" />
+  </svg>
+);
+export const IconArrowDownRight = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M7 7 17 17M17 8v9H8" />
+  </svg>
+);

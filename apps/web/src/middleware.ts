@@ -10,6 +10,22 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_PATHS = ["/login"];
 const AAL1_ALLOWED = ["/login", "/mfa"];
 
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DEMO-ONLY AAL2 BYPASS — READ BEFORE TOUCHING.
+ * The persona switcher signs personas in with a password only (no MFA factor),
+ * so their session is AAL1. In demo mode we let those sessions through the
+ * /mfa step-up so the "View as …" flow lands on a real surface instead of the
+ * enrollment wall. This ONLY affects route gating here in middleware.
+ *
+ * AAL2 REMAINS LAW FOR REAL PHI: the database's app.is_aal2() RLS gate is NOT
+ * touched by this, and it never should be. This flag can NEVER take effect in
+ * production — it is doubly guarded by NODE_ENV so a stray CAREOS_DEMO_MODE=true
+ * in a prod env is inert. CAREOS_DEMO_MODE is a server-only var (never
+ * NEXT_PUBLIC_), so it can't be flipped from the client either.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+const DEMO_AAL2_BYPASS =
+  process.env.CAREOS_DEMO_MODE === "true" && process.env.NODE_ENV !== "production";
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -45,7 +61,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && !AAL1_ALLOWED.some((p) => path.startsWith(p))) {
+  if (user && !DEMO_AAL2_BYPASS && !AAL1_ALLOWED.some((p) => path.startsWith(p))) {
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (aal && aal.currentLevel !== "aal2") {
       const url = request.nextUrl.clone();
