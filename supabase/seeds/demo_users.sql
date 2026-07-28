@@ -93,3 +93,22 @@ join public.role r
   on r.key = p.role_key
  and r.tenant_id = '11111111-1111-1111-1111-111111111111'
 on conflict do nothing;
+
+-- ── auth.mfa_factors: a verified TOTP factor per persona, with a shared synthetic
+-- secret, so the demo login + "View as" switcher can auto-complete the genuine MFA
+-- challenge and reach AAL2 (apps/web/src/lib/demo-totp.ts). This is the real step-up
+-- flow, automated for synthetic accounts — app.is_aal2() is satisfied honestly, no
+-- policy is weakened. LOCAL/synthetic only; the secret unlocks nothing but these demo
+-- accounts on a local instance.
+insert into auth.mfa_factors (id, user_id, friendly_name, factor_type, status,
+                              created_at, updated_at, secret)
+select gen_random_uuid(), p.uid, 'Demo authenticator', 'totp', 'verified', now(), now(),
+       'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP'
+from (values
+  ('11111111-1111-1111-1111-0000000ce001'::uuid),
+  ('11111111-1111-1111-1111-0000000ce002'::uuid),
+  ('22222222-0000-0000-0000-000000000033'::uuid),
+  ('22222222-0000-0000-0000-000000000009'::uuid),
+  ('11111111-1111-1111-1111-0000000ce003'::uuid)
+) as p(uid)
+where not exists (select 1 from auth.mfa_factors f where f.user_id = p.uid);

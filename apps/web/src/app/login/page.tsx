@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { elevateDemoSession } from "@/lib/demo-totp";
 import { IconShield, IconAlert } from "@/components/icons";
+
+const DEMO_MODE = process.env.NEXT_PUBLIC_CAREOS_DEMO_MODE === "true";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,6 +24,13 @@ export default function LoginPage() {
     if (error) {
       setError("That email and password didn't match. Nothing you typed was lost — check and try again.");
       setBusy(false);
+      return;
+    }
+    // Demo mode: auto-complete the persona's real MFA step-up so PHI surfaces open
+    // exactly as a verified session. Production takes the genuine /mfa path below.
+    if (DEMO_MODE && (await elevateDemoSession(supabase))) {
+      router.push("/");
+      router.refresh();
       return;
     }
     router.push("/mfa");

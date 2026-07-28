@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getProfile, homeFor } from "@/lib/profile";
+import { elevateDemoSession } from "@/lib/demo-totp";
 import { StatusChip, Avatar } from "./ui";
 import {
   IconUsers, IconClipboard, IconActivity, IconHome, IconHeart, IconLogOut,
@@ -110,6 +111,8 @@ async function signInAsPersona(formData: FormData) {
     password: process.env.CAREOS_DEMO_PASSWORD ?? "Meadowbrook!demo1",
   });
   if (error) redirect("/login");
+  // Auto-complete the seeded persona's real MFA step-up so PHI surfaces open at AAL2.
+  await elevateDemoSession(supabase);
   redirect(homeFor([persona.role]));
 }
 
