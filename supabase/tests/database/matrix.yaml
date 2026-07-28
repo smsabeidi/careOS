@@ -17,9 +17,34 @@ tables:
   public.signature:         { authenticated: select-scoped-aal2, writes: rpc, append_only: true }
   audit.audit_event:        { authenticated: none, writes: definer-only, append_only: true }
   audit.audit_anchor:       { authenticated: none, writes: anchor-job, append_only: true }
+  # ── Workforce credentials (0008) ──
+  public.credential_type:   { authenticated: select-tenant, writes: none }
+  public.credential:        { authenticated: select-self-or-credential.read.all-aal2, insert: credential.write-aal2, update: credential.write-aal2, delete: none }
+  public.credential_event:  { authenticated: select-self-or-credential.read.all-aal2, writes: trigger-only, append_only: true }
+  # ── Compliance cadence (0009) ──
+  public.cadence_rule:      { authenticated: select-tenant, writes: none }
+  public.obligation:        { authenticated: select-scoped-aal2, writes: definer-only }
+  # ── Care planning + supervisory cadence (0010) ──
+  public.care_plan:         { authenticated: select-scoped-aal2, insert: scoped-aal2, delete: none, append_only: true }
+  public.care_plan_item:    { authenticated: select-scoped-aal2, insert: scoped-aal2, append_only: true }
+  public.supervisory_visit: { authenticated: select-scoped-aal2, insert: scoped-aal2, update: scoped-aal2, delete: none }
+  # ── Scheduling (0011) ──
+  public.shift:             { authenticated: select-self-or-schedule.read, insert: schedule.write, update: schedule.write, delete: none }
+  public.visit:             { authenticated: select-scoped-aal2, insert: schedule.write-aal2, update: schedule.write-aal2, delete: none }
+  public.schedule_exception: { authenticated: select-scoped-aal2, insert: scoped-aal2, delete: none, append_only: true }
+  # ── Consent + family access (0012) ──
+  public.consent:           { authenticated: select-scoped-or-family-aal2, insert: family.manage-or-careteam-aal2, delete: none, append_only: true }
+  public.family_link:       { authenticated: select-self-or-staff, insert: family.manage-aal2, update: family.manage-aal2, delete: none }
+  public.family_update:     { authenticated: select-scoped-or-family-aal2, insert: family.manage-or-careteam-aal2, delete: none, append_only: true }
+  public.shared_document:   { authenticated: select-scoped-or-family-aal2, insert: family.manage-or-careteam-aal2, delete: none, append_only: true }
 tests:
   - 001_schema_invariants.sql
   - 002_rls_matrix.sql
   - 003_append_only.sql
   - 004_audit_chain.sql
   - 005_rpc_guards.sql
+  - 0008_credentials.sql
+  - 0009_cadence.sql
+  - 0010_careplan.sql
+  - 0011_scheduling.sql
+  - 0012_consent_family.sql
