@@ -3,6 +3,7 @@ import { AppShell } from "@/components/shell";
 import { Avatar, Badge, EmptyState, PageHeader, SectionTitle, StatusChip, TintTile } from "@/components/ui";
 import { IconCalendar, IconChevronRight, IconClipboard, IconClock, IconMapPin, IconCheck } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
+import { ClockButton } from "./clock-button";
 
 export const metadata = { title: "Today" };
 export const dynamic = "force-dynamic";
@@ -115,14 +116,7 @@ export default async function TodayPage() {
                       ) : null}
                     </div>
                     <div className="mt-3 flex items-center gap-2">
-                      <button
-                        type="button"
-                        className={`btn btn-sm min-h-11 flex-1 ${done ? "btn-secondary" : "btn-primary"}`}
-                        disabled={done}
-                      >
-                        <IconClock width={15} height={15} />
-                        {done ? "Visit complete" : active ? "Clock out" : "Clock in"}
-                      </button>
+                      <ClockButton visitId={v.id} mode={done ? "done" : active ? "clock_out" : "clock_in"} />
                       <Link href={`/office/clients/${v.client_id}`} className="btn btn-secondary btn-sm min-h-11">
                         <IconClipboard width={15} height={15} />
                         Notes
@@ -134,8 +128,8 @@ export default async function TodayPage() {
             </div>
           )}
           <p className="mt-3 px-1 text-[12px]" style={{ color: "var(--text-muted)" }}>
-            Clocking in from here is a preview. Live GPS-verified clock-in (EVV) works offline in the CareOS
-            field app — even in a basement with no signal — and syncs when you&apos;re back on.
+            Clock in records a GPS-verified visit event (EVV) on the record. Your location is captured once at
+            clock-in and once at clock-out — never tracked in between.
           </p>
         </section>
 
