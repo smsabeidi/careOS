@@ -13,12 +13,14 @@ import {
 
 type NavItem = { href: string; label: string; icon: ReactNode };
 
-/* ── Demo mode — the "View as …" persona switcher (LOCAL ONLY) ──────────────────
- * Guarded by NODE_ENV so it can never render or run in production, matching the
- * middleware AAL2 bypass. The switcher signs in as real seeded demo sessions
- * (supabase/seeds/demo_users.sql) — a genuine password sign-in, no service_role. */
-const DEMO_MODE =
-  process.env.CAREOS_DEMO_MODE === "true" && process.env.NODE_ENV !== "production";
+/* ── Demo mode — the "View as …" persona switcher ───────────────────────────────
+ * Flag-gated (CAREOS_DEMO_MODE), so it can be enabled on a SYNTHETIC deployment
+ * (e.g. a Vercel preview) as well as locally. The switcher signs in as the seeded
+ * demo personas (supabase/seeds/demo_users.sql) via a genuine password sign-in and
+ * reaches AAL2 through the REAL MFA step-up (elevateDemoSession) — no AAL2 bypass,
+ * no service_role. It can only ever impersonate those hardcoded synthetic accounts.
+ * NEVER set CAREOS_DEMO_MODE on a deployment holding real PHI. */
+const DEMO_MODE = process.env.CAREOS_DEMO_MODE === "true";
 
 type Persona = { key: string; label: string; name: string; email: string; role: string };
 const DEMO_PERSONAS: Persona[] = [
@@ -98,7 +100,7 @@ async function signOut() {
  *  service_role — invariant 6). Re-guarded here so it is inert outside demo mode. */
 async function signInAsPersona(formData: FormData) {
   "use server";
-  if (process.env.CAREOS_DEMO_MODE !== "true" || process.env.NODE_ENV === "production") {
+  if (process.env.CAREOS_DEMO_MODE !== "true") {
     redirect("/login");
   }
   const email = String(formData.get("persona") ?? "");
