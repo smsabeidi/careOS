@@ -8,6 +8,7 @@ import { StatusChip, Avatar } from "./ui";
 import {
   IconUsers, IconClipboard, IconActivity, IconHome, IconHeart, IconLogOut,
   IconShield, IconPen, IconCalendar, IconClipboardCheck, IconBadge, IconEye, IconCheck,
+  IconSparkle,
 } from "./icons";
 
 type NavItem = { href: string; label: string; icon: ReactNode };
@@ -39,23 +40,23 @@ function navFor(roles: string[]): NavItem[] {
       { href: "/schedule", label: "Schedule", icon: <IconCalendar /> },
       { href: "/office/compliance", label: "Compliance", icon: <IconClipboardCheck /> },
       { href: "/office/credentials", label: "Credentials", icon: <IconBadge /> },
-      { href: "/office/staff", label: "Staff", icon: <IconShield /> },
+      { href: "/brain", label: "Brain", icon: <IconSparkle /> },
     ];
   }
   if (roles.includes("coordinator") || roles.includes("hr")) {
     return [
       { href: "/office/clients", label: "Clients", icon: <IconUsers /> },
       { href: "/schedule", label: "Schedule", icon: <IconCalendar /> },
-      { href: "/office/forms", label: "Forms", icon: <IconClipboard /> },
-      { href: "/office/staff", label: "Staff", icon: <IconShield /> },
       { href: "/office/compliance", label: "Compliance", icon: <IconClipboardCheck /> },
+      { href: "/office/forms", label: "Forms", icon: <IconClipboard /> },
+      { href: "/brain", label: "Brain", icon: <IconSparkle /> },
     ];
   }
   if (roles.includes("rn")) {
     return [
       { href: "/clinical", label: "Clinical", icon: <IconPen /> },
       { href: "/office/clients", label: "Clients", icon: <IconUsers /> },
-      { href: "/office/forms", label: "Forms", icon: <IconClipboard /> },
+      { href: "/brain", label: "Brain", icon: <IconSparkle /> },
     ];
   }
   if (roles.includes("caregiver")) {
