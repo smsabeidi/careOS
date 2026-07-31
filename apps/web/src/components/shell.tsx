@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getProfile, homeFor } from "@/lib/profile";
 import { elevateDemoSession } from "@/lib/demo-totp";
+import { BrandLogo } from "./logo";
 import { StatusChip, Avatar } from "./ui";
 import {
   IconUsers, IconClipboard, IconActivity, IconHome, IconHeart, IconLogOut,
@@ -72,20 +73,7 @@ function navFor(roles: string[]): NavItem[] {
 }
 
 function BrandMark({ size = 30 }: { size?: number }) {
-  return (
-    <span
-      className="flex items-center justify-center text-white"
-      style={{
-        width: size,
-        height: size,
-        borderRadius: size * 0.3,
-        background: "linear-gradient(160deg, var(--color-accent-500), var(--accent-active))",
-        boxShadow: "var(--shadow-sm)",
-      }}
-    >
-      <IconShield width={size * 0.56} height={size * 0.56} />
-    </span>
-  );
+  return <BrandLogo size={size} />;
 }
 
 async function signOut() {

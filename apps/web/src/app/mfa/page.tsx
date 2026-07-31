@@ -38,7 +38,7 @@ export default function MfaPage() {
     }
     const { data: factors, error: fErr } = await supabase.auth.mfa.listFactors();
     if (fErr) {
-      setError("Couldn't check your security setup. Your sign-in is intact — try again.");
+      setError("Couldn't check your security setup. Your sign-in is intact. Try again.");
       setMode("error");
       return;
     }
@@ -60,7 +60,7 @@ export default function MfaPage() {
       friendlyName: "Authenticator app",
     });
     if (eErr || !enrolled) {
-      setError("Couldn't start authenticator setup. Your sign-in is intact — try again.");
+      setError("Couldn't start authenticator setup. Your sign-in is intact. Try again.");
       setMode("error");
       return;
     }
@@ -81,7 +81,7 @@ export default function MfaPage() {
     setError(null);
     const { data: challenge, error: cErr } = await supabase.auth.mfa.challenge({ factorId });
     if (cErr || !challenge) {
-      setError("Couldn't start verification — try again.");
+      setError("Couldn't start verification. Try again.");
       setBusy(false);
       return;
     }
@@ -91,7 +91,7 @@ export default function MfaPage() {
       code: code.trim(),
     });
     if (vErr) {
-      setError("That code didn't match. Codes refresh every 30 seconds — try the current one.");
+      setError("Code didn't match. Codes refresh every 30 seconds. Enter the current code.");
       setBusy(false);
       return;
     }
@@ -106,10 +106,10 @@ export default function MfaPage() {
           <TintTile icon={<IconLock width={26} height={26} />} size={56} tone="accent" />
           <div>
             <h1 className="title-lg text-[28px]">
-              {mode === "enroll" ? "Set up your authenticator" : "Verify it's you"}
+              {mode === "enroll" ? "Set up your authenticator" : "Verify your identity"}
             </h1>
             <p className="mx-auto mt-2 max-w-xs text-[15px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-              Just one quick step — patient records open only in a verified session.
+              Patient records open only in a verified session.
             </p>
           </div>
         </div>
@@ -149,7 +149,7 @@ export default function MfaPage() {
                 )}
                 {secret && (
                   <p className="text-center text-[13px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                    Can't scan? Enter this key manually:{" "}
+                    If you can't scan, enter this key manually:{" "}
                     <code data-testid="totp-secret" className="tabular font-medium tracking-wide" style={{ color: "var(--text)" }}>{secret}</code>
                   </p>
                 )}

@@ -87,7 +87,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: SP 
           <PageHeader title="Schedule" sub="Week at a glance" />
           <ErrorState
             title="Couldn't load the schedule"
-            body="The care-team data didn't come back. Nothing was changed — try again in a moment."
+            body="Couldn't load care team data. Nothing was changed. Try again."
             retry={
               <Link href={href({ week: offset, filter })} className="btn btn-secondary btn-sm">
                 Try again
@@ -135,8 +135,8 @@ export default async function SchedulePage({ searchParams }: { searchParams: SP 
           <PageHeader title="Schedule" sub="Week at a glance" />
           <EmptyState
             icon={<IconCalendar />}
-            title="No one is scheduled yet"
-            body="Once caregivers are assigned to clients, their week fills in here — with open shifts and coverage gaps called out at the top."
+            title="No caregivers assigned"
+            body="Schedules appear once caregivers are assigned to clients. Open shifts and coverage gaps appear at the top."
             action={
               <Link href="/office/staff" className="btn btn-primary btn-sm">
                 Go to staff
@@ -158,7 +158,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: SP 
           <EmptyState
             icon={<IconLock />}
             title="Verify your session to see the schedule"
-            body="Client visits are protected health information, so they only appear on a verified (MFA) session. Verify now and the board will fill in."
+            body="Client visits are protected health information and appear only on a verified (MFA) session."
             action={
               <Link href="/mfa" className="btn btn-primary btn-sm">
                 Verify session
@@ -178,7 +178,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: SP 
   const subCounts: string[] = [];
   if (week.stats.open) subCounts.push(`${week.stats.open} open ${week.stats.open === 1 ? "shift" : "shifts"}`);
   if (week.stats.exceptions) subCounts.push(`${week.stats.exceptions} to review`);
-  const sub = subCounts.length ? subCounts.join(" · ") : "Every visit is covered this week";
+  const sub = subCounts.length ? subCounts.join(" · ") : "All visits covered this week";
 
   return (
     <AppShell active="/schedule">
@@ -191,7 +191,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: SP 
 
         <PreviewBanner />
         {flash === "preview-assign" && (
-          <FlashBanner text="Preview only — this assignment wasn't saved. When scheduling is live, filling a shift runs the database's assert_schedulable check and records it with an audit event." />
+          <FlashBanner text="Preview only. Assignment not saved." />
         )}
 
         <ScheduleMetrics week={week} />
@@ -224,7 +224,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: SP 
               <EmptyState
                 icon={<IconCalendar />}
                 title="No open shifts this week"
-                body="Every visit has a caregiver assigned. Coverage gaps show up here the moment they appear."
+                body="All visits have an assigned caregiver. Coverage gaps appear here."
               />
             ) : (
               <>
@@ -245,8 +245,8 @@ export default async function SchedulePage({ searchParams }: { searchParams: SP 
             {week.stats.exceptions === 0 ? (
               <EmptyState
                 icon={<IconCalendar />}
-                title="Nothing to review this week"
-                body="Lapsed credentials, coverage conflicts and late notes surface here. You're all clear."
+                title="No exceptions this week"
+                body="Lapsed credentials, coverage conflicts, and late notes appear here."
               />
             ) : (
               <ExceptionList week={week} ctx={ctx} />

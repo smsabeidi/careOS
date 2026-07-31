@@ -108,8 +108,8 @@ export default async function ClinicalPage({
     tab === "signatures"
       ? queue.length
         ? `${queue.length} ${queue.length === 1 ? "record needs" : "records need"} your signature`
-        : "Nothing waiting for your signature"
-      : `${caseClients.length} people on your caseload`;
+        : "No records awaiting signature"
+      : `${caseClients.length} ${caseClients.length === 1 ? "client" : "clients"} on your caseload`;
 
   return (
     <AppShell active="/clinical">
@@ -134,7 +134,7 @@ export default async function ClinicalPage({
               <div className="card flex items-center gap-3.5 px-5 py-4">
                 <TintTile icon={<IconCheck width={20} height={20} />} tone="success" size={40} />
                 <p className="text-[15px]" style={{ color: "var(--text-secondary)" }}>
-                  All caught up — new assessments land here the moment they&apos;re drafted.
+                  No assessments pending signature.
                 </p>
               </div>
             ) : (
@@ -151,7 +151,7 @@ export default async function ClinicalPage({
                           {c && <span style={{ color: "var(--text-muted)" }}> · {c.first_name} {c.last_name}</span>}
                         </p>
                         <p className="mt-0.5 text-[13px]" style={{ color: "var(--text-muted)" }}>
-                          Waiting since {new Date(q.updated_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                          Last updated {new Date(q.updated_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                         </p>
                       </div>
                       <StatusChip status={q.status} />
@@ -174,7 +174,7 @@ export default async function ClinicalPage({
               <EmptyState
                 icon={<IconHeart />}
                 title="No care plans yet"
-                body="A plan of care is authored as version 1 and revised by adding a new version — never overwritten. Plans for your clients appear here."
+                body="A care plan is authored as version 1; revisions add new versions and never overwrite. Plans for your clients appear here."
               />
             ) : (
               <DataTable
@@ -192,7 +192,7 @@ export default async function ClinicalPage({
                       <Avatar name={nameOf(p.client)} size={28} />
                       <span className="font-medium">{nameOf(p.client)}</span>
                     </span>,
-                    p.title ?? "Plan of care",
+                    p.title ?? "Care plan",
                     <span key="v" className="tabular">v{p.version}</span>,
                     <StatusChip key="s" status={p.status} />,
                     p.review_due_on ? <DueChip key="d" due={p.review_due_on} prefix="Review" /> : <span key="d" style={{ color: "var(--text-muted)" }}>—</span>,
@@ -234,7 +234,7 @@ export default async function ClinicalPage({
                       <DueChip key="d" due={s.due_on} />
                     ),
                     s.completed_on ? (
-                      <Badge key="s" tone="success">Done</Badge>
+                      <Badge key="s" tone="success">Completed</Badge>
                     ) : s.status === "missed" ? (
                       <Badge key="s" tone="danger">Missed</Badge>
                     ) : (
@@ -249,7 +249,7 @@ export default async function ClinicalPage({
 
         {tab === "caseload" && (
           <section>
-            <SectionTitle icon={<IconUsers width={16} height={16} />}>My caseload</SectionTitle>
+            <SectionTitle icon={<IconUsers width={16} height={16} />}>Your caseload</SectionTitle>
             {!caseClients.length ? (
               <EmptyState
                 icon={<IconUsers />}

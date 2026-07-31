@@ -55,12 +55,12 @@ export default async function ClientChart({ params }: { params: Promise<{ id: st
               </div>
               <p className="mt-1.5 flex items-center gap-1.5 text-[15px]" style={{ color: "var(--text-muted)" }}>
                 <IconMapPin width={15} height={15} />
-                {address || "Address on file"}
+                {address || "No address on file"}
               </p>
             </div>
             <Link href={`/office/clients/${id}/new`} className="btn btn-primary">
               <IconPlus width={16} height={16} />
-              New form
+              New record
             </Link>
           </div>
 
@@ -95,12 +95,12 @@ export default async function ClientChart({ params }: { params: Promise<{ id: st
         {!forms?.length ? (
           <EmptyState
             icon={<IconClipboard />}
-            title={`No records for ${client.first_name} yet`}
-            body="Assessments, care plans, and visit notes will live here — every version kept, nothing ever overwritten."
+            title="No records yet"
+            body="Assessments, care plans, and visit notes appear here. Versions are permanent; edits create corrections."
             action={
               <Link href={`/office/clients/${id}/new`} className="btn btn-primary">
                 <IconPlus width={16} height={16} />
-                Start the first record
+                Start a record
               </Link>
             }
           />
@@ -112,7 +112,7 @@ export default async function ClientChart({ params }: { params: Promise<{ id: st
                 <Link key={f.id} href={`/office/forms/${f.id}`} className="row-link group">
                   <TintTile icon={<IconClipboard />} size={40} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[15px] font-medium">{template?.title ?? "Form"}</p>
+                    <p className="truncate text-[15px] font-medium">{template?.title ?? "Record"}</p>
                     <p className="mt-0.5 text-[13px]" style={{ color: "var(--text-muted)" }}>
                       Updated {new Date(f.updated_at).toLocaleString(undefined, {
                         month: "short", day: "numeric", hour: "numeric", minute: "2-digit",

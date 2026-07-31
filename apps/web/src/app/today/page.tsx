@@ -66,7 +66,7 @@ export default async function TodayPage() {
   const today = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
   const doneCount = todays.filter((v) => v.status === "completed").length;
   const sub = todays.length
-    ? `${today} · ${doneCount}/${todays.length} visits done`
+    ? `${today} · ${doneCount}/${todays.length} visits completed`
     : today;
 
   return (
@@ -81,7 +81,7 @@ export default async function TodayPage() {
             <EmptyState
               icon={<IconCalendar />}
               title="No visits scheduled today"
-              body="When your coordinator schedules you, each visit shows up here with the time, the client and the address — ready to tap into."
+              body="Visits scheduled by your coordinator appear here with the time, client, and address."
             />
           ) : (
             <div className="stagger flex flex-col gap-3">
@@ -110,7 +110,7 @@ export default async function TodayPage() {
                         )}
                       </div>
                       {done ? (
-                        <Badge tone="success" icon={<IconCheck />}>Done</Badge>
+                        <Badge tone="success" icon={<IconCheck />}>Completed</Badge>
                       ) : active ? (
                         <Badge tone="warning" icon={<IconClock />}>In progress</Badge>
                       ) : null}
@@ -119,7 +119,7 @@ export default async function TodayPage() {
                       <ClockButton visitId={v.id} mode={done ? "done" : active ? "clock_out" : "clock_in"} />
                       <Link href={`/office/clients/${v.client_id}`} className="btn btn-secondary btn-sm min-h-11">
                         <IconClipboard width={15} height={15} />
-                        Notes
+                        Open notes
                       </Link>
                     </div>
                   </div>
@@ -128,15 +128,15 @@ export default async function TodayPage() {
             </div>
           )}
           <p className="mt-3 px-1 text-[12px]" style={{ color: "var(--text-muted)" }}>
-            Clock in records a GPS-verified visit event (EVV) on the record. Your location is captured once at
-            clock-in and once at clock-out — never tracked in between.
+            Clock in records a GPS-verified visit event (EVV) on the visit record. Your location is captured once
+            at clock-in and once at clock-out. It is not tracked in between.
           </p>
         </section>
 
         {/* ── Upcoming ── */}
         {upcoming.length > 0 && (
           <section className="mb-6">
-            <SectionTitle>Coming up</SectionTitle>
+            <SectionTitle>Upcoming visits</SectionTitle>
             <div className="card stagger divide-y hairline overflow-hidden">
               {upcoming.map((v) => {
                 const c = clientOf(v);
@@ -164,7 +164,7 @@ export default async function TodayPage() {
           <SectionTitle>My clients</SectionTitle>
           {!assignments?.length ? (
             <p className="card px-5 py-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>
-              Clients you&apos;re assigned to will appear here.
+              No clients assigned. Assigned clients appear here.
             </p>
           ) : (
             <div className="card stagger divide-y hairline overflow-hidden">
@@ -177,7 +177,7 @@ export default async function TodayPage() {
                     <div className="min-w-0 flex-1">
                       <p className="text-[15px] font-medium">{c.first_name} {c.last_name}</p>
                       <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>
-                        {c.city ?? "—"} · you&apos;re their {a.role_on_case.replace(/_/g, " ")}
+                        {c.city ?? "—"} · {a.role_on_case.replace(/_/g, " ")}
                       </p>
                     </div>
                     <IconChevronRight style={{ color: "var(--text-muted)" }} />
@@ -193,7 +193,7 @@ export default async function TodayPage() {
           <SectionTitle>My open notes</SectionTitle>
           {!myDrafts?.length ? (
             <p className="card px-5 py-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>
-              Drafts you&apos;re working on will wait for you here — saved automatically, never lost.
+              No open drafts. Drafts are saved automatically and appear here.
             </p>
           ) : (
             <div className="card stagger divide-y hairline overflow-hidden">

@@ -59,15 +59,15 @@ export function PreviewBanner() {
       </span>
       <div className="min-w-0">
         <p className="text-[14px] font-semibold" style={{ color: "var(--accent-text)" }}>
-          Preview schedule — the scheduling engine isn&apos;t connected in this environment yet
+          Preview schedule. Scheduling engine not connected in this environment
         </p>
         <p className="mt-0.5 text-[13px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-          This week is laid out from Meadowbrook&apos;s real care-team assignments so you can see the
-          board. Nothing here is saved. When scheduling goes live, fills run through the database&apos;s{" "}
+          This week is generated from Meadowbrook&apos;s real care-team assignments. Nothing is
+          saved. When scheduling is live, each fill runs the database&apos;s{" "}
           <code className="tabular text-[12px]" style={{ color: "var(--accent-text)" }}>
             assert_schedulable
           </code>{" "}
-          check and each one is recorded with an audit event.
+          check and is recorded with an audit event.
         </p>
       </div>
     </div>
@@ -162,7 +162,7 @@ export function ScheduleMetrics({ week }: { week: WeekModel }) {
         tone={s.exceptions ? "warning" : "success"}
       />
       <MetricTile
-        label="On the schedule"
+        label="Caregivers scheduled"
         value={s.caregivers}
         hint={`${s.clients} clients`}
         icon={<IconUsers width={15} height={15} />}
@@ -207,12 +207,12 @@ export function WeekNav({ week, ctx }: { week: WeekModel; ctx: Ctx }) {
 
 export function FilterTabs({ week, ctx }: { week: WeekModel; ctx: Ctx }) {
   const tabs: { key: string; label: string; count?: number }[] = [
-    { key: "all", label: "Everyone", count: week.stats.caregivers },
+    { key: "all", label: "All caregivers", count: week.stats.caregivers },
     { key: "open", label: "Open shifts", count: week.stats.open },
     { key: "exceptions", label: "Exceptions", count: week.stats.exceptions },
   ];
   return (
-    <div className="segmented" role="tablist" aria-label="Filter the board">
+    <div className="segmented" role="tablist" aria-label="Filter the schedule">
       {tabs.map((t) => (
         <Link
           key={t.key}
@@ -300,7 +300,7 @@ function OpenShiftChip({ v, ctx }: { v: Visit; ctx: Ctx }) {
       href={href({ week: ctx.offset, filter: ctx.filter, assign: v.id })}
       className="block rounded-[8px] px-2 py-1.5 transition-colors"
       style={{ background: "var(--accent-soft)", border: "1.5px dashed var(--accent)" }}
-      title={`Open shift · ${v.clientName} · ${timeLabel(v.start)} — tap to fill`}
+      title={`Fill open shift · ${v.clientName} · ${timeLabel(v.start)}`}
     >
       <div className="flex items-center gap-1" style={{ color: "var(--accent-text)" }}>
         <IconPlus width={12} height={12} />
@@ -474,7 +474,7 @@ export function AttentionPanel({ week, ctx }: { week: WeekModel; ctx: Ctx }) {
         </div>
         {openTop.length === 0 ? (
           <p className="px-5 py-6 text-center text-[14px]" style={{ color: "var(--text-muted)" }}>
-            Every visit this week has a caregiver. Nice.
+            No open shifts this week
           </p>
         ) : (
           <div className="divide-y hairline">
@@ -521,7 +521,7 @@ export function AttentionPanel({ week, ctx }: { week: WeekModel; ctx: Ctx }) {
         </div>
         {excTop.length === 0 ? (
           <p className="px-5 py-6 text-center text-[14px]" style={{ color: "var(--text-muted)" }}>
-            No compliance or coverage flags this week.
+            No exceptions this week
           </p>
         ) : (
           <div className="divide-y hairline">
@@ -580,7 +580,7 @@ function VerdictRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="truncate text-[14px] font-medium">{candidate.caregiver.name}</p>
-          {v.status === "preferred" && <StatusChip status="active" label="Knows client" />}
+          {v.status === "preferred" && <StatusChip status="active" label="On care team" />}
         </div>
         {v.status === "blocked" ? (
           <p className="mt-0.5 flex items-center gap-1 text-[12.5px]" style={{ color: "var(--color-danger-700)" }}>
@@ -668,7 +668,7 @@ export function AssignDrawer({
             </p>
             {shift.vacatedBy && (
               <p className="mt-1.5 text-[12.5px]" style={{ color: "var(--text-muted)" }}>
-                Opened up when {shift.vacatedBy} became unavailable.
+                Previously assigned to {shift.vacatedBy}.
               </p>
             )}
           </div>
@@ -680,14 +680,14 @@ export function AssignDrawer({
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           <p className="mb-2 flex items-center gap-1.5 text-[12px]" style={{ color: "var(--text-muted)" }}>
             <IconShield width={13} height={13} />
-            Checked against credentials, double-booking and the 40h overtime cap — the same gate the
-            database enforces.
+            Checked against credentials, double-booking, and the 40h overtime cap. The database
+            enforces the same checks.
           </p>
 
           {eligible.length > 0 && (
             <>
               <p className="mb-2 mt-1 text-[13px] font-semibold" style={{ color: "var(--text-secondary)" }}>
-                Can take this shift · {eligible.length}
+                Eligible · {eligible.length}
               </p>
               <div className="space-y-1.5">
                 {eligible.map((c) => (

@@ -9,10 +9,10 @@ export const metadata = { title: "Family" };
 export const dynamic = "force-dynamic";
 
 const PREVIEW = [
-  { icon: <IconBell width={20} height={20} />, title: "Approved updates", body: "Gentle notes your loved one's care team has chosen to share with you." },
-  { icon: <IconCalendar width={20} height={20} />, title: "Visit calendar", body: "Upcoming visits at a glance — only what you're cleared to see." },
-  { icon: <IconClipboard width={20} height={20} />, title: "Shared documents", body: "Care plans and paperwork the agency shares, ready when you need them." },
-  { icon: <IconUsers width={20} height={20} />, title: "Contact & on-call", body: "Who to reach during the day, and who's on call after hours." },
+  { icon: <IconBell width={20} height={20} />, title: "Approved updates", body: "Updates the care team has chosen to share with you." },
+  { icon: <IconCalendar width={20} height={20} />, title: "Visit calendar", body: "Upcoming visits, limited to what you're authorized to view." },
+  { icon: <IconClipboard width={20} height={20} />, title: "Shared documents", body: "Care plans and documents the agency shares." },
+  { icon: <IconUsers width={20} height={20} />, title: "Contact & on-call", body: "Daytime contacts and after-hours on-call staff." },
 ];
 
 const SCOPE_LABEL: Record<string, string> = {
@@ -46,14 +46,14 @@ export default async function FamilyPage() {
     return (
       <AppShell active="/family">
         <div className="rise mx-auto max-w-xl">
-          <PageHeader title="Family" sub="A window into your loved one's care — always with their consent." />
+          <PageHeader title="Family" sub="Your family member's care, shared with their consent." />
           <EmptyState
             icon={<IconHeart />}
-            title="The family portal opens soon"
-            body="Once your agency turns it on and consent is on file, approved updates, the visit calendar, and shared documents appear here. Nothing is ever shared without permission."
+            title="Family portal not yet active"
+            body="When the agency enables the portal and consent is on file, approved updates, the visit calendar, and shared documents appear here. Nothing is shared without consent."
           />
           <section className="mt-6">
-            <SectionTitle>What you&apos;ll find here</SectionTitle>
+            <SectionTitle>What this portal includes</SectionTitle>
             <div className="card stagger divide-y hairline overflow-hidden">
               {PREVIEW.map((item) => (
                 <div key={item.title} className="flex items-center gap-4 px-5 py-4">
@@ -82,7 +82,7 @@ export default async function FamilyPage() {
   ]);
 
   const c = (clientRes.data as { first_name: string; last_name: string; city: string | null }[] | null)?.[0];
-  const lovedOne = c ? `${c.first_name} ${c.last_name}` : "Your loved one";
+  const lovedOne = c ? `${c.first_name} ${c.last_name}` : "Your family member";
   const scope: string[] = (consentRes.data?.[0]?.scope as string[] | undefined) ?? [];
   const updates = updatesRes.data ?? [];
   const docs = docsRes.data ?? [];
@@ -97,7 +97,7 @@ export default async function FamilyPage() {
             <Avatar name={lovedOne} size={56} />
             <div className="min-w-0">
               <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>
-                {link.relationship ? `Your ${link.relationship}` : "Your loved one"}
+                {link.relationship ? `Your ${link.relationship}` : "Your family member"}
               </p>
               <h1 className="title-lg text-[26px]">{lovedOne}</h1>
               {c?.city && <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>{c.city}</p>}
@@ -105,12 +105,12 @@ export default async function FamilyPage() {
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-4 hairline">
             <span className="flex items-center gap-1.5 text-[12px]" style={{ color: "var(--text-muted)" }}>
-              <IconShield width={13} height={13} /> You&apos;re cleared to see:
+              <IconShield width={13} height={13} /> You can view:
             </span>
             {scope.length ? (
               scope.map((s) => <Badge key={s} tone="success" icon={<IconCheck />}>{SCOPE_LABEL[s] ?? s}</Badge>)
             ) : (
-              <span className="text-[12px]" style={{ color: "var(--text-muted)" }}>nothing yet</span>
+              <span className="text-[12px]" style={{ color: "var(--text-muted)" }}>none granted</span>
             )}
           </div>
         </div>
@@ -121,7 +121,7 @@ export default async function FamilyPage() {
             <SectionTitle icon={<IconBell width={16} height={16} />}>Approved updates</SectionTitle>
             {!updates.length ? (
               <p className="card px-5 py-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>
-                When the care team shares an update, it appears here.
+                No updates shared yet.
               </p>
             ) : (
               <div className="stagger flex flex-col gap-3">
@@ -147,7 +147,7 @@ export default async function FamilyPage() {
             <SectionTitle icon={<IconCalendar width={16} height={16} />}>Visit calendar</SectionTitle>
             {!calendar.length ? (
               <p className="card px-5 py-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>
-                Upcoming visits will appear here.
+                No visits scheduled.
               </p>
             ) : (
               <div className="card stagger divide-y hairline overflow-hidden">
@@ -158,7 +158,7 @@ export default async function FamilyPage() {
                       <p className="text-[15px] font-medium">{fmtDay(v.scheduled_start)}</p>
                       <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>{fmtTime(v.scheduled_start)} – {fmtTime(v.scheduled_end)}</p>
                     </div>
-                    {v.status === "completed" && <Badge tone="success" icon={<IconCheck />}>Visited</Badge>}
+                    {v.status === "completed" && <Badge tone="success" icon={<IconCheck />}>Completed</Badge>}
                   </div>
                 ))}
               </div>
@@ -172,7 +172,7 @@ export default async function FamilyPage() {
             <SectionTitle icon={<IconClipboard width={16} height={16} />}>Shared documents</SectionTitle>
             {!docs.length ? (
               <p className="card px-5 py-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>
-                Documents the agency shares with you appear here.
+                No documents shared yet.
               </p>
             ) : (
               <div className="card stagger divide-y hairline overflow-hidden">
@@ -196,8 +196,8 @@ export default async function FamilyPage() {
             <div className="min-w-0">
               <p className="text-[15px] font-semibold tracking-[-0.01em]">Private by default</p>
               <p className="mt-1 text-[13.5px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                You only ever see what {c?.first_name ?? "your loved one"} has agreed to share, and they can change that at
-                any time. Nothing reaches this page without their permission.
+                You see only what {c?.first_name ?? "your family member"} has agreed to share, and they can change that at
+                any time. Nothing appears here without their consent.
               </p>
             </div>
           </div>

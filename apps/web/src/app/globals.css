@@ -3,7 +3,7 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    CareOS design system — "Apple 2026" language (rebrand)
    ───────────────────────────────────────────────────────────────────────────
-   Instrument Serif (display) · Instrument Sans (UI) · 4-pt grid · continuous corners
+   Inter — one corporate face (UI · display titles · numerals) · 4-pt grid · continuous corners
    Apple systemGray canvas · one confident system-blue accent · soft depth · frosted chrome
    Light mode only. AA contrast enforced. Compliance states are ALWAYS color + icon + label.
    Motion is CSS-only (transform/opacity), spring-feel, and fully reduced-motion-safe.
@@ -12,10 +12,9 @@
 ──────────────────────────────────────────────────────────────────────────── */
 
 @theme {
-  /* ── Type: serif for display, Instrument Sans for all functional UI ── */
-  --font-sans: var(--font-instrument-sans), -apple-system, BlinkMacSystemFont, "SF Pro Text",
-    "Segoe UI", system-ui, sans-serif;
-  --font-serif: var(--font-instrument-serif), ui-serif, "New York", Georgia, "Times New Roman", serif;
+  /* ── Type: Inter — the single corporate face for display, UI, and numerals ── */
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
 
   /* ── Surface ramp — Apple systemGray (cool, neutral; replaces warm stone) ── */
   --color-surface-25: #fdfdfd;
@@ -131,7 +130,9 @@
 
   html {
     font-family: var(--font-sans);
-    font-feature-settings: "cv11", "ss01";
+    /* Inter character variants: cv05 (l with tail) + cv08 (I with serifs) disambiguate
+       I/l/1 — safety-relevant where nurses read doses and visit times. */
+    font-feature-settings: "cv05", "cv08";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -359,8 +360,8 @@
   .tabular { font-variant-numeric: tabular-nums; }
   .hairline { border-color: var(--border); }
   .title-lg {
-    font-family: var(--font-serif); font-weight: 400;
-    letter-spacing: -0.02em; line-height: 1.05;
+    font-family: var(--font-sans); font-weight: 600;
+    letter-spacing: -0.03em; line-height: 1.05;
   }
 
   /* ── Overlays ── */

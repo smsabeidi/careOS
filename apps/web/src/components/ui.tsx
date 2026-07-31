@@ -217,7 +217,7 @@ export function SkeletonRows({ rows = 4 }: { rows?: number }) {
   );
 }
 
-/* ── Stat tile — big value in Instrument Serif, tabular ── */
+/* ── Stat tile — big value in display type, tabular ── */
 export function Stat({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
     <div className="card px-5 py-4">
@@ -386,7 +386,7 @@ export function DataTable({
                   className="px-5 py-10 text-center text-[14px]"
                   style={{ color: "var(--text-muted)" }}
                 >
-                  Nothing here yet.
+                  No records yet
                 </td>
               </tr>
             ) : (

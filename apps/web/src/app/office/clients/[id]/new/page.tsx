@@ -55,7 +55,7 @@ export default async function NewFormPage({ params }: { params: Promise<{ id: st
 
         <PageHeader
           title="Start a new record"
-          sub={`For ${client.first_name} ${client.last_name}. Every save keeps its own version — nothing gets overwritten.`}
+          sub={`For ${client.first_name} ${client.last_name}. Each save creates a new version; nothing is overwritten.`}
         />
 
         {templates && templates.length > 0 ? (
@@ -73,7 +73,7 @@ export default async function NewFormPage({ params }: { params: Promise<{ id: st
                     <p className="text-[15px] font-medium">{t.title}</p>
                     <p className="mt-0.5 text-[13px]" style={{ color: "var(--text-muted)" }}>
                       {t.requires_signature_roles?.length
-                        ? `Needs a signature from: ${t.requires_signature_roles.join(", ").toUpperCase()}`
+                        ? `Requires signature: ${t.requires_signature_roles.join(", ").toUpperCase()}`
                         : "No signature required to finalize"}
                     </p>
                   </div>
@@ -88,8 +88,8 @@ export default async function NewFormPage({ params }: { params: Promise<{ id: st
         ) : (
           <EmptyState
             icon={<IconClipboard />}
-            title="No record types to start yet"
-            body={`Once your agency publishes active form templates, they'll show up here for ${client.first_name}.`}
+            title="No record types available"
+            body="Record types appear here once your agency publishes form templates."
             action={
               <Link href={`/office/clients/${id}`} className="btn btn-secondary">
                 Back to profile

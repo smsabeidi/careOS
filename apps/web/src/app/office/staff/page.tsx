@@ -79,14 +79,14 @@ export default async function StaffPage() {
       <div className="rise">
         <PageHeader
           title="Staff"
-          sub={`${activeCount} active team members across ${grouped.length} roles`}
+          sub={`${activeCount} active staff members across ${grouped.length} roles`}
         />
 
         {!rows.length ? (
           <EmptyState
             icon={<IconShield />}
-            title="The directory needs a permission"
-            body="Staff details are visible to office and leadership roles. If you should have access, your administrator can grant it."
+            title="No staff records visible"
+            body="Staff details are visible to office and leadership roles. Contact your administrator to request access."
           />
         ) : (
           <div className="stagger flex flex-col gap-7">

@@ -51,11 +51,11 @@ export function BrainConsole() {
         />
         <div className="mt-3 flex items-center justify-between gap-3">
           <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>
-            Answers come only from your agency&apos;s policy documents, with sources — or it says it doesn&apos;t know.
+            Answers come only from agency policy documents, with sources. When no policy applies, the Brain abstains.
           </p>
           <button type="submit" className="btn btn-primary btn-sm shrink-0" disabled={pending || !question.trim()}>
             <IconSparkle width={15} height={15} />
-            {pending ? "Thinking…" : "Ask"}
+            {pending ? "Asking…" : "Ask"}
           </button>
         </div>
       </form>

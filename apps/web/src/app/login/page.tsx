@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { elevateDemoSession } from "@/lib/demo-totp";
-import { IconShield, IconAlert } from "@/components/icons";
+import { IconAlert } from "@/components/icons";
+import { BrandLogo } from "@/components/logo";
 
 const DEMO_MODE = process.env.NEXT_PUBLIC_CAREOS_DEMO_MODE === "true";
 
@@ -22,7 +23,7 @@ export default function LoginPage() {
     const supabase = supabaseBrowser();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      setError("That email and password didn't match. Nothing you typed was lost — check and try again.");
+      setError("Email and password didn't match. Your entries are unchanged. Check and try again.");
       setBusy(false);
       return;
     }
@@ -44,22 +45,11 @@ export default function LoginPage() {
     >
       <div className="rise w-full max-w-[400px]">
         <div className="mb-9 flex flex-col items-center gap-5 text-center">
-          <span
-            className="flex items-center justify-center text-white"
-            style={{
-              width: 62,
-              height: 62,
-              borderRadius: 19,
-              background: "linear-gradient(160deg, var(--color-accent-500), var(--accent-active))",
-              boxShadow: "var(--shadow-md)",
-            }}
-          >
-            <IconShield width={34} height={34} />
-          </span>
+          <BrandLogo size={64} />
           <div className="flex flex-col gap-2">
-            <h1 className="title-lg text-[34px]">Welcome back</h1>
+            <h1 className="title-lg text-[34px]">Sign in</h1>
             <p className="text-[15px]" style={{ color: "var(--text-secondary)" }}>
-              Sign in to CareOS — care operations, provably in order.
+              CareOS care operations platform
             </p>
           </div>
         </div>
@@ -107,7 +97,7 @@ export default function LoginPage() {
             {busy ? "Signing in…" : "Continue"}
           </button>
           <p className="text-center text-[13px] leading-snug" style={{ color: "var(--text-secondary)" }}>
-            You'll verify with your authenticator app next — patient records require a verified session.
+            You'll verify with your authenticator app next. Patient records require a verified session.
           </p>
         </form>
       </div>

@@ -33,7 +33,7 @@ export function CommandHero({
           {agencyName} · {today}
         </p>
       </div>
-      <span className="chip chip-neutral" title="Every record is versioned and hash-chained by construction">
+      <span className="chip chip-neutral" title="All records are versioned and hash-chained by design">
         <IconLock width={12} height={12} />
         Append-only records
       </span>
@@ -55,9 +55,9 @@ export function AttentionPanel({ m }: { m: ExecMetrics }) {
       <section className="card flex items-center gap-4 p-5">
         <TintTile icon={<IconCheck />} size={44} tone="success" />
         <div>
-          <p className="text-[16px] font-semibold">You're all caught up</p>
+          <p className="text-[16px] font-semibold">No items waiting</p>
           <p className="text-[14px]" style={{ color: "var(--text-secondary)" }}>
-            No admissions, signatures, or reviews are waiting on you right now.
+            No admissions, signatures, or reviews pending.
           </p>
         </div>
       </section>
@@ -68,7 +68,7 @@ export function AttentionPanel({ m }: { m: ExecMetrics }) {
       <div className="flex items-center justify-between px-5 pt-5">
         <SectionTitle icon={<IconActivity />}>Needs your attention</SectionTitle>
         <span className="tabular text-[13px]" style={{ color: "var(--text-muted)" }}>
-          {m.attention.length} {m.attention.length === 1 ? "thing" : "things"}
+          {m.attention.length} {m.attention.length === 1 ? "item" : "items"}
         </span>
       </div>
       <ul className="divide-y hairline border-t">
@@ -90,8 +90,8 @@ export function AttentionPanel({ m }: { m: ExecMetrics }) {
       <p className="flex items-start gap-2 border-t px-5 py-3 text-[12px] leading-relaxed hairline"
          style={{ color: "var(--text-muted)" }}>
         <IconCalendar width={14} height={14} className="mt-0.5 shrink-0" />
-        This is live work — who's waiting and what's unsigned. COMAR due-date tracking (annual
-        assessments, supervisory visits, credential renewals) arrives with the cadence engine.
+        Live work: pending items and unsigned records. COMAR due-date tracking (annual
+        assessments, supervisory visits, credential renewals) becomes available with the cadence engine.
       </p>
     </section>
   );
@@ -108,7 +108,7 @@ export function CensusPanel({ m }: { m: ExecMetrics }) {
       <div className="flex items-end gap-3">
         <p className="title-lg tabular text-[40px] leading-none">{m.census.inService.toLocaleString()}</p>
         <p className="pb-1 text-[14px]" style={{ color: "var(--text-secondary)" }}>
-          people in active service
+          clients in active service
         </p>
       </div>
       <div className="mt-5 flex flex-col gap-3">
@@ -149,7 +149,7 @@ export function PayerPanel({ m }: { m: ExecMetrics }) {
       <div className="mt-5 flex items-start gap-2.5 border-t pt-4 hairline">
         <IconUsers width={16} height={16} className="mt-0.5 shrink-0" style={{ color: "var(--accent)" }} />
         <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-          {m.language.esPct}% of clients speak Spanish — family updates and care summaries go out in
+          {m.language.esPct}% of clients speak Spanish. Family updates and care summaries are sent in
           each family's language.
         </p>
       </div>
@@ -183,7 +183,7 @@ export function WorkforcePanel({ m }: { m: ExecMetrics }) {
           <>
             <IconCheck width={16} height={16} className="mt-0.5 shrink-0" style={{ color: "var(--color-success-700)" }} />
             <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-              Every client in service has an assigned caregiver and RN case manager.
+              All clients in service have an assigned caregiver and RN case manager.
             </p>
           </>
         ) : (
@@ -191,8 +191,8 @@ export function WorkforcePanel({ m }: { m: ExecMetrics }) {
             <IconAlert width={16} height={16} className="mt-0.5 shrink-0" style={{ color: "var(--color-warning-700)" }} />
             <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
               {Math.max(m.coverage.withoutCaregiver, m.coverage.withoutRn)} client
-              {Math.max(m.coverage.withoutCaregiver, m.coverage.withoutRn) === 1 ? "" : "s"} in service still
-              {m.coverage.withoutCaregiver > 0 && m.coverage.withoutRn > 0 ? " need a caregiver or nurse assigned." : m.coverage.withoutCaregiver > 0 ? " need a caregiver assigned." : " need an RN case manager assigned."}
+              {Math.max(m.coverage.withoutCaregiver, m.coverage.withoutRn) === 1 ? "" : "s"} in service
+              {m.coverage.withoutCaregiver > 0 && m.coverage.withoutRn > 0 ? " without an assigned caregiver or RN case manager. Assign to close the gap." : m.coverage.withoutCaregiver > 0 ? " without an assigned caregiver. Assign to close the gap." : " without an assigned RN case manager. Assign to close the gap."}
             </p>
           </>
         )}
@@ -215,12 +215,12 @@ export function IntegrityPanel({ m }: { m: ExecMetrics }) {
         <RingStat pct={assurance} tone="success" />
         <div className="min-w-0">
           <p className="text-[15px] font-semibold">
-            {allVerified ? "Every signature verified" : hasSignatures ? `${assurance}% verified` : "No signatures yet"}
+            {allVerified ? "All signatures verified" : hasSignatures ? `${assurance}% verified` : "No signatures recorded"}
           </p>
           <p className="mt-0.5 text-[13px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
             {hasSignatures
               ? `${m.docs.aal2Signatures.toLocaleString()} of ${m.docs.signatures.toLocaleString()} clinical signatures were captured in a multi-factor–verified (AAL2) session, each bound to the exact record it signed.`
-              : "Clinical signatures will appear here as your nurses finalize assessments — each captured in a verified session."}
+              : "Clinical signatures appear here as nurses finalize assessments, each captured in a verified session."}
           </p>
         </div>
       </div>
@@ -239,8 +239,8 @@ export function IntegrityPanel({ m }: { m: ExecMetrics }) {
             Append-only &amp; hash-chained
           </p>
           <p className="mt-0.5 text-[13px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-            Every record is versioned and cryptographically linked — nothing can be lost or silently
-            changed, and {m.docs.corrections === 0 ? "no corrections have been needed" : `all ${m.docs.corrections} corrections stay on the record with a reason`}.
+            All records are versioned and cryptographically linked. Nothing can be lost or silently
+            changed. {m.docs.corrections === 0 ? "No corrections recorded" : `All ${m.docs.corrections} corrections remain on the record with a reason`}.
           </p>
         </div>
       </div>
@@ -257,7 +257,7 @@ export function ActivityPanel({ m }: { m: ExecMetrics }) {
       </div>
       {!m.recent.length ? (
         <p className="px-5 pb-8 text-center text-[14px]" style={{ color: "var(--text-muted)" }}>
-          Activity appears here as your team documents care.
+          No recent activity. Entries appear as your team documents care.
         </p>
       ) : (
         <ul className="divide-y hairline border-t">
@@ -290,21 +290,21 @@ export function ActivityPanel({ m }: { m: ExecMetrics }) {
 /* ── Horizon — honest "what's coming", deliberately not faked ── */
 const HORIZON = [
   { icon: <IconCalendar />, title: "COMAR deadline tracking",
-    detail: "Assessment, supervisory-visit, and credential cadences, watched for you." },
+    detail: "Assessment, supervisory-visit, and credential cadences, tracked automatically." },
   { icon: <IconMapPin />, title: "Live visit board & EVV",
-    detail: "Geofenced clock-in/out and a real-time map of who's where." },
-  { icon: <IconShield />, title: "Credential wall & expiries",
-    detail: "Every caregiver's credentials, with renewals flagged before they lapse." },
+    detail: "Geofenced clock-in/out and a real-time map of visit locations." },
+  { icon: <IconShield />, title: "Credential tracking & expirations",
+    detail: "All caregiver credentials, with renewals flagged before expiration." },
   { icon: <IconSparkle />, title: "Ask CareOS",
-    detail: "Ask the agency a question in plain language — answered under your permissions." },
+    detail: "Plain-language questions about the agency, answered under your permissions." },
 ];
 export function HorizonPanel() {
   return (
     <section className="card overflow-hidden">
       <div className="px-5 pt-5">
-        <SectionTitle icon={<IconClock />}>On the horizon</SectionTitle>
+        <SectionTitle icon={<IconClock />}>Planned features</SectionTitle>
         <p className="-mt-1 mb-1 text-[13px]" style={{ color: "var(--text-muted)" }}>
-          Deliberately not shown until it's real — no placeholder numbers.
+          Shown only when live. No placeholder data.
         </p>
       </div>
       <ul className="divide-y hairline border-t">
@@ -315,7 +315,7 @@ export function HorizonPanel() {
               <p className="text-[14px] font-medium">{h.title}</p>
               <p className="text-[13px]" style={{ color: "var(--text-secondary)" }}>{h.detail}</p>
             </div>
-            <span className="chip chip-neutral shrink-0">Coming</span>
+            <span className="chip chip-neutral shrink-0">Planned</span>
           </li>
         ))}
       </ul>

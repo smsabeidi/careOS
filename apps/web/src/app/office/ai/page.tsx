@@ -56,7 +56,7 @@ export default async function AiActivityPage() {
       <div className="rise">
         <PageHeader
           title="AI activity"
-          sub="Every model call the agency makes — logged, costed, and attributable"
+          sub="All model calls, logged with cost and attribution"
           actions={<Link href="/brain" className="btn btn-secondary btn-sm"><IconSparkle width={15} height={15} />Open Brain</Link>}
         />
 
@@ -70,7 +70,7 @@ export default async function AiActivityPage() {
           <EmptyState
             icon={<IconSparkle />}
             title="No AI activity yet"
-            body="Every question asked of the Brain and every extraction run is recorded here — model, tokens, cost, and who ran it."
+            body="Brain questions and extraction runs appear here, with model, tokens, cost, and user."
           />
         ) : (
           <DataTable
@@ -110,8 +110,8 @@ export default async function AiActivityPage() {
         )}
 
         <p className="mt-4 text-[12px]" style={{ color: "var(--text-muted)" }}>
-          Records hold PHI-safe digests only — never raw client content. High-autonomy capabilities (T2/T3)
-          always require a licensed human to dispose; the database refuses to register one that doesn&apos;t.
+          Records hold PHI-safe digests only, never raw client content. High-autonomy capabilities (T2/T3)
+          require disposition by a licensed human; the database rejects registration of any capability without one.
         </p>
       </div>
     </AppShell>

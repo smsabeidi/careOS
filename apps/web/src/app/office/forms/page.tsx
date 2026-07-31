@@ -20,13 +20,13 @@ export default async function FormsPage() {
       <div className="rise">
         <PageHeader
           title="Forms"
-          sub="Every record you can see, newest first. Versions are permanent — corrections, not overwrites."
+          sub="All records, newest first. Versions are permanent; edits create corrections."
         />
         {!forms?.length ? (
           <EmptyState
             icon={<IconClipboard />}
-            title="Nothing here yet"
-            body="Records you create or are assigned to review will appear here. Start one from a client's chart."
+            title="No forms yet"
+            body="Forms you create or are assigned to review appear here. Start one from a client's chart."
           />
         ) : (
           <div className="card divide-y hairline overflow-hidden stagger">

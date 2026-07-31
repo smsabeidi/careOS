@@ -57,7 +57,7 @@ export default async function ClientsPage({
       <div className="rise">
         <PageHeader
           title="Clients"
-          sub={total ? `${total} ${total === 1 ? "person" : "people"}${status ? ` · ${STATUS_FILTERS.find((f) => f.key === status)?.label.toLowerCase()}` : ""}${q ? ` · matching "${q}"` : ""}` : undefined}
+          sub={total ? `${total} ${total === 1 ? "client" : "clients"}${status ? ` · ${STATUS_FILTERS.find((f) => f.key === status)?.label.toLowerCase()}` : ""}${q ? ` · matching "${q}"` : ""}` : undefined}
         />
 
         {/* Toolbar: search + status filter */}
@@ -104,16 +104,16 @@ export default async function ClientsPage({
           <EmptyState
             icon={<IconUsers />}
             title="Couldn't load clients"
-            body="Nothing was changed or lost. Refresh to try again — if this keeps happening, your coordinator can help."
+            body="Nothing was changed. Refresh to try again. If the problem continues, contact your coordinator."
           />
         ) : !clients?.length ? (
           <EmptyState
             icon={<IconUsers />}
-            title={q || status ? "No one matches" : "No clients yet"}
+            title={q || status ? "No matching clients" : "No clients yet"}
             body={
               q || status
-                ? "Try a shorter name, or clear the filters to see everyone you have access to."
-                : "Clients you're assigned to care for will appear here."
+                ? "Adjust the search or clear the filters to see all clients you have access to."
+                : "Clients assigned to you appear here."
             }
             action={
               q || status ? (

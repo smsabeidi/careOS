@@ -69,10 +69,10 @@ export default async function CredentialsPage({
     return (
       <AppShell active="/office/credentials">
         <div className="rise">
-          <PageHeader title="Credentials" sub="Every license, certification and screening in one place" />
+          <PageHeader title="Credentials" sub="All licenses, certifications, and screenings" />
           <ErrorState
             title="Couldn't load credentials"
-            body="Nothing was changed. Refresh to try again — if this keeps happening, an admin can help."
+            body="Nothing was changed. Refresh to try again. If the problem continues, contact your administrator."
           />
         </div>
       </AppShell>
@@ -132,12 +132,12 @@ export default async function CredentialsPage({
         {!shown.length ? (
           <EmptyState
             icon={<IconBadge />}
-            title={filter === "all" ? "No credentials on file yet" : "Nothing in this view"
+            title={filter === "all" ? "No credentials on file yet" : "No credentials match this filter"
             }
             body={
               filter === "all"
-                ? "As staff licenses, certifications and screenings are added, they appear here with a live expiry status."
-                : "Nothing matches this filter right now. Switch back to All to see every credential."
+                ? "Licenses, certifications, and screenings appear here as they are added, each with an expiry status."
+                : "Switch to All to see all credentials."
             }
             action={
               filter === "all" ? undefined : (
@@ -176,7 +176,7 @@ export default async function CredentialsPage({
                   </span>,
                   bucketBadge(r.expiry_bucket, r.status),
                   r.expires_on ? (
-                    <DueChip key="e" due={r.expires_on} prefix="Renews" />
+                    <DueChip key="e" due={r.expires_on} prefix="Expires" />
                   ) : (
                     <span key="e" style={{ color: "var(--text-muted)" }}>No expiry</span>
                   ),
@@ -187,8 +187,8 @@ export default async function CredentialsPage({
         )}
 
         <p className="mt-4 text-[12px]" style={{ color: "var(--text-muted)" }}>
-          Expiry status is computed by the database (Engine 1), never estimated in the browser. A lapsed
-          credential that blocks scheduling stops the worker from being assigned — automatically.
+          Expiry status is computed by the database (Engine 1), not estimated in the browser. A lapsed
+          credential that blocks scheduling prevents assignment automatically.
         </p>
       </div>
     </AppShell>

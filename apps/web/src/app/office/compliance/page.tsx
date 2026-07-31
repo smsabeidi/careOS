@@ -63,10 +63,10 @@ export default async function CompliancePage({
     return (
       <AppShell active="/office/compliance">
         <div className="rise">
-          <PageHeader title="Compliance" sub="Every COMAR obligation, tracked by software" />
+          <PageHeader title="Compliance" sub="All COMAR obligations, tracked by software" />
           <ErrorState
             title="Couldn't load obligations"
-            body="Nothing was changed. Refresh to try again — the compliance engine will pick right back up."
+            body="Nothing was changed. Refresh to try again."
           />
         </div>
       </AppShell>
@@ -132,15 +132,15 @@ export default async function CompliancePage({
         {!shown.length ? (
           <EmptyState
             icon={<IconCheck />}
-            title={filter === "all" ? "No obligations tracked yet" : "All clear"}
+            title={filter === "all" ? "No obligations tracked yet" : "No obligations in this view"}
             body={
               filter === "all"
-                ? "As clients are admitted, the cadence engine materializes their COMAR obligations here — assessments, reassessments and supervisory visits, each with its regulation reference."
-                : "Nothing needs attention in this view. Every obligation here is on track."
+                ? "Admitting a client generates their COMAR obligations — assessments, reassessments, and supervisory visits, each with its regulation reference."
+                : "Obligations appear here when their status matches this filter."
             }
             action={
               filter === "all" ? undefined : (
-                <Link href="/office/compliance?filter=all" className="btn btn-secondary btn-sm">See all obligations</Link>
+                <Link href="/office/compliance?filter=all" className="btn btn-secondary btn-sm">View all obligations</Link>
               )
             }
           />
@@ -192,8 +192,8 @@ export default async function CompliancePage({
 
         <p className="mt-4 text-[12px]" style={{ color: "var(--text-muted)" }}>
           Due dates and statuses are derived by the compliance engine (Engine 1) from each rule&apos;s COMAR
-          cadence — not tracked by hand. Every row traces to its regulation, so a surveyor can be shown exactly
-          how the software enforces it.
+          cadence; they are not tracked by hand. Every row traces to its regulation, so a surveyor can be shown
+          exactly how the software enforces it.
         </p>
       </div>
     </AppShell>

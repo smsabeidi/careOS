@@ -20,7 +20,7 @@ export function ClockButton({
     return (
       <button type="button" disabled className="btn btn-secondary btn-sm min-h-11 flex-1">
         <IconCheck width={15} height={15} />
-        Visit complete
+        Visit completed
       </button>
     );
   }
@@ -28,7 +28,7 @@ export function ClockButton({
   function submit(coords: { lat: number; lng: number; acc: number } | null) {
     startTransition(async () => {
       const res = await clockVisit(visitId, mode as "clock_in" | "clock_out", coords);
-      if (!res.ok) setError(res.error ?? "Try again");
+      if (!res.ok) setError(res.error ?? "Couldn't record the visit event. Nothing was saved. Try again.");
     });
   }
 

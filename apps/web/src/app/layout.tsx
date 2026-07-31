@@ -1,21 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Sans, Instrument_Serif } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-/* Instrument Sans — the functional UI face (400 body · 500 medium · 600 headline). */
-const instrumentSans = Instrument_Sans({
+/* Inter — the single corporate face: UI, display titles, and tabular numerals.
+   Loaded as the full variable axis (wght 100–900) plus opsz (optical sizing)
+   for dense 13px tables. Self-hosted at build via next/font — no runtime CDN. */
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-instrument-sans",
-  display: "swap",
-});
-
-/* Instrument Serif — display only: large titles & hero numerals (self-hosted at build). */
-const instrumentSerif = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
-  variable: "--font-instrument-serif",
+  axes: ["opsz"],
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -34,7 +27,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${instrumentSans.variable} ${instrumentSerif.variable}`}>
+    <html lang="en" className={inter.variable}>
       <body>{children}</body>
     </html>
   );

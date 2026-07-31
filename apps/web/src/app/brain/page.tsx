@@ -23,18 +23,18 @@ export default async function BrainPage() {
       <div className="rise mx-auto max-w-2xl">
         <PageHeader
           title="Brain"
-          sub={`Grounded in ${docCount ?? 0} policy ${docCount === 1 ? "document" : "documents"} · cites its sources or abstains`}
+          sub={`Grounded in ${docCount ?? 0} policy ${docCount === 1 ? "document" : "documents"} · answers cite sources or abstain`}
           actions={
             <Link href="/office/ai" className="btn btn-secondary btn-sm">
               <IconSparkle width={15} height={15} />
-              Activity{typeof askCount === "number" ? ` · ${askCount}` : ""}
+              View activity{typeof askCount === "number" ? ` · ${askCount}` : ""}
             </Link>
           }
         />
         <BrainConsole />
         <p className="mt-5 text-[12px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
-          Every question and answer is logged (model, tokens, cost, tier) and never invents facts — it
-          answers only from your policy documents, or says it doesn&apos;t know. No patient data is sent to
+          Each question and answer is logged with model, tokens, cost, and tier. Answers come only from
+          agency policy documents; when no policy applies, the Brain abstains. No client data is sent to
           the model.
         </p>
       </div>

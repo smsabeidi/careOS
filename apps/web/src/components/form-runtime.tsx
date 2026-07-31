@@ -49,18 +49,18 @@ const KIND_LABEL: Record<string, string> = {
 
 function friendlyError(message: string): string {
   if (message.includes("CAREOS_AAL2_REQUIRED"))
-    return "Your verified session expired. Sign in again with your authenticator — everything on this screen is kept.";
+    return "Your verified session expired. Everything on this screen is kept. Sign in again with your authenticator.";
   if (message.includes("CAREOS_SIGNATURES_INCOMPLETE"))
-    return "A required signature is still missing — collect it below, then finalize.";
+    return "A required signature is missing. Collect it below, then finalize.";
   if (message.includes("CAREOS_NOT_AUTHORIZED"))
     return "Your role isn't one of the required signers for this form.";
   if (message.includes("CAREOS_STALE_VERSION"))
-    return "A newer version was saved — review it below, then finalize the latest.";
+    return "A newer version was saved. Review it below, then finalize the latest version.";
   if (message.includes("CAREOS_INVALID_STATE"))
     return "This record's status changed. Refresh to see the latest.";
   if (message.includes("CAREOS_REASON_REQUIRED"))
-    return "Corrections need a short reason — it becomes part of the permanent record.";
-  return "That didn't go through. Your work is still on this screen — try again.";
+    return "Corrections require a reason. It becomes part of the permanent record.";
+  return "The request didn't complete. Your work is still on this screen. Try again.";
 }
 
 function hashExcerpt(hex: string) {
@@ -251,11 +251,11 @@ export function FormRuntime(props: {
             <div className="flex items-center gap-2 px-5 py-3 text-sm font-medium"
                  style={{ background: "var(--color-warning-50)", color: "var(--color-warning-700)" }}>
               <IconAlert width={16} height={16} />
-              {(props.authorNames[conflict.authorId] ?? "A teammate")} saved a version while you were editing
+              {(props.authorNames[conflict.authorId] ?? "Another user")} saved a version while you were editing
             </div>
             <div className="p-5">
               <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                Both versions are kept either way — nothing is lost. Choose where to continue:
+                Both versions are kept. Choose where to continue:
               </p>
               {conflictDiffKeys.length > 0 && (
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -288,10 +288,10 @@ export function FormRuntime(props: {
               )}
               <div className="mt-4 flex flex-wrap gap-2">
                 <button className="btn btn-primary" onClick={resolveKeepMine}>
-                  Keep my changes on top
+                  Keep my changes
                 </button>
                 <button className="btn btn-secondary" onClick={resolveTakeTheirs}>
-                  Continue from theirs
+                  Continue from their version
                 </button>
               </div>
             </div>
@@ -304,8 +304,8 @@ export function FormRuntime(props: {
                style={{ background: "var(--accent-soft)", borderColor: "var(--accent-soft-border)" }}>
             <IconLock style={{ color: "var(--accent)" }} />
             <div className="flex-1 text-sm" style={{ color: "var(--text-secondary)" }}>
-              This record is final. It can't be edited — a correction creates a new version with a reason,
-              and every earlier version stays on file.
+              This record is final and can't be edited. A correction creates a new version with a reason.
+              Every earlier version stays on file.
             </div>
             <button className="btn btn-secondary btn-sm" onClick={() => setCorrecting(true)}>
               <IconPen width={14} height={14} />
@@ -318,7 +318,7 @@ export function FormRuntime(props: {
           <div className="card rise mb-5 p-5" style={{ borderColor: "var(--accent-soft-border)" }}>
             <p className="text-sm font-medium">Correction reason</p>
             <p className="mt-0.5 text-[13px]" style={{ color: "var(--text-muted)" }}>
-              Becomes part of the permanent record — say what was wrong, plainly.
+              Becomes part of the permanent record. State what was wrong.
             </p>
             <textarea
               className="textarea mt-3"
@@ -364,7 +364,7 @@ export function FormRuntime(props: {
                       onChange={(e) => { setField(f.key, e.target.value); }}
                       onBlur={flush}
                     >
-                      <option value="">Choose…</option>
+                      <option value="">Select…</option>
                       {f.options?.map((o) => <option key={o} value={o}>{o}</option>)}
                     </select>
                   ) : f.type === "boolean" ? (
@@ -412,8 +412,8 @@ export function FormRuntime(props: {
                style={{ borderColor: "var(--accent-soft-border)" }}>
             <p className="text-[15px] font-semibold">Finalize as a permanent record</p>
             <p className="mt-1 text-sm" style={{ color: "var(--text-secondary)" }}>
-              Finalizing locks version {base.version_no} exactly as shown above. After this, changes
-              happen only as corrections — with a reason, on the record.
+              Finalizing locks version {base.version_no} exactly as shown above. Further changes
+              require a correction with a reason, which becomes part of the record.
             </p>
             {finalizeHash && (
               <p className="tabular mt-2 text-xs" style={{ color: "var(--text-muted)" }}>
@@ -424,7 +424,7 @@ export function FormRuntime(props: {
               <button className="btn btn-primary" disabled={busy === "finalize"} onClick={finalize}>
                 {busy === "finalize" ? "Finalizing…" : `Finalize version ${base.version_no}`}
               </button>
-              <button className="btn btn-ghost" onClick={() => setFinalizeOpen(false)}>Not yet</button>
+              <button className="btn btn-ghost" onClick={() => setFinalizeOpen(false)}>Cancel</button>
             </div>
           </div>
         )}
@@ -454,13 +454,13 @@ export function FormRuntime(props: {
                     {signedRoles.has(r) ? (
                       <>
                         <IconCheck width={14} height={14} style={{ color: "var(--color-success-600)" }} />
-                        <span>{r.toUpperCase()} — signed</span>
+                        <span>{r.toUpperCase()} · signed</span>
                       </>
                     ) : (
                       <>
                         <span aria-hidden className="inline-block size-3.5 rounded-full border-2"
                               style={{ borderColor: "var(--border-strong)" }} />
-                        <span style={{ color: "var(--text-muted)" }}>{r.toUpperCase()} — waiting</span>
+                        <span style={{ color: "var(--text-muted)" }}>{r.toUpperCase()} · pending</span>
                       </>
                     )}
                   </li>

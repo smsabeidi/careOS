@@ -337,7 +337,7 @@ export function rankCandidates(
         verdict: {
           status: "blocked",
           reason: "Credential lapsed",
-          detail: `${cred.type} expired ${prettyDate(cred.lapsedOn)} — renew to schedule`,
+          detail: `${cred.type} lapsed ${prettyDate(cred.lapsedOn)}. Renew to schedule`,
         },
       };
     }
@@ -350,7 +350,7 @@ export function rankCandidates(
         verdict: {
           status: "blocked",
           reason: "Double-booked",
-          detail: `Already with ${clash.clientName.split(" ")[0]} at ${timeLabel(clash.start)}`,
+          detail: `Booked with ${clash.clientName.split(" ")[0]} at ${timeLabel(clash.start)}`,
         },
       };
     }
@@ -382,7 +382,7 @@ export function rankCandidates(
     }
     if (weekHours < 24) {
       score += 6;
-      notes.push(`Light week (${weekHours.toFixed(0)}h)`);
+      notes.push(`${weekHours.toFixed(0)}h scheduled this week`);
     }
     return {
       caregiver,
