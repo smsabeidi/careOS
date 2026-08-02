@@ -3,6 +3,7 @@ import { AppShell } from "@/components/shell";
 import { Avatar, Badge, EmptyState, PageHeader, SectionTitle, StatusChip, TintTile } from "@/components/ui";
 import { IconCalendar, IconChevronRight, IconClipboard, IconClock, IconMapPin, IconCheck } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
+import { VoiceNote } from "@/components/voice-note";
 import { ClockButton } from "./clock-button";
 
 export const metadata = { title: "Today" };
@@ -122,6 +123,9 @@ export default async function TodayPage() {
                         Open notes
                       </Link>
                     </div>
+                    {/* Speak the note instead of typing it. The draft is reviewed section by
+                        section and saved by the caregiver — nothing files itself (docs/16 G1). */}
+                    <VoiceNote visitId={v.id} clientId={v.client_id} clientName={name} />
                   </div>
                 );
               })}

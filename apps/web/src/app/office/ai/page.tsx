@@ -33,12 +33,30 @@ export default async function AiActivityPage() {
   await requireRole(["owner", "admin"]);
   const supabase = await supabaseServer();
 
-  const { data: rows } = await supabase
-    .from("ai_interaction")
-    .select("id, capability_key, provider, model, tier, status, tokens_in, tokens_out, cost_usd, created_by, created_at")
-    .order("created_at", { ascending: false })
-    .limit(200);
+  const [{ data: rows }, { data: dispositions }] = await Promise.all([
+    supabase
+      .from("ai_interaction")
+      .select("id, capability_key, provider, model, tier, status, tokens_in, tokens_out, cost_usd, created_by, created_at")
+      .order("created_at", { ascending: false })
+      .limit(200),
+    // Read as the user: RLS returns your own dispositions, or the tenant's with ai.read.
+    supabase
+      .from("ai_disposition")
+      .select("action")
+      .order("created_at", { ascending: false })
+      .limit(500),
+  ]);
   const list = (rows ?? []) as Row[];
+
+  const dispo = ((dispositions ?? []) as { action: string }[]).reduce(
+    (a, d) => ({
+      total: a.total + 1,
+      accepted: a.accepted + (d.action === "accepted" ? 1 : 0),
+      edited: a.edited + (d.action === "edited" ? 1 : 0),
+      rejected: a.rejected + (d.action === "rejected" ? 1 : 0),
+    }),
+    { total: 0, accepted: 0, edited: 0, rejected: 0 }
+  );
 
   const userIds = [...new Set(list.map((r) => r.created_by))];
   const { data: staff } = userIds.length
@@ -60,10 +78,21 @@ export default async function AiActivityPage() {
           actions={<Link href="/brain" className="btn btn-secondary btn-sm"><IconSparkle width={15} height={15} />Open Brain</Link>}
         />
 
-        <div className="mb-6 grid grid-cols-3 gap-3">
+        <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <MetricTile label="Calls" value={totals.calls} icon={<IconSparkle />} />
           <MetricTile label="Tokens" value={totals.tokens.toLocaleString()} tone="neutral" />
           <MetricTile label="Cost" value={`$${totals.cost.toFixed(2)}`} tone="neutral" />
+          <MetricTile
+            label="Dispositions"
+            value={dispo.total}
+            icon={<IconCheck />}
+            tone="success"
+            hint={
+              dispo.total === 0
+                ? "No feedback recorded yet"
+                : `${dispo.accepted} accepted · ${dispo.edited} edited · ${dispo.rejected} rejected`
+            }
+          />
         </div>
 
         {!list.length ? (
@@ -109,9 +138,14 @@ export default async function AiActivityPage() {
           />
         )}
 
-        <p className="mt-4 text-[12px]" style={{ color: "var(--text-muted)" }}>
+        <p className="mt-4 text-[12px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
           Records hold PHI-safe digests only, never raw client content. High-autonomy capabilities (T2/T3)
           require disposition by a licensed human; the database rejects registration of any capability without one.
+        </p>
+        <p className="mt-2 text-[12px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
+          Flywheel: dispositions captured here become evaluation and training data, each one keyed to the model
+          and prompt version that produced the output it judges. Feedback is append-only — it cannot be edited or
+          removed. Training use stays on synthetic Meadowbrook data until a business associate agreement is executed.
         </p>
       </div>
     </AppShell>

@@ -2,6 +2,8 @@ import { AppShell } from "@/components/shell";
 import { supabaseServer } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/profile";
 import { getExecMetrics } from "@/lib/exec/metrics";
+import { getOrGenerateBrief } from "@/lib/ai/huddle";
+import { HuddleBriefCard } from "@/components/huddle-brief";
 import {
   ActivityPanel, AttentionPanel, CensusPanel, CommandHero, HorizonPanel,
   IntegrityPanel, PayerPanel, QuickNav, WorkforcePanel,
@@ -13,7 +15,10 @@ export const dynamic = "force-dynamic";
 export default async function ExecPage() {
   const profile = await requireRole(["owner", "admin"]);
   const supabase = await supabaseServer();
-  const m = await getExecMetrics(supabase);
+  const [m, brief] = await Promise.all([
+    getExecMetrics(supabase),
+    getOrGenerateBrief(supabase, "owner", profile.userId),
+  ]);
 
   return (
     <AppShell active="/exec">
@@ -22,6 +27,8 @@ export default async function ExecPage() {
         <div className="mb-6">
           <QuickNav />
         </div>
+
+        <HuddleBriefCard brief={brief} canRegenerate />
 
         <div className="stagger flex flex-col gap-5">
           <AttentionPanel m={m} />

@@ -3,6 +3,9 @@ import { AppShell } from "@/components/shell";
 import { Avatar, EmptyState, PageHeader, StatusChip } from "@/components/ui";
 import { IconChevronRight, IconSearch, IconUsers } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
+import { getProfile } from "@/lib/profile";
+import { getOrGenerateBrief } from "@/lib/ai/huddle";
+import { HuddleBriefCard } from "@/components/huddle-brief";
 
 export const metadata = { title: "Clients" };
 export const dynamic = "force-dynamic";
@@ -52,9 +55,17 @@ export default async function ClientsPage({
   const to = Math.min(page * PAGE_SIZE, total);
   const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
+  // Coordinators and HR run their morning from this page, so their edition of the brief
+  // lands here. Other roles read theirs on their own home surface.
+  const profile = await getProfile();
+  const isCoordinator = (profile?.roles ?? []).some((r) => r === "coordinator" || r === "hr");
+  const brief =
+    isCoordinator && profile ? await getOrGenerateBrief(supabase, "coordinator", profile.userId) : null;
+
   return (
     <AppShell active="/office/clients">
       <div className="rise">
+        {brief && <HuddleBriefCard brief={brief} canRegenerate />}
         <PageHeader
           title="Clients"
           sub={total ? `${total} ${total === 1 ? "client" : "clients"}${status ? ` · ${STATUS_FILTERS.find((f) => f.key === status)?.label.toLowerCase()}` : ""}${q ? ` · matching "${q}"` : ""}` : undefined}

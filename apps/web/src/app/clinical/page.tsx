@@ -8,6 +8,8 @@ import {
 } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/profile";
+import { getOrGenerateBrief } from "@/lib/ai/huddle";
+import { HuddleBriefCard } from "@/components/huddle-brief";
 
 export const metadata = { title: "Clinical" };
 export const dynamic = "force-dynamic";
@@ -111,10 +113,14 @@ export default async function ClinicalPage({
         : "No records awaiting signature"
       : `${caseClients.length} ${caseClients.length === 1 ? "client" : "clients"} on your caseload`;
 
+  const brief = await getOrGenerateBrief(supabase, "rn", profile.userId);
+
   return (
     <AppShell active="/clinical">
       <div className="rise">
         <PageHeader title="Clinical" sub={sub} />
+
+        <HuddleBriefCard brief={brief} canRegenerate />
 
         <div className="mb-6">
           <Tabs
