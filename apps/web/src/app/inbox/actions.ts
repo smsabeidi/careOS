@@ -29,6 +29,7 @@
  */
 
 import { revalidatePath } from "next/cache";
+import { executeApprovedProposal } from "./execute";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/profile";
@@ -157,6 +158,8 @@ export async function disposeProposal(
   /** The state the proposal is in after this call (derived from the event ledger). */
   status?: string;
   flywheel?: "recorded" | "no_model_output" | "not_recorded";
+  /** What the platform did after approval — published, assigned, or not sent. */
+  effect?: string;
 }> {
   const id = proposalId?.trim();
   if (!id) return { ok: false, error: "That proposal could not be identified." };
@@ -172,7 +175,7 @@ export async function disposeProposal(
   // The proposal itself (RLS-scoped, AAL2-gated). Explicit columns, never select(*).
   const { data: proposalRow, error: loadErr } = await supabase
     .from("ai_proposal")
-    .select("id, tenant_id, capability_key, body, ai_interaction_id")
+    .select("id, tenant_id, capability_key, kind, subject_type, subject_id, title, body, payload, ai_interaction_id")
     .eq("id", id)
     .maybeSingle();
 
@@ -187,7 +190,12 @@ export async function disposeProposal(
     id: string;
     tenant_id: string;
     capability_key: string;
+    kind: string;
+    subject_type: string | null;
+    subject_id: string | null;
+    title: string | null;
     body: string | null;
+    payload: unknown;
     ai_interaction_id: string | null;
   };
 
@@ -255,10 +263,31 @@ export async function disposeProposal(
     flywheel = res.ok ? "recorded" : "not_recorded";
   }
 
+  // ── Execution: the human has disposed, so now the platform acts (invariant 8 order).
+  // A failed effect never rescinds the approval — the decision stands, and the approver is
+  // told plainly what did and did not happen.
+  let effect: string | undefined;
+  if (decision !== "reject") {
+    const approvedBody = decision === "approve_edited" ? trimmedEdit : (proposal.body ?? "");
+    const outcome = await executeApprovedProposal(supabase, proposal, approvedBody, profile.userId);
+    effect = outcome.message;
+    if (outcome.executed) {
+      // The execution is its own append-only fact, distinct from the approval.
+      await supabase.from("ai_proposal_event").insert({
+        tenant_id: proposal.tenant_id,
+        proposal_id: proposal.id,
+        action: "execute",
+        note: outcome.message.slice(0, 1000),
+        actor: profile.userId,
+      });
+      for (const path of outcome.revalidate) revalidatePath(path);
+    }
+  }
+
   revalidatePath("/inbox");
   const nextStatus =
     decision === "reject" ? "rejected" : decision === "approve_edited" ? "edited" : "approved";
-  return { ok: true, status: nextStatus, flywheel };
+  return { ok: true, status: nextStatus, flywheel, effect };
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

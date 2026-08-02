@@ -110,7 +110,16 @@ export default async function CompliancePage({
   return (
     <AppShell active="/office/compliance">
       <div className="rise">
-        <PageHeader title="Compliance" sub={sub} />
+        <PageHeader
+          title="Compliance"
+          sub={sub}
+          actions={
+            <Link href="/office/evidence" className="btn btn-secondary btn-sm">
+              <IconShield width={15} height={15} />
+              Evidence packet
+            </Link>
+          }
+        />
 
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <MetricTile label="Overdue" value={counts.overdue} tone="danger" icon={<IconAlert />} />

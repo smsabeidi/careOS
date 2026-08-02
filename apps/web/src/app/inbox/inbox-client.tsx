@@ -288,7 +288,11 @@ function PendingCard({ p }: { p: ProposalView }) {
       setState({
         kind: "done",
         heading,
-        note: FLYWHEEL_NOTE[res.flywheel ?? "not_recorded"] ?? FLYWHEEL_NOTE.not_recorded,
+        // What the platform actually did comes first — published, assigned, or not sent.
+        // The flywheel line is the quieter second fact.
+        note: [res.effect, FLYWHEEL_NOTE[res.flywheel ?? "not_recorded"] ?? FLYWHEEL_NOTE.not_recorded]
+          .filter(Boolean)
+          .join(" "),
       });
       router.refresh();
     });
