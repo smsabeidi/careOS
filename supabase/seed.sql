@@ -7,7 +7,7 @@
 -- @trace: ST-006
 
 insert into public.tenant (id, name) values
-  ('11111111-1111-1111-1111-111111111111', 'Meadowbrook Home Care (SYNTHETIC)')
+  ('11111111-1111-1111-1111-111111111111', 'American Care Team (SYNTHETIC)')
 on conflict (id) do nothing;
 
 insert into public.permission (key, description) values
@@ -78,7 +78,7 @@ on conflict do nothing;
 
 insert into public.app_user (id, tenant_id, full_name, work_email, kind) values
   ('11111111-1111-1111-1111-0000000ce001', '11111111-1111-1111-1111-111111111111',
-   'Sarah Okafor', 'sarah@meadowbrook.demo', 'staff'),
+   'Dr. Fatima', 'sarah@meadowbrook.demo', 'staff'),
   ('11111111-1111-1111-1111-0000000ce002', '11111111-1111-1111-1111-111111111111',
    'Nina Vasquez, RN', 'nina@meadowbrook.demo', 'staff')
 on conflict (id) do nothing;

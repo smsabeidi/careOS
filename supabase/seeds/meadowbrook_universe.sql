@@ -44,7 +44,7 @@ begin
       when i = 51 then 'omar@meadowbrook.demo'
       else 'staff' || i || '@meadowbrook.demo' end;
     if i = 9  then v_name := 'Dee Alvarez'; end if;
-    if i = 51 then v_name := 'Omar Reid'; end if;
+    if i = 51 then v_name := 'Hussien Barre'; end if;
 
     insert into auth.users (instance_id, id, aud, role, email, encrypted_password,
                             email_confirmed_at, raw_app_meta_data, raw_user_meta_data,

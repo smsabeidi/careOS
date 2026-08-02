@@ -71,9 +71,9 @@ on conflict do nothing;
 insert into public.app_user (id, tenant_id, full_name, work_email, kind)
 select p.uid, '11111111-1111-1111-1111-111111111111', p.full_name, p.email, p.kind
 from (values
-  ('11111111-1111-1111-1111-0000000ce001'::uuid, 'sarah@meadowbrook.demo',  'Sarah Okafor',     'staff'),
+  ('11111111-1111-1111-1111-0000000ce001'::uuid, 'sarah@meadowbrook.demo',  'Dr. Fatima',       'staff'),
   ('11111111-1111-1111-1111-0000000ce002'::uuid, 'nina@meadowbrook.demo',   'Nina Vasquez, RN', 'staff'),
-  ('22222222-0000-0000-0000-000000000033'::uuid, 'omar@meadowbrook.demo',   'Omar Reid',        'staff'),
+  ('22222222-0000-0000-0000-000000000033'::uuid, 'omar@meadowbrook.demo',   'Hussien Barre',    'staff'),
   ('22222222-0000-0000-0000-000000000009'::uuid, 'dee@meadowbrook.demo',    'Dee Alvarez',      'staff'),
   ('11111111-1111-1111-1111-0000000ce003'::uuid, 'family@meadowbrook.demo', 'Grace Vance',      'family')
 ) as p(uid, email, full_name, kind)

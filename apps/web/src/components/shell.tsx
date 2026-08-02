@@ -31,8 +31,8 @@ const DEMO_MODE = process.env.CAREOS_DEMO_MODE === "true";
 
 type Persona = { key: string; label: string; name: string; email: string; role: string };
 const DEMO_PERSONAS: Persona[] = [
-  { key: "owner",       label: "Owner",       name: "Sarah Okafor",  email: "sarah@meadowbrook.demo",  role: "owner" },
-  { key: "coordinator", label: "Coordinator", name: "Omar Reid",     email: "omar@meadowbrook.demo",   role: "coordinator" },
+  { key: "owner",       label: "Owner",       name: "Dr. Fatima",  email: "sarah@meadowbrook.demo",  role: "owner" },
+  { key: "coordinator", label: "Coordinator", name: "Hussien Barre",     email: "omar@meadowbrook.demo",   role: "coordinator" },
   { key: "rn",          label: "Nurse (RN)",  name: "Nina Vasquez",  email: "nina@meadowbrook.demo",   role: "rn" },
   { key: "caregiver",   label: "Caregiver",   name: "Dee Alvarez",   email: "dee@meadowbrook.demo",    role: "caregiver" },
   { key: "family",      label: "Family",      name: "Grace Vance",   email: "family@meadowbrook.demo", role: "family" },
