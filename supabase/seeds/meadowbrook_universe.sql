@@ -4,8 +4,8 @@
 -- ~900 append-only form versions with real hashes, RN signatures on finalized
 -- assessments, and an unsigned in-review queue for the clinical surface.
 -- Deterministic: setseed + index-derived UUIDs. Runs after seed.sql.
--- Demo logins (all "Meadowbrook!demo1"): sarah@ (owner) · nina@ (RN) ·
--- omar@ (coordinator) · dee@ (caregiver) — @meadowbrook.demo
+-- Demo logins (all "AmericanCare!demo1"): sarah@ (owner) · nina@ (RN) ·
+-- omar@ (coordinator) · dee@ (caregiver) — @americancareteam.demo
 
 do $$
 declare
@@ -27,7 +27,7 @@ declare
   i int;
 begin
   perform setseed(0.42);
-  select extensions.crypt('Meadowbrook!demo1', extensions.gen_salt('bf')) into v_pw;
+  select extensions.crypt('AmericanCare!demo1', extensions.gen_salt('bf')) into v_pw;
 
   -- ── Staff 1..55 ──────────────────────────────────────────────────────────
   for i in 1..55 loop
@@ -40,9 +40,9 @@ begin
     v_name := fn[1 + (i * 7) % 56] || ' ' || ln[1 + (i * 11) % 56]
               || case when v_role_key = 'rn' then ', RN' else '' end;
     v_email := case
-      when i = 9  then 'dee@meadowbrook.demo'
-      when i = 51 then 'omar@meadowbrook.demo'
-      else 'staff' || i || '@meadowbrook.demo' end;
+      when i = 9  then 'dee@americancareteam.demo'
+      when i = 51 then 'hussien@americancareteam.demo'
+      else 'staff' || i || '@americancareteam.demo' end;
     if i = 9  then v_name := 'Dee Alvarez'; end if;
     if i = 51 then v_name := 'Hussien Barre'; end if;
 

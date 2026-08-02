@@ -31,11 +31,11 @@ const DEMO_MODE = process.env.CAREOS_DEMO_MODE === "true";
 
 type Persona = { key: string; label: string; name: string; email: string; role: string };
 const DEMO_PERSONAS: Persona[] = [
-  { key: "owner",       label: "Owner",       name: "Dr. Fatima",  email: "sarah@meadowbrook.demo",  role: "owner" },
-  { key: "coordinator", label: "Coordinator", name: "Hussien Barre",     email: "omar@meadowbrook.demo",   role: "coordinator" },
-  { key: "rn",          label: "Nurse (RN)",  name: "Nina Vasquez",  email: "nina@meadowbrook.demo",   role: "rn" },
-  { key: "caregiver",   label: "Caregiver",   name: "Dee Alvarez",   email: "dee@meadowbrook.demo",    role: "caregiver" },
-  { key: "family",      label: "Family",      name: "Grace Vance",   email: "family@meadowbrook.demo", role: "family" },
+  { key: "owner",       label: "Owner",       name: "Dr. Fatima",  email: "fatima@americancareteam.demo",  role: "owner" },
+  { key: "coordinator", label: "Coordinator", name: "Hussien Barre",     email: "hussien@americancareteam.demo",   role: "coordinator" },
+  { key: "rn",          label: "Nurse (RN)",  name: "Nina Vasquez",  email: "nina@americancareteam.demo",   role: "rn" },
+  { key: "caregiver",   label: "Caregiver",   name: "Dee Alvarez",   email: "dee@americancareteam.demo",    role: "caregiver" },
+  { key: "family",      label: "Family",      name: "Grace Vance",   email: "family@americancareteam.demo", role: "family" },
 ];
 
 /** Each persona gets its own surface set — ≤7 items, most-used first (docs/10 §2).
@@ -116,7 +116,7 @@ async function signInAsPersona(formData: FormData) {
   await supabase.auth.signOut();
   const { error } = await supabase.auth.signInWithPassword({
     email: persona.email,
-    password: process.env.CAREOS_DEMO_PASSWORD ?? "Meadowbrook!demo1",
+    password: process.env.CAREOS_DEMO_PASSWORD ?? "AmericanCare!demo1",
   });
   if (error) redirect("/login");
   // Auto-complete the seeded persona's real MFA step-up so PHI surfaces open at AAL2.
