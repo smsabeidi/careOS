@@ -6,10 +6,12 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import { elevateDemoSession } from "@/lib/demo-totp";
 import { IconAlert } from "@/components/icons";
 import { BrandLogo } from "@/components/logo";
+import { useT } from "@/lib/i18n/client";
 
 const DEMO_MODE = process.env.NEXT_PUBLIC_CAREOS_DEMO_MODE === "true";
 
 export default function LoginPage() {
+  const t = useT();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,7 +25,7 @@ export default function LoginPage() {
     const supabase = supabaseBrowser();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      setError("Email and password didn't match. Your entries are unchanged. Check and try again.");
+      setError(t("auth.signInError"));
       setBusy(false);
       return;
     }
@@ -47,16 +49,16 @@ export default function LoginPage() {
         <div className="mb-9 flex flex-col items-center gap-5 text-center">
           <BrandLogo size={64} />
           <div className="flex flex-col gap-2">
-            <h1 className="title-lg text-[34px]">Sign in</h1>
+            <h1 className="title-lg text-[34px]">{t("auth.signIn")}</h1>
             <p className="text-[15px]" style={{ color: "var(--text-secondary)" }}>
-              CareOS care operations platform
+              {t("auth.tagline")}
             </p>
           </div>
         </div>
 
         <form onSubmit={onSubmit} className="card flex flex-col gap-5 p-7">
           <div>
-            <label className="label" htmlFor="email">Work email</label>
+            <label className="label" htmlFor="email">{t("auth.workEmail")}</label>
             <input
               id="email"
               type="email"
@@ -65,11 +67,11 @@ export default function LoginPage() {
               className="input h-12"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@agency.com"
+              placeholder={t("auth.emailPlaceholder")}
             />
           </div>
           <div>
-            <label className="label" htmlFor="password">Password</label>
+            <label className="label" htmlFor="password">{t("auth.password")}</label>
             <input
               id="password"
               type="password"
@@ -94,10 +96,10 @@ export default function LoginPage() {
           )}
 
           <button className="btn btn-primary btn-lg btn-block mt-1" disabled={busy} type="submit">
-            {busy ? "Signing in…" : "Continue"}
+            {busy ? t("auth.signingIn") : t("auth.continue")}
           </button>
           <p className="text-center text-[13px] leading-snug" style={{ color: "var(--text-secondary)" }}>
-            You'll verify with your authenticator app next. Patient records require a verified session.
+            {t("auth.mfaNext")}
           </p>
         </form>
       </div>

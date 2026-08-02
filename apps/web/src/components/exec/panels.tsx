@@ -10,15 +10,17 @@ import {
 } from "@/components/icons";
 import { BarRow, DataPoint, MiniColumns, RingStat } from "./viz";
 import type { ExecMetrics } from "@/lib/exec/metrics";
+import { getT } from "@/lib/i18n/server";
 
 /* ── Command hero — greeting + agency + date ── */
-export function CommandHero({
+export async function CommandHero({
   name,
   agencyName,
 }: {
   name: string;
   agencyName: string;
 }) {
+  const t = await getT();
   const hour = new Date().getHours();
   const part = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const first = name.split(/\s+/)[0] || name;
@@ -35,7 +37,7 @@ export function CommandHero({
       </div>
       <span className="chip chip-neutral" title="All records are versioned and hash-chained by design">
         <IconLock width={12} height={12} />
-        Append-only records
+        {t("common.appendOnlyRecords")}
       </span>
     </div>
   );
@@ -324,12 +326,13 @@ export function HorizonPanel() {
 }
 
 /* ── Jump-to nav ── */
-export function QuickNav() {
+export async function QuickNav() {
+  const t = await getT();
   const links = [
-    { href: "/office/clients", label: "Clients", icon: <IconUsers width={16} height={16} /> },
-    { href: "/office/staff", label: "Staff", icon: <IconShield width={16} height={16} /> },
-    { href: "/clinical", label: "Clinical queue", icon: <IconPen width={16} height={16} /> },
-    { href: "/office/forms", label: "Records", icon: <IconClipboard width={16} height={16} /> },
+    { href: "/office/clients", label: t("nav.clients"), icon: <IconUsers width={16} height={16} /> },
+    { href: "/office/staff", label: t("nav.staff"), icon: <IconShield width={16} height={16} /> },
+    { href: "/clinical", label: t("nav.clinical"), icon: <IconPen width={16} height={16} /> },
+    { href: "/office/forms", label: t("nav.forms"), icon: <IconClipboard width={16} height={16} /> },
   ];
   return (
     <div className="flex flex-wrap gap-2">

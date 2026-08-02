@@ -4,9 +4,13 @@ import { Avatar, Badge, EmptyState, PageHeader, SectionTitle, StatusChip, TintTi
 import { IconCalendar, IconChevronRight, IconClipboard, IconClock, IconMapPin, IconCheck } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
 import { VoiceNote } from "@/components/voice-note";
+import { getLocale, getT } from "@/lib/i18n/server";
 import { ClockButton } from "./clock-button";
 
-export const metadata = { title: "Today" };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: t("page.today") };
+}
 export const dynamic = "force-dynamic";
 
 type Visit = {
@@ -23,11 +27,13 @@ type Visit = {
 function clientOf(v: Visit) {
   return Array.isArray(v.client) ? v.client[0] : v.client;
 }
-function timeOf(iso: string) {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+function timeOf(iso: string, locale: string) {
+  return new Date(iso).toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
 }
 
 export default async function TodayPage() {
+  const t = await getT();
+  const locale = await getLocale();
   const supabase = await supabaseServer();
   const {
     data: { user },
@@ -64,40 +70,40 @@ export default async function TodayPage() {
     .order("updated_at", { ascending: false })
     .limit(5);
 
-  const today = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const today = now.toLocaleDateString(locale, { weekday: "long", month: "long", day: "numeric" });
   const doneCount = todays.filter((v) => v.status === "completed").length;
   const sub = todays.length
-    ? `${today} · ${doneCount}/${todays.length} visits completed`
+    ? `${today} · ${t("today.subVisits", { done: doneCount, total: todays.length })}`
     : today;
 
   return (
     <AppShell active="/today">
       <div className="rise mx-auto max-w-xl">
-        <PageHeader title="Today" sub={sub} />
+        <PageHeader title={t("page.today")} sub={sub} />
 
         {/* ── Today's visits ── */}
         <section className="mb-6">
-          <SectionTitle icon={<IconCalendar width={16} height={16} />}>Your visits</SectionTitle>
+          <SectionTitle icon={<IconCalendar width={16} height={16} />}>{t("today.yourVisits")}</SectionTitle>
           {!todays.length ? (
             <EmptyState
               icon={<IconCalendar />}
-              title="No visits scheduled today"
-              body="Visits scheduled by your coordinator appear here with the time, client, and address."
+              title={t("today.noVisitsTitle")}
+              body={t("today.noVisitsBody")}
             />
           ) : (
             <div className="stagger flex flex-col gap-3">
               {todays.map((v) => {
                 const c = clientOf(v);
-                const name = c ? `${c.first_name} ${c.last_name}` : "Client";
+                const name = c ? `${c.first_name} ${c.last_name}` : t("today.clientFallback");
                 const done = v.status === "completed";
                 const active = v.status === "in_progress";
                 return (
                   <div key={v.id} className="card p-4">
                     <div className="flex items-center gap-3.5">
                       <div className="flex w-14 shrink-0 flex-col items-center">
-                        <span className="tabular text-[15px] font-semibold">{timeOf(v.scheduled_start)}</span>
+                        <span className="tabular text-[15px] font-semibold">{timeOf(v.scheduled_start, locale)}</span>
                         <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-                          {timeOf(v.scheduled_end)}
+                          {timeOf(v.scheduled_end, locale)}
                         </span>
                       </div>
                       <Avatar name={name} size={44} />
@@ -111,16 +117,16 @@ export default async function TodayPage() {
                         )}
                       </div>
                       {done ? (
-                        <Badge tone="success" icon={<IconCheck />}>Completed</Badge>
+                        <Badge tone="success" icon={<IconCheck />}>{t("today.completed")}</Badge>
                       ) : active ? (
-                        <Badge tone="warning" icon={<IconClock />}>In progress</Badge>
+                        <Badge tone="warning" icon={<IconClock />}>{t("today.inProgress")}</Badge>
                       ) : null}
                     </div>
                     <div className="mt-3 flex items-center gap-2">
                       <ClockButton visitId={v.id} mode={done ? "done" : active ? "clock_out" : "clock_in"} />
                       <Link href={`/office/clients/${v.client_id}`} className="btn btn-secondary btn-sm min-h-11">
                         <IconClipboard width={15} height={15} />
-                        Open notes
+                        {t("today.openNotes")}
                       </Link>
                     </div>
                     {/* Speak the note instead of typing it. The draft is reviewed section by
@@ -132,27 +138,26 @@ export default async function TodayPage() {
             </div>
           )}
           <p className="mt-3 px-1 text-[12px]" style={{ color: "var(--text-muted)" }}>
-            Clock in records a GPS-verified visit event (EVV) on the visit record. Your location is captured once
-            at clock-in and once at clock-out. It is not tracked in between.
+            {t("today.evvNote")}
           </p>
         </section>
 
         {/* ── Upcoming ── */}
         {upcoming.length > 0 && (
           <section className="mb-6">
-            <SectionTitle>Upcoming visits</SectionTitle>
+            <SectionTitle>{t("today.upcoming")}</SectionTitle>
             <div className="card stagger divide-y hairline overflow-hidden">
               {upcoming.map((v) => {
                 const c = clientOf(v);
-                const name = c ? `${c.first_name} ${c.last_name}` : "Client";
+                const name = c ? `${c.first_name} ${c.last_name}` : t("today.clientFallback");
                 return (
                   <Link key={v.id} href={`/office/clients/${v.client_id}`} className="row-link group min-h-14">
                     <TintTile icon={<IconCalendar width={18} height={18} />} size={40} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[15px] font-medium">{name}</p>
                       <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>
-                        {new Date(v.scheduled_start).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
-                        {" · "}{timeOf(v.scheduled_start)}
+                        {new Date(v.scheduled_start).toLocaleDateString(locale, { weekday: "short", month: "short", day: "numeric" })}
+                        {" · "}{timeOf(v.scheduled_start, locale)}
                       </p>
                     </div>
                     <IconChevronRight style={{ color: "var(--text-muted)" }} />
@@ -165,10 +170,10 @@ export default async function TodayPage() {
 
         {/* ── My clients ── */}
         <section className="mb-6">
-          <SectionTitle>My clients</SectionTitle>
+          <SectionTitle>{t("nav.myClients")}</SectionTitle>
           {!assignments?.length ? (
             <p className="card px-5 py-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>
-              No clients assigned. Assigned clients appear here.
+              {t("today.noClients")}
             </p>
           ) : (
             <div className="card stagger divide-y hairline overflow-hidden">
@@ -194,24 +199,24 @@ export default async function TodayPage() {
 
         {/* ── My open notes ── */}
         <section>
-          <SectionTitle>My open notes</SectionTitle>
+          <SectionTitle>{t("today.myOpenNotes")}</SectionTitle>
           {!myDrafts?.length ? (
             <p className="card px-5 py-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>
-              No open drafts. Drafts are saved automatically and appear here.
+              {t("today.noDrafts")}
             </p>
           ) : (
             <div className="card stagger divide-y hairline overflow-hidden">
               {myDrafts.map((f) => {
-                const t = Array.isArray(f.form_template) ? f.form_template[0] : f.form_template;
+                const tpl = Array.isArray(f.form_template) ? f.form_template[0] : f.form_template;
                 const c = Array.isArray(f.client) ? f.client[0] : f.client;
                 return (
                   <Link key={f.id} href={`/office/forms/${f.id}`} className="row-link group min-h-14">
                     <TintTile icon={<IconClipboard />} size={40} />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[15px] font-medium">{t?.title ?? "Note"}</p>
+                      <p className="truncate text-[15px] font-medium">{tpl?.title ?? t("today.noteFallback")}</p>
                       <p className="text-[13px]" style={{ color: "var(--text-muted)" }}>
-                        {c ? `${c.first_name} ${c.last_name} · ` : ""}saved{" "}
-                        {new Date(f.updated_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                        {c ? `${c.first_name} ${c.last_name} · ` : ""}
+                        {t("today.savedAt", { time: timeOf(f.updated_at, locale) })}
                       </p>
                     </div>
                     <StatusChip status={f.status} />

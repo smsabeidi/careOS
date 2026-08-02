@@ -6,6 +6,7 @@ import {
 import { IconBadge, IconShield, IconAlert, IconCheck, IconClock } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/profile";
+import { getT } from "@/lib/i18n/server";
 
 export const metadata = { title: "Credentials" };
 export const dynamic = "force-dynamic";
@@ -55,6 +56,7 @@ export default async function CredentialsPage({
   const params = await searchParams;
   const filter = FILTERS.some((f) => f.key === params.filter) ? params.filter! : "all";
   await requireRole(ROLES);
+  const t = await getT();
   const supabase = await supabaseServer();
 
   const { data: rows, error } = await supabase
@@ -69,10 +71,10 @@ export default async function CredentialsPage({
     return (
       <AppShell active="/office/credentials">
         <div className="rise">
-          <PageHeader title="Credentials" sub="All licenses, certifications, and screenings" />
+          <PageHeader title={t("page.credentials")} sub="All licenses, certifications, and screenings" />
           <ErrorState
-            title="Couldn't load credentials"
-            body="Nothing was changed. Refresh to try again. If the problem continues, contact your administrator."
+            title={t("states.errorTitle")}
+            body={t("states.errorBody")}
           />
         </div>
       </AppShell>
@@ -110,7 +112,7 @@ export default async function CredentialsPage({
   return (
     <AppShell active="/office/credentials">
       <div className="rise">
-        <PageHeader title="Credentials" sub={sub} />
+        <PageHeader title={t("page.credentials")} sub={sub} />
 
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <MetricTile label="Valid" value={counts.valid} tone="success" icon={<IconCheck />} />
@@ -132,7 +134,7 @@ export default async function CredentialsPage({
         {!shown.length ? (
           <EmptyState
             icon={<IconBadge />}
-            title={filter === "all" ? "No credentials on file yet" : "No credentials match this filter"
+            title={filter === "all" ? "No credentials on file yet" : t("states.noResults")
             }
             body={
               filter === "all"
@@ -141,7 +143,7 @@ export default async function CredentialsPage({
             }
             action={
               filter === "all" ? undefined : (
-                <Link href="/office/credentials" className="btn btn-secondary btn-sm">Show all</Link>
+                <Link href="/office/credentials" className="btn btn-secondary btn-sm">{t("common.showAll")}</Link>
               )
             }
           />

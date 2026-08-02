@@ -4,7 +4,10 @@ import type { ReactNode } from "react";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getProfile, homeFor } from "@/lib/profile";
 import { elevateDemoSession } from "@/lib/demo-totp";
+import { getT } from "@/lib/i18n/server";
+import type { TranslationKey } from "@/lib/i18n/dictionaries";
 import { BrandLogo } from "./logo";
+import { ChromeControls } from "./chrome-controls";
 import { StatusChip, Avatar } from "./ui";
 import {
   IconUsers, IconClipboard, IconActivity, IconHome, IconHeart, IconLogOut,
@@ -12,7 +15,10 @@ import {
   IconSparkle, IconInbox, IconPlus, IconSearch,
 } from "./icons";
 
-type NavItem = { href: string; label: string; icon: ReactNode };
+/** Rails carry a translation KEY, not a string: the label is resolved once, at
+ *  render, in the request's language (invariant 14 — plain language, and the
+ *  caregiver's plain language may be Spanish). */
+type NavItem = { href: string; labelKey: TranslationKey; icon: ReactNode };
 
 /* ── Demo mode — the "View as …" persona switcher ───────────────────────────────
  * Flag-gated (CAREOS_DEMO_MODE), so it can be enabled on a SYNTHETIC deployment
@@ -41,46 +47,46 @@ function navFor(roles: string[]): NavItem[] {
     // Command → what needs a decision → who it is about → the regulator's view,
     // then the two AI surfaces. Schedule and Credentials are one click from Command.
     return [
-      { href: "/exec", label: "Command", icon: <IconActivity /> },
-      { href: "/inbox", label: "Approvals", icon: <IconInbox /> },
-      { href: "/office/clients", label: "Clients", icon: <IconUsers /> },
-      { href: "/office/compliance", label: "Compliance", icon: <IconClipboardCheck /> },
-      { href: "/office/intake", label: "Intake", icon: <IconPlus /> },
-      { href: "/analytics", label: "Analytics", icon: <IconSearch /> },
-      { href: "/brain", label: "Brain", icon: <IconSparkle /> },
+      { href: "/exec", labelKey: "nav.command", icon: <IconActivity /> },
+      { href: "/inbox", labelKey: "nav.approvals", icon: <IconInbox /> },
+      { href: "/office/clients", labelKey: "nav.clients", icon: <IconUsers /> },
+      { href: "/office/compliance", labelKey: "nav.compliance", icon: <IconClipboardCheck /> },
+      { href: "/office/intake", labelKey: "nav.intake", icon: <IconPlus /> },
+      { href: "/analytics", labelKey: "nav.analytics", icon: <IconSearch /> },
+      { href: "/brain", labelKey: "nav.brain", icon: <IconSparkle /> },
     ];
   }
   if (roles.includes("coordinator") || roles.includes("hr")) {
     // Analytics is an owner/admin/coordinator surface; HR gets the same rail without it.
     const rail: NavItem[] = [
-      { href: "/office/clients", label: "Clients", icon: <IconUsers /> },
-      { href: "/schedule", label: "Schedule", icon: <IconCalendar /> },
-      { href: "/inbox", label: "Approvals", icon: <IconInbox /> },
-      { href: "/office/compliance", label: "Compliance", icon: <IconClipboardCheck /> },
-      { href: "/office/intake", label: "Intake", icon: <IconPlus /> },
+      { href: "/office/clients", labelKey: "nav.clients", icon: <IconUsers /> },
+      { href: "/schedule", labelKey: "nav.schedule", icon: <IconCalendar /> },
+      { href: "/inbox", labelKey: "nav.approvals", icon: <IconInbox /> },
+      { href: "/office/compliance", labelKey: "nav.compliance", icon: <IconClipboardCheck /> },
+      { href: "/office/intake", labelKey: "nav.intake", icon: <IconPlus /> },
     ];
     if (roles.includes("coordinator")) {
-      rail.push({ href: "/analytics", label: "Analytics", icon: <IconSearch /> });
+      rail.push({ href: "/analytics", labelKey: "nav.analytics", icon: <IconSearch /> });
     }
-    rail.push({ href: "/brain", label: "Brain", icon: <IconSparkle /> });
+    rail.push({ href: "/brain", labelKey: "nav.brain", icon: <IconSparkle /> });
     return rail;
   }
   if (roles.includes("rn")) {
     return [
-      { href: "/clinical", label: "Clinical", icon: <IconPen /> },
-      { href: "/inbox", label: "Approvals", icon: <IconInbox /> },
-      { href: "/office/clients", label: "Clients", icon: <IconUsers /> },
-      { href: "/brain", label: "Brain", icon: <IconSparkle /> },
+      { href: "/clinical", labelKey: "nav.clinical", icon: <IconPen /> },
+      { href: "/inbox", labelKey: "nav.approvals", icon: <IconInbox /> },
+      { href: "/office/clients", labelKey: "nav.clients", icon: <IconUsers /> },
+      { href: "/brain", labelKey: "nav.brain", icon: <IconSparkle /> },
     ];
   }
   if (roles.includes("caregiver")) {
     return [
-      { href: "/today", label: "Today", icon: <IconHome /> },
-      { href: "/office/clients", label: "My clients", icon: <IconUsers /> },
-      { href: "/office/forms", label: "My notes", icon: <IconClipboard /> },
+      { href: "/today", labelKey: "nav.today", icon: <IconHome /> },
+      { href: "/office/clients", labelKey: "nav.myClients", icon: <IconUsers /> },
+      { href: "/office/forms", labelKey: "nav.myNotes", icon: <IconClipboard /> },
     ];
   }
-  return [{ href: "/family", label: "Family", icon: <IconHeart /> }];
+  return [{ href: "/family", labelKey: "nav.family", icon: <IconHeart /> }];
 }
 
 function BrandMark({ size = 30 }: { size?: number }) {
@@ -126,6 +132,7 @@ export async function AppShell({
   active: string;
 }) {
   const profile = await getProfile();
+  const t = await getT();
   const name = profile?.name ?? "Signed in";
   const nav = navFor(profile?.roles ?? []);
 
@@ -150,7 +157,7 @@ export async function AppShell({
               aria-current={active === item.href ? "page" : undefined}
             >
               {item.icon}
-              {item.label}
+              {t(item.labelKey)}
             </Link>
           ))}
         </nav>
@@ -162,7 +169,7 @@ export async function AppShell({
               style={{ color: "var(--text-muted)", letterSpacing: "0.04em" }}
             >
               <IconEye width={13} height={13} />
-              Demo · View as
+              {`${t("nav.demo")} · ${t("nav.viewAs")}`}
             </p>
             <div className="flex flex-col gap-0.5">
               {DEMO_PERSONAS.map((p) => {
@@ -199,7 +206,7 @@ export async function AppShell({
           <form action={signOut}>
             <button className="rail-link w-full" type="submit">
               <IconLogOut />
-              Sign out
+              {t("nav.signOut")}
             </button>
           </form>
         </div>
@@ -208,16 +215,30 @@ export async function AppShell({
       <div className="flex min-w-0 flex-1 flex-col">
         {/* ── Mobile frosted top bar ── */}
         <header
-          className="material sticky top-0 z-20 flex h-14 items-center justify-between border-b px-4 md:hidden hairline"
+          className="material sticky top-0 z-20 flex h-14 items-center justify-between gap-2 border-b px-4 md:hidden hairline"
         >
-          <Link href="/" className="flex items-center gap-2.5">
+          <Link href="/" className="flex min-w-0 items-center gap-2.5">
             <BrandMark size={26} />
-            <span className="text-[17px] font-semibold tracking-[-0.02em]">CareOS</span>
+            {/* The wordmark yields below 360px so the session chip and the chrome
+                cluster both stay whole on a small phone. The mark never yields. */}
+            <span className="text-[17px] font-semibold tracking-[-0.02em] max-[359px]:hidden">CareOS</span>
           </Link>
-          <StatusChip status="aal2" />
+          <div className="flex shrink-0 items-center gap-2">
+            <StatusChip status="aal2" />
+            <ChromeControls />
+          </div>
         </header>
 
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 md:px-10 md:py-10">{children}</main>
+        {/* ── Desktop chrome row — the cluster's top-right anchor ──
+         * In flow (never overlapping a page header) but `sticky`, so it stays in
+         * the corner as the page scrolls and content passes under the frosted
+         * pill. `main`'s top padding is reduced to match, so the total space
+         * above a page title is close to what it was before the row existed. */}
+        <div className="pointer-events-none sticky top-0 z-30 mx-auto hidden w-full max-w-5xl justify-end px-10 pt-5 md:flex">
+          <ChromeControls className="pointer-events-auto" />
+        </div>
+
+        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 md:px-10 md:pt-3 md:pb-10">{children}</main>
 
         {/* ── iOS-style frosted tab bar ── */}
         <nav
@@ -237,7 +258,7 @@ export async function AppShell({
                 style={{ color: on ? "var(--accent-text)" : "var(--text-secondary)" }}
               >
                 {item.icon}
-                {item.label}
+                {t(item.labelKey)}
               </Link>
             );
           })}

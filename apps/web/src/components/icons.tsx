@@ -178,6 +178,41 @@ export const IconEye = (p: SVGProps<SVGSVGElement>) => (
     <circle cx="12" cy="12" r="3" />
   </svg>
 );
+/* ── Chrome controls (appearance + language) ──
+ * Drawn on the same 24 grid at the same optical weight as the rest of the set, so
+ * the top-right cluster reads as part of the system and not a borrowed icon font.
+ * All three appearance glyphs occupy the same optical box — swapping one for
+ * another when the theme changes must not move a single pixel. */
+
+// Appearance · light
+export const IconSun = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="4.2" />
+    <path d="M12 2.6v2.3M12 19.1v2.3M4.35 4.35l1.63 1.63M18.02 18.02l1.63 1.63M2.6 12h2.3M19.1 12h2.3M4.35 19.65l1.63-1.63M18.02 5.98l1.63-1.63" />
+  </svg>
+);
+// Appearance · dark
+export const IconMoon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1Z" />
+  </svg>
+);
+// Appearance · follow the operating system
+export const IconMonitor = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <rect x="2.5" y="4" width="19" height="13" rx="2.4" />
+    <path d="M8.5 21h7M12 17v4" />
+  </svg>
+);
+// Language — globe with meridians; the locale code beside it carries the meaning
+export const IconLanguage = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3.3 9.4h17.4M3.3 14.6h17.4" />
+    <path d="M12 3c2.8 2.5 4.2 5.5 4.2 9s-1.4 6.5-4.2 9c-2.8-2.5-4.2-5.5-4.2-9S9.2 5.5 12 3Z" />
+  </svg>
+);
+
 // Metric trend deltas
 export const IconArrowUpRight = (p: SVGProps<SVGSVGElement>) => (
   <svg {...base(p)}>

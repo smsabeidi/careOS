@@ -4,6 +4,7 @@ import { Avatar, EmptyState, PageHeader, SectionTitle, StatusChip } from "@/comp
 import { IconCalendar, IconClipboard, IconHeart, IconLock, IconShield, IconUsers } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/profile";
+import { getT } from "@/lib/i18n/server";
 
 export const metadata = { title: "Staff" };
 export const dynamic = "force-dynamic";
@@ -37,6 +38,7 @@ type StaffRow = {
 
 export default async function StaffPage() {
   await requireRole(["owner", "admin", "coordinator", "hr"]);
+  const t = await getT();
   const supabase = await supabaseServer();
 
   const [{ data: staff }, { data: activeAssignments }] = await Promise.all([
@@ -78,7 +80,7 @@ export default async function StaffPage() {
     <AppShell active="/office/staff">
       <div className="rise">
         <PageHeader
-          title="Staff"
+          title={t("page.staff")}
           sub={`${activeCount} active staff members across ${grouped.length} roles`}
         />
 

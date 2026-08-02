@@ -5,7 +5,8 @@
    ───────────────────────────────────────────────────────────────────────────
    Inter — one corporate face (UI · display titles · numerals) · 4-pt grid · continuous corners
    Apple systemGray canvas · one confident system-blue accent · soft depth · frosted chrome
-   Light mode only. AA contrast enforced. Compliance states are ALWAYS color + icon + label.
+   Light + dark appearance (dark supersedes the light-only clause of D-012).
+   AA contrast enforced in BOTH. Compliance states are ALWAYS color + icon + label.
    Motion is CSS-only (transform/opacity), spring-feel, and fully reduced-motion-safe.
    Token NAMES are preserved from the previous system so every surface re-skins at once;
    VALUES are Apple. Add here, never inline.
@@ -73,7 +74,9 @@
   --shadow-lg: 0 16px 48px rgb(17 24 39 / 0.12), 0 4px 12px rgb(17 24 39 / 0.06);
 }
 
-/* ── Semantic layer (light only) + motion + material ── */
+/* ── Semantic layer (LIGHT appearance) + motion + material ──
+   Every component reads from here, never from a literal. The dark appearance
+   below overrides these same names — that is the whole mechanism. ── */
 :root {
   color-scheme: light;
 
@@ -108,6 +111,28 @@
   --shadow-1: var(--shadow-sm);
   --shadow-2: var(--shadow-md);
 
+  /* ── Component slots that used to be hardcoded light literals ──
+     Every one of these is a value that must differ between appearances but whose
+     RULE must not. Tokenising them keeps each component rule single and
+     unconditional — the dark block below only swaps values, never re-declares
+     selectors. Light values are byte-identical to what they replaced. */
+  --accent-fill: var(--accent);              /* solid accent under a white label */
+  --accent-fill-hover: var(--accent-hover);
+  --accent-soft-hover: color-mix(in srgb, var(--accent) 16%, #fff);
+  --danger-fill: var(--color-danger-600);    /* solid red under a white label */
+  --danger-fill-hover: var(--color-danger-700);
+  --btn-secondary-hover: #ffffff;
+  --segment-selected: #ffffff;               /* segmented + tab selected pill */
+  --chip-success-border: #b7ecc4;
+  --chip-warning-border: #ffdca6;
+  --chip-danger-border: #ffc9c4;
+  --skeleton-base: var(--color-surface-150);
+  --skeleton-sheen: var(--color-surface-100);
+  --scrim: rgb(0 0 0 / 0.32);
+  --selection-bg: color-mix(in srgb, var(--accent) 22%, transparent);
+  --overlay-border: var(--border);           /* popover edge */
+  --sheet-ring: transparent;                 /* dark replaces the vanishing sheet shadow */
+
   /* Motion — strong custom curves (emil) + a subtle spring, all CSS */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
@@ -121,6 +146,261 @@
   --dur: 200ms;
   --dur-slow: 320ms;
   --dur-sheet: 460ms;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   DARK APPEARANCE — Apple dark system palette
+   ═══════════════════════════════════════════════════════════════════════════
+   This is a SEMANTIC + PRIMITIVE override. No component file changes for dark:
+   surfaces read `--panel`/`--bg`/`--text`…, and several read the raw ramp
+   (`var(--color-surface-100)`, `var(--color-danger-700)`, …), so BOTH tiers are
+   remapped here.
+
+   CANVAS DECISION — `--bg: #000000` (true black), not #1c1c1e.
+   Light's canvas is systemGray6 (#f2f2f7): Apple's *grouped* background, with
+   white cells sitting on it. The exact dark counterpart of the grouped canvas
+   is true black with #1c1c1e cells — that is what iOS/iPadOS and apple.com ship
+   in dark. It also buys us card definition for free: on dark, box-shadows are
+   nearly invisible, so separation has to come from the panel being LIGHTER than
+   the canvas. #000 → #1c1c1e → #2c2c2e gives three legible elevation steps
+   without a single visible shadow. (#1c1c1e as canvas was the alternative; it
+   collapses that first step and forces every card onto a border.)
+
+   ELEVATION INVERTS: raised surfaces get lighter, never darker.
+
+   RAMP INVERSION IS ROLE-PRESERVING, not lightness-preserving. Components use
+   low surface numbers as fills/backgrounds and high numbers as text, so in dark
+   the low end becomes near-canvas dark fills and the high end becomes light
+   labels. Every number keeps its JOB; only its lightness flips.
+
+   CONTRAST — every pairing below was computed (WCAG 2.x relative luminance):
+     --text #f2f2f7        on --panel #1c1c1e ....... 15.4:1   AA/AAA ✓
+     --text #f2f2f7        on --bg #000000 .......... 18.8:1   AA/AAA ✓
+     --text-secondary      on --panel ................ 6.7:1   AA ✓
+     --text-secondary      on --panel-raised #2c2c2e . 5.4:1   AA ✓
+     --text-muted #98989d  on --panel ................ 5.9:1   AA ✓
+     --text-muted #98989d  on --panel-raised ......... 4.8:1   AA ✓
+   NOTE ON --text-muted: Apple's systemGray #8e8e93 lands at 4.23:1 on
+   --panel-raised — a FAIL. It is lifted one step to #98989d, exactly as light
+   mode lifted #8e8e93 → #6b6b70 for the same reason. Apple's grey, our floor.
+
+   ⚠ TWO SELECTORS, ONE BODY. The `@media` copy makes system-dark correct on
+   first paint, before any theme script runs (no white flash, and dark still
+   works with JS disabled). The attribute copy comes second so an explicit user
+   choice wins at equal specificity. KEEP THE TWO DECLARATION BODIES IDENTICAL.
+════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1 of 2 · system preference, unless the user explicitly chose light ── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --bg: #000000;
+    --panel: #1c1c1e;
+    --panel-raised: #2c2c2e;
+
+    --border: rgb(255 255 255 / 0.12);
+    --border-strong: rgb(255 255 255 / 0.2);
+    --separator: rgb(255 255 255 / 0.16);
+
+    --text: #f2f2f7;
+    --text-secondary: #a1a1a6;
+    --text-muted: #98989d;
+
+    --accent: #0a84ff;
+    --accent-hover: #0a6fd6;
+    --accent-active: #0a5cb0;
+    --accent-text: #5aa9ff;
+    --accent-soft: rgb(10 132 255 / 0.16);
+    --accent-soft-border: rgb(10 132 255 / 0.32);
+    --ring: #0a84ff;
+
+    --material: rgb(28 28 30 / 0.72);
+    --material-strong: rgb(28 28 30 / 0.86);
+    --material-edge: rgb(255 255 255 / 0.08);
+
+    --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.5);
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.55), 0 1px 3px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 4px 16px rgb(0 0 0 / 0.6), 0 1px 4px rgb(0 0 0 / 0.45);
+    --shadow-lg: 0 24px 64px rgb(0 0 0 / 0.72), 0 6px 20px rgb(0 0 0 / 0.5);
+
+    --color-surface-25: #202022;
+    --color-surface-50: #242426;
+    --color-surface-100: #2c2c2e;
+    --color-surface-150: #333336;
+    --color-surface-200: #3a3a3c;
+    --color-surface-300: #48484a;
+    --color-surface-400: #58585c;
+    --color-surface-500: #7c7c80;
+    --color-surface-600: #8e8e93;
+    --color-surface-700: #aeaeb2;
+    --color-surface-800: #c7c7cc;
+    --color-surface-850: #d1d1d6;
+    --color-surface-900: #f2f2f7;
+    --color-surface-950: #ffffff;
+
+    --color-accent-50: rgb(10 132 255 / 0.16);
+    --color-accent-100: rgb(10 132 255 / 0.32);
+    --color-accent-200: #17548f;
+    --color-accent-300: #2f7fd4;
+    --color-accent-400: #0a84ff;
+    --color-accent-500: #0a84ff;
+    --color-accent-600: #0a84ff;
+    --color-accent-700: #0a6fd6;
+    --color-accent-800: #5aa9ff;
+    --color-accent-900: #8cc4ff;
+
+    --color-success-50: rgb(48 209 88 / 0.16);
+    --color-success-600: #30d158;
+    --color-success-700: #30d158;
+    --color-warning-50: rgb(255 159 10 / 0.16);
+    --color-warning-600: #ff9f0a;
+    --color-warning-700: #ff9f0a;
+    --color-danger-50: rgb(255 69 58 / 0.16);
+    --color-danger-600: #ff453a;
+    --color-danger-700: #ff6961;
+    --color-info-50: rgb(10 132 255 / 0.16);
+    --color-info-600: #0a84ff;
+    --color-info-700: #5aa9ff;
+
+    --accent-fill: #0b6fd6;
+    --accent-fill-hover: #0a5cb0;
+    --accent-soft-hover: rgb(10 132 255 / 0.28);
+    --danger-fill: #d13930;
+    --danger-fill-hover: #b52f27;
+    --btn-secondary-hover: #3a3a3c;
+    --segment-selected: #48484a;
+    --chip-success-border: rgb(48 209 88 / 0.32);
+    --chip-warning-border: rgb(255 159 10 / 0.32);
+    --chip-danger-border: rgb(255 69 58 / 0.32);
+    --skeleton-base: rgb(255 255 255 / 0.05);
+    --skeleton-sheen: rgb(255 255 255 / 0.11);
+    --scrim: rgb(0 0 0 / 0.6);
+    --selection-bg: color-mix(in srgb, var(--accent) 38%, transparent);
+    --overlay-border: var(--border-strong);
+    --sheet-ring: rgb(255 255 255 / 0.14);
+  }
+}
+
+/* ── 2 of 2 · explicit user choice (wins over the system copy above) ──
+   Identical body. See the ⚠ note. Value rationale lives on this copy. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Canvas → cell → raised cell. Elevation gets LIGHTER. */
+  --bg: #000000;
+  --panel: #1c1c1e;        /* systemGray6 dark — the grouped cell */
+  --panel-raised: #2c2c2e; /* systemGray5 dark — popovers, inset fills */
+
+  /* Hairlines invert to light-on-dark at low alpha. Alpha (not a flat hex) so a
+     border reads correctly over #000 canvas AND over a #2c2c2e raised surface. */
+  --border: rgb(255 255 255 / 0.12);
+  --border-strong: rgb(255 255 255 / 0.2);
+  --separator: rgb(255 255 255 / 0.16); /* ≈ Apple's rgb(84 84 88 / .65) over --panel */
+
+  /* Never #fff for body text — Apple's primary dark label is #f2f2f7. */
+  --text: #f2f2f7;         /* 15.4:1 on --panel · 18.8:1 on --bg */
+  --text-secondary: #a1a1a6; /* 6.7:1 on --panel · 5.4:1 on --panel-raised */
+  --text-muted: #98989d;   /* 5.9:1 / 4.8:1 — lifted off #8e8e93, which fails at 4.23:1 */
+
+  /* Dark systemBlue is brighter. --accent is used for icons, rings and active
+     indicators (non-text: needs 3:1 — it clears 4.7:1 on --panel).
+     Hover/active go DEEPER, not brighter, so white button labels stay AA. */
+  --accent: #0a84ff;
+  --accent-hover: #0a6fd6;
+  --accent-active: #0a5cb0;
+  --accent-text: #5aa9ff;  /* small blue text: 7.0:1 on --panel · 5.7:1 on --accent-soft */
+  --accent-soft: rgb(10 132 255 / 0.16);        /* a wash, not a pale tint */
+  --accent-soft-border: rgb(10 132 255 / 0.32);
+  --ring: #0a84ff;
+
+  /* Frosted chrome tints dark and keeps a faint light top edge (glass catching light). */
+  --material: rgb(28 28 30 / 0.72);
+  --material-strong: rgb(28 28 30 / 0.86);
+  --material-edge: rgb(255 255 255 / 0.08);
+
+  /* Depth on dark = black at higher alpha. These read on overlays (sheets,
+     popovers, menus) and all but vanish on the canvas — which is intended:
+     cards are separated by being lighter than --bg, plus a hairline. */
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.5);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.55), 0 1px 3px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 16px rgb(0 0 0 / 0.6), 0 1px 4px rgb(0 0 0 / 0.45);
+  --shadow-lg: 0 24px 64px rgb(0 0 0 / 0.72), 0 6px 20px rgb(0 0 0 / 0.5);
+
+  /* Surface ramp — role-preserving inversion (Apple dark systemGray ladder).
+     25–200 are fills that sit ON a panel; 600–950 are labels. */
+  --color-surface-25: #202022;  /* barest tint on a cell (weekend columns) */
+  --color-surface-50: #242426;  /* row / table hover */
+  --color-surface-100: #2c2c2e; /* systemGray5 — inset cards, segmented + tab tracks */
+  --color-surface-150: #333336; /* meter + progress tracks */
+  --color-surface-200: #3a3a3c; /* systemGray4 — strong hairline, chip borders */
+  --color-surface-300: #48484a; /* systemGray3 — switch off-track, field borders */
+  --color-surface-400: #58585c;
+  --color-surface-500: #7c7c80;
+  --color-surface-600: #8e8e93; /* systemGray — identical in both themes */
+  --color-surface-700: #aeaeb2; /* chip label: 6.2:1 on #2c2c2e ✓ */
+  --color-surface-800: #c7c7cc;
+  --color-surface-850: #d1d1d6;
+  --color-surface-900: #f2f2f7; /* primary label */
+  --color-surface-950: #ffffff;
+
+  /* Accent ramp. 800 stays the "AA text blue" slot, so in dark it is LIGHTER
+     than 700 — the ramp keeps its roles, not its monotonic lightness. */
+  --color-accent-50: rgb(10 132 255 / 0.16);
+  --color-accent-100: rgb(10 132 255 / 0.32);
+  --color-accent-200: #17548f;
+  --color-accent-300: #2f7fd4; /* secondary/inactive chart blue */
+  --color-accent-400: #0a84ff;
+  --color-accent-500: #0a84ff;
+  --color-accent-600: #0a84ff;
+  --color-accent-700: #0a6fd6;
+  --color-accent-800: #5aa9ff; /* = --accent-text */
+  --color-accent-900: #8cc4ff;
+
+  /* Semantic hues → Apple dark. The *-50 tints become low-alpha washes of the
+     600 hue (never a pale tint). The *-700 TEXT slots are lifted only where AA
+     demands it: green and orange already clear 6:1 on their own wash, so 600 and
+     700 converge; red at #ff453a is 4.14:1 on its wash — a fail — so the text
+     slot moves to #ff6961 (5.0:1 on the wash, 6.1:1 on --panel). */
+  --color-success-50: rgb(48 209 88 / 0.16);
+  --color-success-600: #30d158; /* systemGreen dark */
+  --color-success-700: #30d158; /* 6.1:1 on its wash · 8.5:1 on --panel ✓ */
+  --color-warning-50: rgb(255 159 10 / 0.16);
+  --color-warning-600: #ff9f0a; /* systemOrange dark */
+  --color-warning-700: #ff9f0a; /* 6.0:1 on its wash · 8.3:1 on --panel ✓ */
+  --color-danger-50: rgb(255 69 58 / 0.16);
+  --color-danger-600: #ff453a;  /* systemRed dark — fills, icons, rules */
+  --color-danger-700: #ff6961;  /* 5.0:1 on its wash · 6.1:1 on --panel ✓ */
+  --color-info-50: rgb(10 132 255 / 0.16);
+  --color-info-600: #0a84ff;
+  --color-info-700: #5aa9ff;
+
+  /* ── Component slots (see the light block for what each one feeds) ──
+     Filled buttons keep WHITE labels in dark, as Apple's do — so the FILL has to
+     carry the contrast. Apple's #0a84ff under white is 3.65:1 and #ff453a is
+     3.36:1; both fail AA. Each fill is deepened to the brightest value that
+     still clears 4.5:1, same hue, and hover/press go deeper still (mirroring
+     light). --accent itself stays the vivid #0a84ff for icons, rings and active
+     indicators, where the requirement is 3:1 non-text and it clears 4.7:1. */
+  --accent-fill: #0b6fd6;                  /* white label 4.9:1 ✓ */
+  --accent-fill-hover: #0a5cb0;            /* white label 6.6:1 ✓ */
+  --accent-soft-hover: rgb(10 132 255 / 0.28); /* a deeper wash — mixing toward
+                                              the panel would be invisible here */
+  --danger-fill: #d13930;                  /* white label 4.8:1 ✓ */
+  --danger-fill-hover: #b52f27;            /* white label 6.2:1 ✓ */
+  --btn-secondary-hover: #3a3a3c;          /* lighter than the #2c2c2e rest state */
+  --segment-selected: #48484a;             /* --text on it: 8.3:1 ✓ */
+  --chip-success-border: rgb(48 209 88 / 0.32);
+  --chip-warning-border: rgb(255 159 10 / 0.32);
+  --chip-danger-border: rgb(255 69 58 / 0.32);
+  --skeleton-base: rgb(255 255 255 / 0.05); /* alpha, so a skeleton is right on
+                                               canvas, card and popover alike */
+  --skeleton-sheen: rgb(255 255 255 / 0.11);
+  --scrim: rgb(0 0 0 / 0.6);               /* denser: a .32 scrim over dark is invisible */
+  --selection-bg: color-mix(in srgb, var(--accent) 38%, transparent);
+  --overlay-border: var(--border-strong);  /* floating edges need the stronger hairline */
+  --sheet-ring: rgb(255 255 255 / 0.14);   /* a sheet's drop shadow disappears on
+                                              dark — a light 1px ring replaces it */
 }
 
 @layer base {
@@ -146,7 +426,9 @@
     letter-spacing: -0.006em; /* Apple UI type sits a hair tight */
   }
   h1, h2, h3, h4 { letter-spacing: -0.02em; }
-  ::selection { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--text); }
+  /* Tokenised: a 22% accent wash reads on white but vanishes on black, so dark
+     raises it to 38%. --text stays legible over both. */
+  ::selection { background: var(--selection-bg); color: var(--text); }
   :focus-visible {
     outline: 2.5px solid var(--ring);
     outline-offset: 2px;
@@ -167,17 +449,24 @@
       transform: none !important;
     }
   }
-  /* Reduced transparency — frost becomes solid (apple-design §14) */
+  /* Reduced transparency — frost becomes solid (apple-design §14).
+     Tokenised (was #ffffff) so it resolves per theme: #fff light, #2c2c2e dark. */
   @media (prefers-reduced-transparency: reduce) {
     .material, .material-strong {
-      background: #ffffff !important;
+      background: var(--panel-raised) !important;
       -webkit-backdrop-filter: none !important;
       backdrop-filter: none !important;
     }
   }
-  /* High contrast — defined borders */
+  /* High contrast — defined borders. Ramp refs, not hexes (were #3a3a3c/#48484a):
+     the ramp inverts by role, so light pushes these labels darker and dark pushes
+     them lighter, from one rule. */
   @media (prefers-contrast: more) {
-    :root { --border: var(--color-surface-400); --text-secondary: #3a3a3c; --text-muted: #48484a; }
+    :root {
+      --border: var(--color-surface-400);
+      --text-secondary: var(--color-surface-850); /* light #3a3a3c · dark #d1d1d6 */
+      --text-muted: var(--color-surface-800);     /* light #48484a · dark #c7c7cc */
+    }
   }
 }
 
@@ -214,22 +503,26 @@
                 filter var(--dur) var(--ease-out);
   }
   @media (hover: hover) and (pointer: fine) {
-    .btn-primary:hover { background: var(--accent-hover); }
-    .btn-secondary:hover { background: #ffffff; border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+    /* Tokenised (were accent-hover / #ffffff / #fff / danger-700) — identical in
+       light, theme-correct in dark. */
+    .btn-primary:hover { background: var(--accent-fill-hover); }
+    .btn-secondary:hover { background: var(--btn-secondary-hover); border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
     .btn-white:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
-    .btn-tinted:hover { background: color-mix(in srgb, var(--accent) 16%, #fff); }
+    .btn-tinted:hover { background: var(--accent-soft-hover); }
     .btn-ghost:hover, .btn-plain:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
-    .btn-danger:hover { background: var(--color-danger-700); }
+    .btn-danger:hover { background: var(--danger-fill-hover); }
   }
   .btn:active { transform: scale(0.97); }
   .btn:disabled { opacity: 0.42; pointer-events: none; }
-  .btn-primary { background: var(--accent); color: #fff; box-shadow: var(--shadow-sm); }
+  /* --accent-fill, not --accent: the label is white, so the fill owes it 4.5:1.
+     Light = #007aff (unchanged); dark deepens it. Same for .btn-danger below. */
+  .btn-primary { background: var(--accent-fill); color: #fff; box-shadow: var(--shadow-sm); }
   .btn-secondary { background: var(--color-surface-100); color: var(--text); border: 1px solid var(--border); }
   /* White pill — for controls sitting directly on the gray grouped canvas (filters, toolbars) */
   .btn-white { background: var(--panel); color: var(--text-secondary); border: 1px solid var(--border); box-shadow: var(--shadow-xs); }
   .btn-tinted { background: var(--accent-soft); color: var(--accent-text); }
   .btn-ghost, .btn-plain { background: transparent; color: var(--accent-text); }
-  .btn-danger { background: var(--color-danger-600); color: #fff; box-shadow: var(--shadow-sm); }
+  .btn-danger { background: var(--danger-fill); color: #fff; box-shadow: var(--shadow-sm); }
   .btn-lg { height: 3.25rem; padding-inline: 1.5rem; font-size: 1.0625rem; border-radius: var(--radius-lg); } /* 52px field */
   .btn-sm { height: 2.25rem; padding-inline: 0.875rem; font-size: 0.8125rem; border-radius: var(--radius-sm); }
   .btn-pill { border-radius: var(--radius-pill, 980px); }
@@ -246,7 +539,8 @@
   .card-inset { background: var(--color-surface-100); border: 1px solid var(--border); border-radius: var(--radius-md); }
   .card-interactive {
     transition: box-shadow var(--dur) var(--ease-out), transform var(--dur-fast) var(--ease-out),
-                border-color var(--dur) var(--ease-out);
+                border-color var(--dur) var(--ease-out),
+                background-color var(--dur) var(--ease-out); /* also carries the theme flip */
   }
   @media (hover: hover) and (pointer: fine) {
     .card-interactive:hover { box-shadow: var(--shadow-md); border-color: var(--border-strong); }
@@ -261,9 +555,12 @@
   }
   .chip-neutral { background: var(--color-surface-100); color: var(--color-surface-700); border-color: var(--color-surface-200); }
   .chip-accent  { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent-soft-border); }
-  .chip-success { background: var(--color-success-50); color: var(--color-success-700); border-color: #b7ecc4; }
-  .chip-warning { background: var(--color-warning-50); color: var(--color-warning-700); border-color: #ffdca6; }
-  .chip-danger  { background: var(--color-danger-50); color: var(--color-danger-700); border-color: #ffc9c4; }
+  /* Borders tokenised (were #b7ecc4 / #ffdca6 / #ffc9c4). The 50/700 pairs are
+     themselves remapped in dark — wash background, lifted text — so every chip
+     clears AA in both appearances (worst pair: danger, 5.0:1). */
+  .chip-success { background: var(--color-success-50); color: var(--color-success-700); border-color: var(--chip-success-border); }
+  .chip-warning { background: var(--color-warning-50); color: var(--color-warning-700); border-color: var(--chip-warning-border); }
+  .chip-danger  { background: var(--color-danger-50); color: var(--color-danger-700); border-color: var(--chip-danger-border); }
   .chip-info    { background: var(--color-info-50); color: var(--color-info-700); border-color: var(--accent-soft-border); }
 
   /* ── Form fields — Apple grouped-field, blue focus glow, ≥44px ── */
@@ -277,7 +574,8 @@
     border: 1px solid var(--border-strong);
     color: var(--text);
     transition: border-color var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out),
-                background-color var(--dur) var(--ease-out);
+                background-color var(--dur) var(--ease-out),
+                color var(--dur) var(--ease-out); /* also carries the theme flip */
   }
   .input, .select { height: 2.875rem; } /* 46px */
   .textarea { @apply min-h-28 py-2.5 leading-relaxed; }
@@ -301,6 +599,8 @@
   }
   .switch::after {
     content: ""; position: absolute; top: 2px; left: 2px; width: 1.75rem; height: 1.75rem;
+    /* Knob stays white in BOTH appearances — this is Apple's behaviour, and on the
+       dark #48484a off-track it is the only thing that reads. Not a missed token. */
     border-radius: 50%; background: #fff; box-shadow: var(--shadow-sm);
     transition: transform var(--dur) var(--spring);
   }
@@ -321,13 +621,18 @@
     transition: background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out),
                 box-shadow var(--dur) var(--ease-out);
   }
-  .segmented > button[data-active="true"] { background: #fff; color: var(--text); box-shadow: var(--shadow-sm); }
+  /* Selected segment: tokenised (was #fff). In dark the track is #2c2c2e, so the
+     selected pill goes LIGHTER (#48484a) rather than white. */
+  .segmented > button[data-active="true"] { background: var(--segment-selected); color: var(--text); box-shadow: var(--shadow-sm); }
 
-  /* ── Skeletons — layout-mirroring shimmer (no spinner walls) ── */
+  /* ── Skeletons — layout-mirroring shimmer (no spinner walls) ──
+     Tokenised: in light the sheen is a LIGHTER grey than the base; on dark that
+     ordering inverts, so the ramp can't express it and the values swap to
+     white-alpha (which also makes a skeleton correct on any surface). */
   .skeleton {
     border-radius: var(--radius-sm);
     background: linear-gradient(100deg,
-      var(--color-surface-150) 38%, var(--color-surface-100) 50%, var(--color-surface-150) 62%);
+      var(--skeleton-base) 38%, var(--skeleton-sheen) 50%, var(--skeleton-base) 62%);
     background-size: 200% 100%;
     animation: shimmer 1.5s ease-in-out infinite;
   }
@@ -365,15 +670,18 @@
   }
 
   /* ── Overlays ── */
-  .scrim { background: rgb(0 0 0 / 0.32); -webkit-backdrop-filter: blur(1px); backdrop-filter: blur(1px); }
+  .scrim { background: var(--scrim); -webkit-backdrop-filter: blur(1px); backdrop-filter: blur(1px); }
   .sheet {
-    background: var(--panel); border-radius: var(--radius-2xl); box-shadow: var(--shadow-lg);
+    background: var(--panel); border-radius: var(--radius-2xl);
+    /* The 1px ring is transparent in light; in dark it replaces the drop shadow,
+       which all but disappears against a dark backdrop. No layout cost. */
+    box-shadow: var(--shadow-lg), 0 0 0 1px var(--sheet-ring);
     animation: sheet-in var(--dur-sheet) var(--ease-drawer) both;
   }
   .popover {
     background: var(--material-strong);
     -webkit-backdrop-filter: saturate(180%) blur(30px); backdrop-filter: saturate(180%) blur(30px);
-    border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+    border: 1px solid var(--overlay-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
     transform-origin: var(--transform-origin, top center);
     animation: popover-in var(--dur) var(--ease-out) both;
   }
@@ -397,3 +705,120 @@
 
 @keyframes sheet-in { from { opacity: 0; transform: translateY(12px) scale(0.985); } to { opacity: 1; transform: none; } }
 @keyframes popover-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Browser-painted surfaces the tokens don't reach on their own
+──────────────────────────────────────────────────────────────────────────── */
+
+/* Autofill. Chrome paints its own near-white/yellow fill and near-black text,
+   ignoring `background`. The inset trick is the only override; it is written
+   token-first so it is right in both appearances (and fixes the light-mode
+   yellow too). The absurd transition delay defeats Chrome's re-paint on blur. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--text);
+  -webkit-box-shadow: 0 0 0 1000px var(--panel) inset;
+  caret-color: var(--text);
+  border-color: var(--border-strong);
+  transition: background-color 600000s 0s;
+}
+
+/* Scrollbars, form controls, spinners and the pre-paint canvas are handled by
+   `color-scheme` on :root — declared in both appearance blocks. Nothing custom:
+   Apple's answer here is the platform scrollbar. */
+
+/* ── Shims for light literals that live in component inline styles ──
+   Inline styles outrank stylesheets, so these need !important. Each is written
+   against a token, so LIGHT renders byte-identical to the literal it overrides
+   and only dark actually changes. Each one is a one-line fix in its component;
+   until then, dark is correct without touching those files. */
+
+/* ui.tsx Tabs — selected tab hardcodes `background: "#fff"`.
+   `nav.hairline` is unique to Tabs (nothing else pairs a <nav> with .hairline). */
+nav.hairline > a[data-active="true"] { background: var(--segment-selected) !important; }
+
+/* brain-console.tsx reason pills — selected hardcodes white-on-var(--accent)
+   (3.65:1 in dark), idle hardcodes `background: "#fff"`. .btn-pill + aria-pressed
+   matches only these; every other .btn-pill carries .btn-white or .btn-tinted. */
+button.btn-pill[aria-pressed="true"] {
+  background: var(--accent-fill) !important;
+  border-color: var(--accent-fill) !important;
+}
+button.btn-pill[aria-pressed="false"]:not(.btn-white):not(.btn-tinted) {
+  background: var(--panel) !important;
+}
+
+/* voice-note.tsx mic-blocked notice — hardcodes the light warning border.
+   Two forms: the SSR string, and the value after React re-serialises it. */
+[style*="#ffdca6"],
+[style*="255, 220, 166"] { border-color: var(--chip-warning-border) !important; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Appearance flip — a short colour cross-fade, nothing else
+   ───────────────────────────────────────────────────────────────────────────
+   Scoped to colour properties, and only to surfaces that don't already own a
+   transition (.btn, .input, .rail-link, .row-link, .segmented > button and
+   .card-interactive all animate background-color already, so they cross-fade
+   for free). No transform, no opacity — a theme change must never look like a
+   page transition, and nothing here can fire on hover or on first paint.
+──────────────────────────────────────────────────────────────────────────── */
+body,
+.card:not(.card-interactive), .card-flat, .card-inset,
+.material, .material-strong,
+.chip, .segmented, .sheet, .popover, .hairline {
+  transition: background-color var(--dur) var(--ease-out),
+              border-color var(--dur) var(--ease-out),
+              color var(--dur) var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  body,
+  .card:not(.card-interactive), .card-flat, .card-inset,
+  .material, .material-strong,
+  .chip, .segmented, .sheet, .popover, .hairline {
+    transition: none !important; /* flip is instantaneous */
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Print — always light, whatever the screen appearance
+   ───────────────────────────────────────────────────────────────────────────
+   Browsers drop background colours when printing but keep TEXT colours, so a
+   dark-mode print would put #f2f2f7 labels on white paper. Evidence packets and
+   care plans are compliance artifacts; they print black-on-white, full stop.
+   Placed after both appearance blocks so it wins at equal specificity.
+──────────────────────────────────────────────────────────────────────────── */
+@media print {
+  :root, :root[data-theme="dark"], :root[data-theme="light"] {
+    color-scheme: light;
+
+    --bg: #ffffff; --panel: #ffffff; --panel-raised: #ffffff;
+    --border: #d6d6db; --border-strong: #b8b8be; --separator: #d6d6db;
+    --text: #000000; --text-secondary: #2a2a2e; --text-muted: #45454a;
+
+    --accent: #0058b8; --accent-text: #0058b8;
+    --accent-fill: #0058b8; --accent-soft: #eaf3ff; --accent-soft-border: #b3d4ff;
+    --material: #ffffff; --material-strong: #ffffff; --material-edge: transparent;
+    --scrim: transparent; --selection-bg: transparent; --sheet-ring: transparent;
+    --shadow-xs: none; --shadow-sm: none; --shadow-md: none; --shadow-lg: none;
+
+    --color-surface-25: #ffffff; --color-surface-50: #fafafa;
+    --color-surface-100: #f2f2f7; --color-surface-150: #ececf1;
+    --color-surface-200: #e5e5ea; --color-surface-300: #d1d1d6;
+    --color-surface-600: #56565a; --color-surface-700: #3a3a3c;
+    --color-surface-900: #000000;
+
+    /* Ink, not screen hues — these must survive a monochrome laser printer. */
+    --color-success-50: #e7f9ed; --color-success-600: #1c7a34; --color-success-700: #1c6b30;
+    --color-warning-50: #fff4e5; --color-warning-600: #8a4b00; --color-warning-700: #7a4200;
+    --color-danger-50: #ffecea;  --color-danger-600: #c00011;  --color-danger-700: #a3000e;
+    --color-info-50: #eaf3ff;    --color-info-600: #0058b8;    --color-info-700: #0058b8;
+    --chip-success-border: #b7ecc4;
+    --chip-warning-border: #ffdca6;
+    --chip-danger-border: #ffc9c4;
+    --segment-selected: #ffffff;
+    --skeleton-base: #ececf1; --skeleton-sheen: #f2f2f7;
+  }
+}
