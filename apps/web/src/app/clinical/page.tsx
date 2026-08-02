@@ -4,22 +4,31 @@ import {
   Avatar, Badge, DataTable, DueChip, EmptyState, PageHeader, SectionTitle, StatusChip, Tabs, TintTile,
 } from "@/components/ui";
 import {
-  IconCheck, IconChevronRight, IconClipboard, IconClipboardCheck, IconHeart, IconPen, IconUsers,
+  IconCheck, IconChevronRight, IconClipboard, IconClipboardCheck, IconPen, IconUsers,
 } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/profile";
 import { getOrGenerateBrief } from "@/lib/ai/huddle";
 import { HuddleBriefCard } from "@/components/huddle-brief";
+import { FlagsPanel, type FlagView } from "./flags-panel";
+import { CarePlanReviewPanel, type CarePlanRowView } from "./careplan-review";
+import type { FlagKind, FlagSeverity } from "./clinical-actions";
 
 export const metadata = { title: "Clinical" };
 export const dynamic = "force-dynamic";
 
 const TABS = [
   { key: "signatures", label: "Needs signature" },
+  { key: "flags", label: "Flags" },
   { key: "careplans", label: "Care plans" },
   { key: "supervisory", label: "Supervisory" },
   { key: "caseload", label: "Caseload" },
 ];
+
+/** A plan is in its review window this many days before the platform's review date. */
+const REVIEW_WINDOW_DAYS = 14;
+const FLAG_KINDS = ["condition_trend", "mood_trend", "exception_spike", "visit_shortfall"];
+const FLAG_SEVERITIES = ["info", "medium", "high"];
 
 function nameOf<T extends { first_name: string; last_name: string }>(c: T | T[] | null): string {
   const x = Array.isArray(c) ? c[0] : c;
@@ -99,8 +108,64 @@ export default async function ClinicalPage({
   for (const p of planRows ?? []) if (!latestPlan.has(p.client_id)) latestPlan.set(p.client_id, p);
   const plans = [...latestPlan.values()];
 
+  // The review window is a comparison against the platform's own review_due_on —
+  // no date is invented here, and none is invented by a model (invariant 13).
+  const reviewCutoff = new Date(Date.now() + REVIEW_WINDOW_DAYS * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+  const planViews: CarePlanRowView[] = plans
+    .map((p) => ({
+      id: p.id,
+      clientId: p.client_id,
+      clientName: nameOf(p.client),
+      title: p.title ?? "Care plan",
+      version: p.version,
+      status: p.status,
+      reviewDueOn: p.review_due_on,
+      reviewDue: Boolean(p.review_due_on && p.review_due_on <= reviewCutoff),
+    }))
+    .sort((a, b) => {
+      if (a.reviewDue !== b.reviewDue) return a.reviewDue ? -1 : 1;
+      return (a.reviewDueOn ?? "9999").localeCompare(b.reviewDueOn ?? "9999");
+    });
+
+  // ── Clinical early-warning flags (RLS: care team or client.read.all, AAL2) ──
+  const { data: flagRows } = await supabase
+    .from("clinical_flag")
+    .select(
+      "id, client_id, kind, severity, summary, evidence, status, ai_interaction_id, created_at, acknowledged_at, client(first_name, last_name)"
+    )
+    .order("created_at", { ascending: false })
+    .limit(60);
+
+  const flags: FlagView[] = (flagRows ?? [])
+    .filter((f) => FLAG_KINDS.includes(f.kind) && FLAG_SEVERITIES.includes(f.severity))
+    .map((f) => ({
+      id: f.id,
+      clientId: f.client_id,
+      clientName: nameOf(f.client),
+      kind: f.kind as FlagKind,
+      severity: f.severity as FlagSeverity,
+      summary: f.summary,
+      evidence:
+        f.evidence && typeof f.evidence === "object" && !Array.isArray(f.evidence)
+          ? (f.evidence as Record<string, unknown>)
+          : null,
+      status: (f.status === "acknowledged" || f.status === "dismissed" ? f.status : "open") as
+        | "open"
+        | "acknowledged"
+        | "dismissed",
+      aiWritten: Boolean(f.ai_interaction_id),
+      createdAt: f.created_at,
+      disposedAt: f.acknowledged_at,
+    }));
+  const openFlags = flags.filter((f) => f.status === "open");
+
+  const isClinical = profile.roles.some((r) => ["rn", "owner", "admin"].includes(r));
+
   const counts = {
     signatures: queue.length,
+    flags: openFlags.length,
     careplans: plans.length,
     supervisory: supOpen.length,
     caseload: caseClients.length,
@@ -111,7 +176,11 @@ export default async function ClinicalPage({
       ? queue.length
         ? `${queue.length} ${queue.length === 1 ? "record needs" : "records need"} your signature`
         : "No records awaiting signature"
-      : `${caseClients.length} ${caseClients.length === 1 ? "client" : "clients"} on your caseload`;
+      : tab === "flags"
+        ? openFlags.length
+          ? `${openFlags.length} ${openFlags.length === 1 ? "flag is" : "flags are"} waiting on your review`
+          : "No flags are waiting on your review"
+        : `${caseClients.length} ${caseClients.length === 1 ? "client" : "clients"} on your caseload`;
 
   const brief = await getOrGenerateBrief(supabase, "rn", profile.userId);
 
@@ -173,40 +242,12 @@ export default async function ClinicalPage({
           </section>
         )}
 
+        {tab === "flags" && (
+          <FlagsPanel flags={flags} canScan={isClinical} canDispose={isClinical} />
+        )}
+
         {tab === "careplans" && (
-          <section>
-            <SectionTitle icon={<IconHeart width={16} height={16} />}>Care plans on your caseload</SectionTitle>
-            {!plans.length ? (
-              <EmptyState
-                icon={<IconHeart />}
-                title="No care plans yet"
-                body="A care plan is authored as version 1; revisions add new versions and never overwrite. Plans for your clients appear here."
-              />
-            ) : (
-              <DataTable
-                columns={[
-                  { header: "Client" },
-                  { header: "Plan" },
-                  { header: "Version" },
-                  { header: "Status" },
-                  { header: "Review due", align: "right" },
-                ]}
-                rows={plans.map((p) => ({
-                  key: p.id,
-                  cells: [
-                    <span key="c" className="flex items-center gap-2.5">
-                      <Avatar name={nameOf(p.client)} size={28} />
-                      <span className="font-medium">{nameOf(p.client)}</span>
-                    </span>,
-                    p.title ?? "Care plan",
-                    <span key="v" className="tabular">v{p.version}</span>,
-                    <StatusChip key="s" status={p.status} />,
-                    p.review_due_on ? <DueChip key="d" due={p.review_due_on} prefix="Review" /> : <span key="d" style={{ color: "var(--text-muted)" }}>—</span>,
-                  ],
-                }))}
-              />
-            )}
-          </section>
+          <CarePlanReviewPanel plans={planViews} canReview={isClinical} />
         )}
 
         {tab === "supervisory" && (

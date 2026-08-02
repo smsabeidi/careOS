@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { AppShell } from "@/components/shell";
 import { EmptyState, ErrorState, PageHeader, SectionTitle } from "@/components/ui";
-import { IconCalendar, IconLock, IconPlus, IconAlert } from "@/components/icons";
+import { IconCalendar, IconLock, IconPlus, IconAlert, IconUsers } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/profile";
 import {
@@ -15,6 +15,8 @@ import {
 import {
   AssignDrawer,
   AttentionPanel,
+  CoveragePanel,
+  CoverageRequests,
   FilterTabs,
   FlashBanner,
   Legend,
@@ -24,6 +26,7 @@ import {
   WeekNav,
   href,
 } from "./components";
+import { loadCoveragePanel, loadOpenVisits, runShiftFill } from "./agent-actions";
 
 export const metadata = { title: "Schedule" };
 export const dynamic = "force-dynamic";
@@ -43,6 +46,27 @@ function clampOffset(raw: string | undefined): number {
 function normFilter(raw: string | undefined): string {
   return raw === "open" || raw === "exceptions" ? raw : "all";
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Fill-agent flash copy. Every message says what happened, what is saved, and what is
+ * next — including on the degraded path, where the plan is the platform's own words.
+ */
+const FILL_FLASH: Record<string, string> = {
+  "fill-created":
+    "Coverage plan saved. It is waiting for approval — review the ranking and the drafted offers below, then approve or reject the plan.",
+  "fill-created-degraded":
+    "Coverage plan saved. Offer wording could not be drafted, so the plan below is the platform's own; the ranking and the blockers are unaffected.",
+  "fill-existing":
+    "A coverage plan for this visit is already waiting for approval. It is shown below — nothing was created twice.",
+  "fill-engine":
+    "The scheduling engine could not rank candidates for this visit. Nothing was changed. Try again, or verify your session if it has expired.",
+  "fill-unknown":
+    "That visit could not be found on your account. Nothing was changed.",
+  "fill-unsaved":
+    "The coverage plan could not be saved, so nothing is waiting for approval. The ranking below is live — try again.",
+};
 
 /**
  * Illustrative assign. When the scheduling engine lands, this becomes a Lane-B Server
@@ -70,6 +94,8 @@ export default async function SchedulePage({ searchParams }: { searchParams: SP 
   const filter = normFilter(one(params.filter));
   const flash = one(params.flash);
   const assignId = one(params.assign);
+  const fillRaw = one(params.fill);
+  const fillId = fillRaw && UUID_RE.test(fillRaw) ? fillRaw : undefined;
   const ctx = { offset, filter };
 
   // ── Real, RLS-scoped care-team data (the honest foundation for the illustration) ──
@@ -170,6 +196,13 @@ export default async function SchedulePage({ searchParams }: { searchParams: SP 
     );
   }
 
+  // ── The fill agent, on REAL visit rows (the board below is an illustration) ──
+  // Both reads are RLS-scoped and degrade to nothing rather than taking the page down.
+  const [openVisits, coverage] = await Promise.all([
+    loadOpenVisits(),
+    fillId ? loadCoveragePanel(fillId) : Promise.resolve(null),
+  ]);
+
   const links = assignments.map((a) => ({ caregiverId: a.user_id, clientId: a.client_id }));
   const week = buildWeek({ now: new Date(), offset, caregivers, clients, assignments: links });
   const openShift = assignId ? findOpenShift(week, assignId) : undefined;
@@ -193,6 +226,33 @@ export default async function SchedulePage({ searchParams }: { searchParams: SP 
         {flash === "preview-assign" && (
           <FlashBanner text="Preview only. Assignment not saved." />
         )}
+        {flash && FILL_FLASH[flash] && <FlashBanner text={FILL_FLASH[flash]} />}
+
+        {coverage && (
+          <div className="mb-2">
+            <CoveragePanel panel={coverage} ctx={ctx} />
+          </div>
+        )}
+        {fillId && !coverage && (
+          <div className="mb-8">
+            <ErrorState
+              title="That visit is not available"
+              body="The visit could not be found on your account, or your session is no longer verified. Nothing was changed."
+              retry={
+                <Link href={href({ week: offset, filter })} className="btn btn-secondary btn-sm">
+                  Back to the schedule
+                </Link>
+              }
+            />
+          </div>
+        )}
+
+        <section className="mb-8">
+          <SectionTitle icon={<IconUsers width={16} height={16} />}>
+            Live coverage · from the scheduling engine
+          </SectionTitle>
+          <CoverageRequests visits={openVisits} ctx={ctx} fillAction={runShiftFill} />
+        </section>
 
         <ScheduleMetrics week={week} />
 

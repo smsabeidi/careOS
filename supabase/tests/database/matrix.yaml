@@ -42,6 +42,17 @@ tables:
   public.ai_disposition:    { authenticated: select-self-or-ai.read, insert: self-pinned, delete: none, append_only: true }
   public.huddle_brief:      { authenticated: select-role-or-self-or-ai.read-aal2, insert: self-pinned-aal2, delete: none, append_only: true }
   public.knowledge_chunk:   { authenticated: select-tenant, insert: ai.manage-or-client.write, update: embedding-column-only-ai.manage, delete: none }
+  # ── AI action plane (0016) ──
+  # public.ai_proposal_status is a security_invoker VIEW over ai_proposal +
+  # ai_proposal_event — it holds no rows of its own and inherits both policies.
+  public.ai_proposal:       { authenticated: select-ai.read-or-self-or-schedule.write-or-compliance.read-aal2, insert: self-pinned-aal2, delete: none, append_only: true }
+  public.ai_proposal_event: { authenticated: select-follows-proposal-aal2, insert: self-pinned-actor-aal2, delete: none, append_only: true }
+  public.extraction_job:    { authenticated: select-intake-or-careteam-or-self-aal2, insert: self-pinned-client.write-or-ai.manage-aal2, update: status-column-only, delete: none, append_only: true }
+  public.extraction_field:  { authenticated: select-follows-job-aal2, insert: client.write-or-ai.manage-aal2, update: acceptance-columns-only-self-pinned, delete: none, append_only: true }
+  public.agent_task:        { authenticated: select-ai.read-or-schedule-or-self-aal2, insert: self-pinned-schedule.write-or-ai.manage-aal2, update: status-column-only, delete: none, append_only: true }
+  public.agent_step:        { authenticated: select-follows-task-aal2, insert: schedule.write-or-ai.manage-aal2, delete: none, append_only: true }
+  public.clinical_flag:     { authenticated: select-careteam-or-client.read.all-aal2, insert: self-pinned-scoped-aal2, update: disposition-columns-only-client.read.all, delete: none, append_only: true }
+  public.evidence_packet:   { authenticated: select-compliance.read-aal2, insert: self-pinned-compliance.read-aal2, delete: none, append_only: true }
   # ── Consent + family access (0012) ──
   public.consent:           { authenticated: select-scoped-or-family-aal2, insert: family.manage-or-careteam-aal2, delete: none, append_only: true }
   public.family_link:       { authenticated: select-self-or-staff, insert: family.manage-aal2, update: family.manage-aal2, delete: none }
@@ -61,3 +72,4 @@ tests:
   - 0013_visit_events.sql
   - 0014_ai_plane.sql
   - 0015_ai_governance.sql
+  - 0016_ai_agents.sql

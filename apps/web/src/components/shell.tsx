@@ -8,8 +8,8 @@ import { BrandLogo } from "./logo";
 import { StatusChip, Avatar } from "./ui";
 import {
   IconUsers, IconClipboard, IconActivity, IconHome, IconHeart, IconLogOut,
-  IconShield, IconPen, IconCalendar, IconClipboardCheck, IconBadge, IconEye, IconCheck,
-  IconSparkle,
+  IconPen, IconCalendar, IconClipboardCheck, IconEye, IconCheck,
+  IconSparkle, IconInbox, IconPlus, IconSearch,
 } from "./icons";
 
 type NavItem = { href: string; label: string; icon: ReactNode };
@@ -32,32 +32,43 @@ const DEMO_PERSONAS: Persona[] = [
   { key: "family",      label: "Family",      name: "Grace Vance",   email: "family@meadowbrook.demo", role: "family" },
 ];
 
-/** Each persona gets its own surface set — ≤5 items (docs/10 §2). */
+/** Each persona gets its own surface set — ≤7 items, most-used first (docs/10 §2).
+ *  The first four also become the mobile tab bar, so ordering is the phone layout too.
+ *  Surfaces left off a rail stay reachable from the command, client and compliance
+ *  pages — the rail is the daily path, not the sitemap. */
 function navFor(roles: string[]): NavItem[] {
   if (roles.includes("owner") || roles.includes("admin")) {
-    // 6-item cap: Command + Clients + the three new operating surfaces + Staff.
-    // Clinical/Forms stay reachable from client & command surfaces, not the rail.
+    // Command → what needs a decision → who it is about → the regulator's view,
+    // then the two AI surfaces. Schedule and Credentials are one click from Command.
     return [
       { href: "/exec", label: "Command", icon: <IconActivity /> },
+      { href: "/inbox", label: "Approvals", icon: <IconInbox /> },
       { href: "/office/clients", label: "Clients", icon: <IconUsers /> },
-      { href: "/schedule", label: "Schedule", icon: <IconCalendar /> },
       { href: "/office/compliance", label: "Compliance", icon: <IconClipboardCheck /> },
-      { href: "/office/credentials", label: "Credentials", icon: <IconBadge /> },
+      { href: "/office/intake", label: "Intake", icon: <IconPlus /> },
+      { href: "/analytics", label: "Analytics", icon: <IconSearch /> },
       { href: "/brain", label: "Brain", icon: <IconSparkle /> },
     ];
   }
   if (roles.includes("coordinator") || roles.includes("hr")) {
-    return [
+    // Analytics is an owner/admin/coordinator surface; HR gets the same rail without it.
+    const rail: NavItem[] = [
       { href: "/office/clients", label: "Clients", icon: <IconUsers /> },
       { href: "/schedule", label: "Schedule", icon: <IconCalendar /> },
+      { href: "/inbox", label: "Approvals", icon: <IconInbox /> },
       { href: "/office/compliance", label: "Compliance", icon: <IconClipboardCheck /> },
-      { href: "/office/forms", label: "Forms", icon: <IconClipboard /> },
-      { href: "/brain", label: "Brain", icon: <IconSparkle /> },
+      { href: "/office/intake", label: "Intake", icon: <IconPlus /> },
     ];
+    if (roles.includes("coordinator")) {
+      rail.push({ href: "/analytics", label: "Analytics", icon: <IconSearch /> });
+    }
+    rail.push({ href: "/brain", label: "Brain", icon: <IconSparkle /> });
+    return rail;
   }
   if (roles.includes("rn")) {
     return [
       { href: "/clinical", label: "Clinical", icon: <IconPen /> },
+      { href: "/inbox", label: "Approvals", icon: <IconInbox /> },
       { href: "/office/clients", label: "Clients", icon: <IconUsers /> },
       { href: "/brain", label: "Brain", icon: <IconSparkle /> },
     ];
