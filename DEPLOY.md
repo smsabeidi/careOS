@@ -14,7 +14,13 @@ cannot reach the Supabase running on your Mac). Budget ~15–20 minutes the firs
 ## 1 — Hosted Supabase backend
 
 1. Create a project at supabase.com (note the project ref, DB password, and region).
-2. From this repo, link and push the schema (migrations 0001–0014):
+2. From this repo, link and push the schema (migrations 0001–0019):
+
+   > **Already deployed once?** `supabase db push` is also how you ship *new* migrations to
+   > an existing hosted project — it applies only what the remote has not seen. 0017–0019
+   > (definition binding, legal authority, COMAR fidelity) are additive and expand-only, but
+   > 0017 does run a one-time backfill `UPDATE` over `form_version` to populate the new
+   > template binding. Take a PITR bookmark first on anything you care about (docs/13 §3).
    ```bash
    cd ~/careos-work
    supabase link --project-ref <your-project-ref>
