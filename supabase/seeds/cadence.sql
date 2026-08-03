@@ -50,6 +50,13 @@ insert into public.cadence_rule
   ('11111111-1111-1111-1111-0000000ca001', '11111111-1111-1111-1111-111111111111',
    'assessment.annual', 'Annual RN assessment', 'client', 'interval_days', 365, null,
    0, 30, 'high', 'rn_assessment', 'COMAR 10.07.05.12'),
+  -- ⚠ The three supervisory intervals are MUTUALLY EXCLUSIVE per client — COMAR selects one
+  -- by medication-involvement level. CareOS has no medication_involvement attribute (docs/07
+  -- §8 specs it; no migration creates it), so there is no way to choose. All three are
+  -- defined here so the corrected UNITS are preserved and pgTAP-testable, but only the 90d
+  -- default is ACTIVE. Leaving all three active triple-counts every client's supervisory
+  -- duty — which is exactly what happened on the hosted demo before this was caught.
+  -- Activating the right one per client is blocked on the medication_involvement field.
   -- .12: every 45 DAYS where agency staff administer medications.
   ('11111111-1111-1111-1111-0000000ca005', '11111111-1111-1111-1111-111111111111',
    'supervisory.45d', 'RN supervisory visit — staff administers medications', 'client',
@@ -134,3 +141,9 @@ update public.credential_type ct
  where la.jurisdiction = 'US-MD'
    and la.citation = 'COMAR 10.07.05.10'
    and ct.legal_authority_id is null;
+
+-- Park the two supervisory variants that cannot be selected per client (see above).
+-- Their definitions and corrected units remain; they simply generate no obligations.
+update public.cadence_rule set active = false
+ where tenant_id = '11111111-1111-1111-1111-111111111111'
+   and key in ('supervisory.45d','supervisory.120d');
