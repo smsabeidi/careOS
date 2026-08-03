@@ -419,7 +419,7 @@
   --art-deep:  #0058b8;
   --art-blue:  #007aff;
   --art-warm:  #ff9500;
-  --auth-photo: url("/auth-art.jpg");
+  --auth-photo: none;
   position: relative;
   overflow: hidden;
   isolation: isolate;
@@ -498,6 +498,15 @@
 /* Ribbon Field canvas — sits BELOW the grain (::before) and scrim (::after) so the
    overlaid copy keeps its AA contrast, and below both so the CSS mesh on .auth-art is
    still the first paint before hydration (and the fallback if JS never runs). */
+/* The photo is declared ONLY at the breakpoint where the art panel exists. The panel is
+   display:none below lg, but Chrome still resolves the url() inside the custom property
+   and fetches it — 150 KB pulled down on a phone for a panel that is never painted, on
+   exactly the mid-tier Android this product is built to survive on. Scoping the property
+   to the media query is what actually prevents the request; `display:none` does not. */
+@media (min-width: 1024px) {
+  .auth-art { --auth-photo: url("/auth-art.jpg"); }
+}
+
 .auth-art-canvas {
   position: absolute;
   inset: 0;
