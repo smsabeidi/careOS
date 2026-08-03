@@ -2,7 +2,7 @@
   "name": "careos",
   "private": true,
   "version": "0.1.0",
-  "description": "CareOS \u2014 HIPAA-grade, AI-native care-operations platform (American Care Team / OCTSERVICES)",
+  "description": "CareOS — HIPAA-grade, AI-native care-operations platform (American Care Team / OCTSERVICES)",
   "packageManager": "pnpm@9.15.9",
   "scripts": {
     "db:start": "supabase db start",
