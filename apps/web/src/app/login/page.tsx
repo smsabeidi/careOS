@@ -6,7 +6,6 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import { elevateDemoSession } from "@/lib/demo-totp";
 import { IconAlert, IconShield, IconCheck, IconClipboardCheck } from "@/components/icons";
 import { BrandLogo } from "@/components/logo";
-import { GradientField } from "@/components/gradient-field";
 
 const DEMO_MODE = process.env.NEXT_PUBLIC_CAREOS_DEMO_MODE === "true";
 
@@ -71,8 +70,6 @@ export default function LoginPage() {
           Decorative on small screens (the form is the task), so it collapses to a
           short banner rather than pushing the fields below the fold. */}
       <section className="auth-art hidden flex-col justify-between p-10 lg:flex xl:p-14">
-        <GradientField className="auth-art-canvas" />
-
         <div className="auth-art-body flex items-center gap-3">
           <BrandLogo size={34} />
           <span className="text-[17px] font-semibold tracking-[-0.01em]">CareOS</span>

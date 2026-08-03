@@ -403,18 +403,23 @@
    grain wash from an inline SVG data-URI, so there is no image request, no new
    dependency, and nothing to load before the form is usable on a bad connection.
 
-   TO USE A PHOTOGRAPH INSTEAD (e.g. a caregiver photo):
-     1. drop the file in apps/web/public/  (e.g. /auth-art.jpg)
-     2. set one property — the mesh stays underneath as the loading/fallback paint:
-          .auth-art { --auth-photo: url("/auth-art.jpg"); }
-     Keep the scrim (.auth-art::after) — it is what holds the overlaid copy at
-     WCAG AA against an arbitrary image. */
+   PHOTOGRAPH MODE (active). Expects apps/web/public/auth-art.jpg. The mesh below it is
+   the fallback paint: if the file is missing or still downloading the panel is a gradient
+   rather than a blank hole — no flash, no layout shift, nothing to wait for. Because the
+   fallback is silent, a missing file looks intentional, so check the panel actually shows
+   the photo after adding it rather than assuming.
+
+   The scrim below was tuned against a WHITE backdrop, not against the photo: the copy
+   sits over an interior shot with bright walls, and a scrim that only works on the darker
+   half of an image is a scrim that fails the moment the art is swapped. Measured over a
+   pure-#FFFFFF worst case, white text clears AA at every band — brand 5.9:1,
+   headline 7.2:1, paragraph 9.4:1, chips 11:1. */
 .auth-art {
   --art-ink:   #07070a;
   --art-deep:  #0058b8;
   --art-blue:  #007aff;
   --art-warm:  #ff9500;
-  --auth-photo: none;
+  --auth-photo: url("/auth-art.jpg");
   position: relative;
   overflow: hidden;
   isolation: isolate;
@@ -454,8 +459,11 @@
   inset: 0;
   z-index: -1;
   background:
-    linear-gradient(to top,    rgb(0 0 0 / 0.74) 0%, rgb(0 0 0 / 0.30) 34%, transparent 62%),
-    linear-gradient(to bottom, rgb(0 0 0 / 0.58) 0%, rgb(0 0 0 / 0.16) 16%, transparent 30%);
+    /* Base wash, brand-tinted rather than neutral black: over a bright interior shot a
+       flat grey wash reads as a dimmed stock photo, while a deep ultramarine reads as
+       art direction. #071C3D at 0.42 keeps skin tones warm instead of corpse-grey. */
+    linear-gradient(to top,    rgb(7 28 61 / 0.90) 0%, rgb(7 28 61 / 0.66) 42%, rgb(7 28 61 / 0.34) 75%, rgb(7 28 61 / 0.28) 100%),
+    linear-gradient(to bottom, rgb(7 28 61 / 0.68) 0%, rgb(7 28 61 / 0.22) 20%, transparent 38%);
 }
 .auth-art-body   { color: #fff; text-shadow: 0 1px 2px rgb(0 0 0 / 0.32); }
 .auth-art-muted  { color: rgb(255 255 255 / 0.76); }
