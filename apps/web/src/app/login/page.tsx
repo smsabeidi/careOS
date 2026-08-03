@@ -69,38 +69,46 @@ export default function LoginPage() {
       {/* ── Art panel ──────────────────────────────────────────────────────────
           Decorative on small screens (the form is the task), so it collapses to a
           short banner rather than pushing the fields below the fold. */}
-      <section className="auth-art hidden flex-col justify-between p-10 lg:flex xl:p-14">
-        <div className="auth-art-body flex items-center gap-3">
-          <BrandLogo size={34} />
-          <span className="text-[17px] font-semibold tracking-[-0.01em]">CareOS</span>
+      <section className="auth-art hidden flex-col gap-7 p-7 lg:flex xl:gap-8 xl:p-9">
+        {/* Brand sits on the panel, not on the photograph — a white mark vanishes against
+            a bright interior wall, and scrimming the top to fix that would re-dirty the
+            image this layout exists to keep clean. */}
+        <div className="auth-art-body flex shrink-0 items-center gap-2.5">
+          <BrandLogo size={30} />
+          <span className="text-[16px] font-semibold tracking-[-0.01em]">CareOS</span>
         </div>
 
-        <div className="auth-art-body max-w-[32rem]">
-          <h2 className="title-lg text-[clamp(1.875rem,2.6vw,2.75rem)] leading-[1.08] tracking-[-0.025em]">
-            Your team trained to give care.
-            <br />
-            Not to chase paperwork.
-          </h2>
-          <p className="auth-art-muted mt-5 text-[15.5px] leading-relaxed">
-            CareOS is the AI-native operating system for home-care agencies. Intake,
-            scheduling, verified visits, compliance and billing run in one place — and the
-            admin is handled before anyone has to ask for it.
-          </p>
+        <div className="auth-photo-card flex flex-col justify-end p-8 xl:p-10">
+          <div className="auth-art-body max-w-[30rem]">
+            <h2
+              className="title-lg text-[clamp(1.75rem,2.5vw,2.5rem)] leading-[1.1] tracking-[-0.025em]"
+              style={{ textWrap: "balance" } as React.CSSProperties}
+            >
+              Save hundreds of hours every week.
+            </h2>
+            <p className="auth-art-muted mt-4 text-[15px] leading-relaxed">
+              CareOS handles scheduling, paperwork, compliance and billing across your
+              agency. Your team gets more time with clients. You get more room to grow.
+            </p>
 
-          <ul className="mt-7 flex flex-wrap gap-2" aria-label="Compliance and platform coverage">
-            <li className="auth-chip">
-              <IconShield width={13} height={13} aria-hidden />
-              HIPAA compliant
-            </li>
-            <li className="auth-chip">
-              <IconClipboardCheck width={13} height={13} aria-hidden />
-              COMAR 10.07.05
-            </li>
-            <li className="auth-chip">
-              <IconCheck width={13} height={13} aria-hidden />
-              Verified EVV visits
-            </li>
-          </ul>
+            <ul
+              className="mt-6 flex flex-wrap gap-2"
+              aria-label="Compliance and platform coverage"
+            >
+              <li className="auth-chip">
+                <IconShield width={13} height={13} aria-hidden />
+                HIPAA compliant
+              </li>
+              <li className="auth-chip">
+                <IconClipboardCheck width={13} height={13} aria-hidden />
+                COMAR 10.07.05
+              </li>
+              <li className="auth-chip">
+                <IconCheck width={13} height={13} aria-hidden />
+                Verified EVV
+              </li>
+            </ul>
+          </div>
         </div>
       </section>
 
