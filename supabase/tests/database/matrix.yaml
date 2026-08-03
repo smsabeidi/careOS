@@ -2,62 +2,82 @@
 # Every table in public/audit MUST have an entry; scripts/check-matrix.sh fails CI
 # on any table missing from this file. Expected access is per role at AAL2 unless
 # stated; "rpc" means mutations happen only through the Lane-B RPC catalog.
+#
+# `scope:` is MANDATORY on every entry (ST-110, D-018) and is enforced by
+# scripts/check-matrix.sh. It distinguishes a deliberately global catalog from a table
+# that is missing tenant_id by accident — 001_schema_invariants asserts RLS
+# enabled+forced but never asserts tenant_id presence, so without this key the two are
+# indistinguishable.
+#   tenant — carries tenant_id; policies predicate on app.current_tenant_id()
+#   global — no tenant_id by design; RLS still enabled+forced, read-only to clients,
+#            zero write grants (precedent: public.permission, 0002_identity_rbac.sql:35)
+#
+# `append_only: true` means the table carries an app.forbid_mutation() trigger — UPDATE and
+# DELETE both raise. check-matrix.sh verifies this against the migrations in BOTH directions,
+# so the manifest cannot claim an immutability the schema does not enforce.
+# Tables that forbid DELETE but permit a column-scoped UPDATE (e.g. `grant update (status)`)
+# are `no_delete: true` instead. Four AI-plane tables were relabelled this way in ST-110:
+# they were marked append_only while granting update on status/acknowledgement columns.
 tables:
-  public.tenant:            { authenticated: select-own-tenant, writes: none }
-  public.app_user:          { authenticated: select-self-or-user.read, writes: rpc }
-  public.permission:        { authenticated: select, writes: none }
-  public.role:              { authenticated: select-tenant, writes: rpc }
-  public.role_permission:   { authenticated: select-tenant, writes: rpc }
-  public.user_role:         { authenticated: select-self-or-user.read, writes: rpc }
-  public.care_team_assignment: { authenticated: select-self-or-careteam.read, writes: rpc }
-  public.client:            { authenticated: select-team-or-client.read.all-aal2, insert: client.write-aal2, update: client.write-aal2, delete: none }
-  public.form_template:     { authenticated: select-tenant, writes: rpc }
-  public.form_instance:     { authenticated: select-scoped-aal2, writes: rpc }
-  public.form_version:      { authenticated: select-scoped-aal2, writes: rpc, append_only: true }
-  public.signature:         { authenticated: select-scoped-aal2, writes: rpc, append_only: true }
-  audit.audit_event:        { authenticated: none, writes: definer-only, append_only: true }
-  audit.audit_anchor:       { authenticated: none, writes: anchor-job, append_only: true }
+  public.tenant:            { scope: tenant, authenticated: select-own-tenant, writes: none }
+  public.app_user:          { scope: tenant, authenticated: select-self-or-user.read, writes: rpc }
+  public.permission:        { scope: global, authenticated: select, writes: none }
+  public.role:              { scope: tenant, authenticated: select-tenant, writes: rpc }
+  public.role_permission:   { scope: tenant, authenticated: select-tenant, writes: rpc }
+  public.user_role:         { scope: tenant, authenticated: select-self-or-user.read, writes: rpc }
+  public.care_team_assignment: { scope: tenant, authenticated: select-self-or-careteam.read, writes: rpc }
+  public.client:            { scope: tenant, authenticated: select-team-or-client.read.all-aal2, insert: client.write-aal2, update: client.write-aal2, delete: none }
+  public.form_template:     { scope: tenant, authenticated: select-tenant, writes: rpc, append_only: true }
+  public.form_instance:     { scope: tenant, authenticated: select-scoped-aal2, writes: rpc }
+  public.form_version:      { scope: tenant, authenticated: select-scoped-aal2, writes: rpc, append_only: true }
+  public.signature:         { scope: tenant, authenticated: select-scoped-aal2, writes: rpc, append_only: true }
+  audit.audit_event:        { scope: tenant, authenticated: none, writes: definer-only, append_only: true }
+  audit.audit_anchor:       { scope: tenant, authenticated: none, writes: anchor-job, append_only: true }
   # ── Workforce credentials (0008) ──
-  public.credential_type:   { authenticated: select-tenant, writes: none }
-  public.credential:        { authenticated: select-self-or-credential.read.all-aal2, insert: credential.write-aal2, update: credential.write-aal2, delete: none }
-  public.credential_event:  { authenticated: select-self-or-credential.read.all-aal2, writes: trigger-only, append_only: true }
+  public.credential_type:   { scope: tenant, authenticated: select-tenant, writes: none }
+  public.credential:        { scope: tenant, authenticated: select-self-or-credential.read.all-aal2, insert: credential.write-aal2, update: credential.write-aal2, delete: none }
+  public.credential_event:  { scope: tenant, authenticated: select-self-or-credential.read.all-aal2, writes: trigger-only, append_only: true }
   # ── Compliance cadence (0009) ──
-  public.cadence_rule:      { authenticated: select-tenant, writes: none }
-  public.obligation:        { authenticated: select-scoped-aal2, writes: definer-only }
+  public.cadence_rule:      { scope: tenant, authenticated: select-tenant, writes: none }
+  public.obligation:        { scope: tenant, authenticated: select-scoped-aal2, writes: definer-only }
   # ── Care planning + supervisory cadence (0010) ──
-  public.care_plan:         { authenticated: select-scoped-aal2, insert: scoped-aal2, delete: none, append_only: true }
-  public.care_plan_item:    { authenticated: select-scoped-aal2, insert: scoped-aal2, append_only: true }
-  public.supervisory_visit: { authenticated: select-scoped-aal2, insert: scoped-aal2, update: scoped-aal2, delete: none }
+  public.care_plan:         { scope: tenant, authenticated: select-scoped-aal2, insert: scoped-aal2, delete: none, append_only: true }
+  public.care_plan_item:    { scope: tenant, authenticated: select-scoped-aal2, insert: scoped-aal2, append_only: true }
+  public.supervisory_visit: { scope: tenant, authenticated: select-scoped-aal2, insert: scoped-aal2, update: scoped-aal2, delete: none }
   # ── Scheduling (0011) ──
-  public.shift:             { authenticated: select-self-or-schedule.read, insert: schedule.write, update: schedule.write, delete: none }
-  public.visit:             { authenticated: select-scoped-aal2, insert: schedule.write-aal2, update: schedule.write-aal2, delete: none }
-  public.schedule_exception: { authenticated: select-scoped-aal2, insert: scoped-aal2, delete: none, append_only: true }
-  public.visit_event:       { authenticated: select-self-or-schedule.read-aal2, writes: rpc, delete: none, append_only: true }
+  public.shift:             { scope: tenant, authenticated: select-self-or-schedule.read, insert: schedule.write, update: schedule.write, delete: none }
+  public.visit:             { scope: tenant, authenticated: select-scoped-aal2, insert: schedule.write-aal2, update: schedule.write-aal2, delete: none }
+  public.schedule_exception: { scope: tenant, authenticated: select-scoped-aal2, insert: scoped-aal2, delete: none, append_only: true }
+  public.visit_event:       { scope: tenant, authenticated: select-self-or-schedule.read-aal2, writes: rpc, delete: none, append_only: true }
   # ── AI plane (0014) ──
-  public.ai_capability:     { authenticated: select-tenant, writes: none }
-  public.knowledge_document: { authenticated: select-tenant, insert: ai.manage-or-client.write, delete: none }
-  public.ai_interaction:    { authenticated: select-self-or-ai.read, insert: self-pinned, delete: none, append_only: true }
+  public.ai_capability:     { scope: tenant, authenticated: select-tenant, writes: none }
+  public.knowledge_document: { scope: tenant, authenticated: select-tenant, insert: ai.manage-or-client.write, delete: none }
+  public.ai_interaction:    { scope: tenant, authenticated: select-self-or-ai.read, insert: self-pinned, delete: none, append_only: true }
   # ── AI governance (0015) ──
-  public.ai_prompt_template: { authenticated: select-tenant, writes: none }
-  public.ai_disposition:    { authenticated: select-self-or-ai.read, insert: self-pinned, delete: none, append_only: true }
-  public.huddle_brief:      { authenticated: select-role-or-self-or-ai.read-aal2, insert: self-pinned-aal2, delete: none, append_only: true }
-  public.knowledge_chunk:   { authenticated: select-tenant, insert: ai.manage-or-client.write, update: embedding-column-only-ai.manage, delete: none }
+  public.ai_prompt_template: { scope: tenant, authenticated: select-tenant, writes: none }
+  public.ai_disposition:    { scope: tenant, authenticated: select-self-or-ai.read, insert: self-pinned, delete: none, append_only: true }
+  public.huddle_brief:      { scope: tenant, authenticated: select-role-or-self-or-ai.read-aal2, insert: self-pinned-aal2, delete: none, append_only: true }
+  public.knowledge_chunk:   { scope: tenant, authenticated: select-tenant, insert: ai.manage-or-client.write, update: embedding-column-only-ai.manage, delete: none }
   # ── AI action plane (0016) ──
   # public.ai_proposal_status is a security_invoker VIEW over ai_proposal +
   # ai_proposal_event — it holds no rows of its own and inherits both policies.
-  public.ai_proposal:       { authenticated: select-ai.read-or-self-or-schedule.write-or-compliance.read-aal2, insert: self-pinned-aal2, delete: none, append_only: true }
-  public.ai_proposal_event: { authenticated: select-follows-proposal-aal2, insert: self-pinned-actor-aal2, delete: none, append_only: true }
-  public.extraction_job:    { authenticated: select-intake-or-careteam-or-self-aal2, insert: self-pinned-client.write-or-ai.manage-aal2, update: status-column-only, delete: none, append_only: true }
-  public.extraction_field:  { authenticated: select-follows-job-aal2, insert: client.write-or-ai.manage-aal2, update: acceptance-columns-only-self-pinned, delete: none, append_only: true }
-  public.agent_task:        { authenticated: select-ai.read-or-schedule-or-self-aal2, insert: self-pinned-schedule.write-or-ai.manage-aal2, update: status-column-only, delete: none, append_only: true }
-  public.agent_step:        { authenticated: select-follows-task-aal2, insert: schedule.write-or-ai.manage-aal2, delete: none, append_only: true }
-  public.clinical_flag:     { authenticated: select-careteam-or-client.read.all-aal2, insert: self-pinned-scoped-aal2, update: disposition-columns-only-client.read.all, delete: none, append_only: true }
-  public.evidence_packet:   { authenticated: select-compliance.read-aal2, insert: self-pinned-compliance.read-aal2, delete: none, append_only: true }
+  public.ai_proposal:       { scope: tenant, authenticated: select-ai.read-or-self-or-schedule.write-or-compliance.read-aal2, insert: self-pinned-aal2, delete: none, append_only: true }
+  public.ai_proposal_event: { scope: tenant, authenticated: select-follows-proposal-aal2, insert: self-pinned-actor-aal2, delete: none, append_only: true }
+  public.extraction_job:    { scope: tenant, authenticated: select-intake-or-careteam-or-self-aal2, insert: self-pinned-client.write-or-ai.manage-aal2, update: status-column-only, delete: none, no_delete: true }
+  public.extraction_field:  { scope: tenant, authenticated: select-follows-job-aal2, insert: client.write-or-ai.manage-aal2, update: acceptance-columns-only-self-pinned, delete: none, no_delete: true }
+  public.agent_task:        { scope: tenant, authenticated: select-ai.read-or-schedule-or-self-aal2, insert: self-pinned-schedule.write-or-ai.manage-aal2, update: status-column-only, delete: none, no_delete: true }
+  public.agent_step:        { scope: tenant, authenticated: select-follows-task-aal2, insert: schedule.write-or-ai.manage-aal2, delete: none, append_only: true }
+  public.clinical_flag:     { scope: tenant, authenticated: select-careteam-or-client.read.all-aal2, insert: self-pinned-scoped-aal2, update: disposition-columns-only-client.read.all, delete: none, no_delete: true }
+  public.evidence_packet:   { scope: tenant, authenticated: select-compliance.read-aal2, insert: self-pinned-compliance.read-aal2, delete: none, append_only: true }
+  # ── Regulatory authority (0018 · D-015) ──
+  # Global, non-PHI, non-AAL2 catalog on the public.permission pattern. Publication
+  # requires a named human verifier + source checksum, enforced by CHECK.
+  public.legal_authority:   { scope: global, authenticated: select, writes: definer-only, append_only: true }
   # ── Consent + family access (0012) ──
-  public.consent:           { authenticated: select-scoped-or-family-aal2, insert: family.manage-or-careteam-aal2, delete: none, append_only: true }
-  public.family_link:       { authenticated: select-self-or-staff, insert: family.manage-aal2, update: family.manage-aal2, delete: none }
-  public.family_update:     { authenticated: select-scoped-or-family-aal2, insert: family.manage-or-careteam-aal2, delete: none, append_only: true }
-  public.shared_document:   { authenticated: select-scoped-or-family-aal2, insert: family.manage-or-careteam-aal2, delete: none, append_only: true }
+  public.consent:           { scope: tenant, authenticated: select-scoped-or-family-aal2, insert: family.manage-or-careteam-aal2, delete: none, append_only: true }
+  public.family_link:       { scope: tenant, authenticated: select-self-or-staff, insert: family.manage-aal2, update: family.manage-aal2, delete: none }
+  public.family_update:     { scope: tenant, authenticated: select-scoped-or-family-aal2, insert: family.manage-or-careteam-aal2, delete: none, append_only: true }
+  public.shared_document:   { scope: tenant, authenticated: select-scoped-or-family-aal2, insert: family.manage-or-careteam-aal2, delete: none, append_only: true }
 tests:
   - 001_schema_invariants.sql
   - 002_rls_matrix.sql
@@ -73,3 +93,6 @@ tests:
   - 0014_ai_plane.sql
   - 0015_ai_governance.sql
   - 0016_ai_agents.sql
+  - 0017_definition_binding.sql
+  - 0018_legal_authority.sql
+  - 0019_comar_fidelity.sql

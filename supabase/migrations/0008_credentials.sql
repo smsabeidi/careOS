@@ -6,19 +6,19 @@
 --
 -- Deviations from docs/07 §8 (SURFACE for a docs/00 §3 decision entry — do not treat
 -- as silently ratified):
---   D-0008a  `credential.app_user_id -> public.app_user(id)` instead of the doc's
+--   DN-0008a  `credential.app_user_id -> public.app_user(id)` instead of the doc's
 --            `credential.employee_id -> public.employee(id)`. The `employee` table is
 --            the M7 workforce spine and is NOT yet migrated (only referenced as a
 --            future FK in 0005). Every employee IS an app_user (docs §8:
 --            `employee.id references app_user(id)`), so app_user is the correct
 --            superset anchor today. When `employee` lands, an expand migration can add
 --            `employee_id` + backfill from app_user; no history is lost.
---   D-0008b  Column names follow the orchestrated field list: `status`
+--   DN-0008b  Column names follow the orchestrated field list: `status`
 --            (doc: verification_status), `credential_type_id` (doc: type_id),
 --            `app_user_id` (doc: employee_id), `required_for_roles`
 --            (doc: required_for_titles). `credential_type.category` is added (new).
 --            Status VALUES are kept identical to the doc (pending/verified/rejected/expired).
---   D-0008c  AAL2 is required on `credential` and `credential_event` even though they
+--   DN-0008c  AAL2 is required on `credential` and `credential_event` even though they
 --            are classified PII (invariant 3 mandates AAL2 only for PHI). Credential
 --            records carry compliance-sensitive PII — license numbers, background-check
 --            and verification decisions adverse to an employee — so they are gated at
@@ -74,7 +74,7 @@ grant select on public.credential_type to authenticated;
 create table public.credential (                           -- PII
   id uuid primary key default gen_random_uuid(),
   tenant_id uuid not null references public.tenant(id),
-  app_user_id uuid not null references public.app_user(id),        -- the staff member (D-0008a)
+  app_user_id uuid not null references public.app_user(id),        -- the staff member (DN-0008a)
   credential_type_id uuid not null references public.credential_type(id),
   identifier text,                                          -- license / certificate number
   issued_on date,

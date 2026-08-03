@@ -254,7 +254,7 @@ grant select, insert on public.schedule_exception to authenticated;   -- no upda
 --                      employee_id / type_id / verification_status)
 --     credential_type: required_for_roles, blocks_scheduling                (doc said
 --                      required_for_titles)
---   There is NO `employee` table (D-0008a: every employee IS an app_user), so the
+--   There is NO `employee` table (DN-0008a: every employee IS an app_user), so the
 --   caregiver's role source is app_user → user_role → role. required_for_roles carries
 --   title tokens ('RN','Caregiver'); role.key/name are matched case-insensitively.
 --

@@ -20,6 +20,7 @@ const FILTERS = [
 
 type Row = {
   id: string;
+  cadence_rule_id: string;
   client_id: string | null;
   staff_id: string | null;
   due_on: string;
@@ -30,6 +31,18 @@ type Row = {
   days_until_due: number | null;
   computed_status: string;
 };
+
+/**
+ * Authority provenance per rule (D-015 / D-017).
+ *
+ * The shield icon is a claim about legal traceability, so it may appear only once a named
+ * human has attested the citation through app.publish_authority. Until then the citation
+ * still shows — an unverified citation beats none — but it is labelled as unverified
+ * rather than dressed as authority. This surface previously rendered the literal string
+ * "Doc 02 §3 — enrich with COMAR cite" behind a shield under a heading reading
+ * "Regulation", which is the failure this branch removes.
+ */
+type Authority = { verified: boolean; citation: string | null };
 
 function statusBadge(s: string) {
   if (s === "overdue") return <Badge tone="danger" icon={<IconAlert />}>Overdue</Badge>;
@@ -55,9 +68,22 @@ export default async function CompliancePage({
 
   const { data: rows, error } = await supabase
     .from("cadence_obligation_status")
-    .select("id, client_id, staff_id, due_on, applies_to, rule_name, severity, comar_source_ref, days_until_due, computed_status")
+    .select("id, cadence_rule_id, client_id, staff_id, due_on, applies_to, rule_name, severity, comar_source_ref, days_until_due, computed_status")
     .order("due_on", { ascending: true })
     .limit(1000);
+
+  // Bounded companion read — one row per rule, not per obligation. Runs under the same
+  // user JWT; cadence_rule_authority is security_invoker, so the perimeter still applies.
+  const { data: authRows } = await supabase
+    .from("cadence_rule_authority")
+    .select("cadence_rule_id, citation, authority_is_verified");
+
+  const authority = new Map<string, Authority>(
+    (authRows ?? []).map((a) => [
+      a.cadence_rule_id as string,
+      { verified: a.authority_is_verified === true, citation: a.citation as string | null },
+    ]),
+  );
 
   if (error) {
     return (
@@ -182,14 +208,29 @@ export default async function CompliancePage({
                     )}
                     {subject}
                   </span>,
-                  r.comar_source_ref ? (
+                  (() => {
+                    const a = authority.get(r.cadence_rule_id);
+                    const cite = a?.citation ?? r.comar_source_ref;
+                    if (!cite) return <span key="c" style={{ color: "var(--text-muted)" }}>—</span>;
+                    // Shield = attested by a human. Otherwise the citation stands on its
+                    // own with an explicit label, so it is never read as authority.
+                    if (!a?.verified) {
+                      return (
+                        <span key="c" className="tabular inline-flex flex-col text-[13px]" style={{ color: "var(--text-secondary)" }}>
+                          <span>{cite}</span>
+                          <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+                            Unverified — pending compliance review
+                          </span>
+                        </span>
+                      );
+                    }
+                    return (
                     <span key="c" className="tabular inline-flex items-center gap-1.5 text-[13px]" style={{ color: "var(--text-secondary)" }}>
                       <IconShield width={13} height={13} />
-                      {r.comar_source_ref}
+                      {cite}
                     </span>
-                  ) : (
-                    <span key="c" style={{ color: "var(--text-muted)" }}>—</span>
-                  ),
+                    );
+                  })(),
                   severityBadge(r.severity),
                   <DueChip key="d" due={r.due_on} />,
                   statusBadge(r.computed_status),
@@ -201,8 +242,9 @@ export default async function CompliancePage({
 
         <p className="mt-4 text-[12px]" style={{ color: "var(--text-muted)" }}>
           Due dates and statuses are derived by the compliance engine (Engine 1) from each rule&apos;s COMAR
-          cadence; they are not tracked by hand. Every row traces to its regulation, so a surveyor can be shown
-          exactly how the software enforces it.
+          cadence; they are not tracked by hand. Each rule cites the regulation it comes from. Citations marked{" "}
+          <em>unverified</em> have been researched but not yet confirmed by a compliance reviewer, and should not
+          be relied on as authority until they are.
         </p>
       </div>
     </AppShell>
