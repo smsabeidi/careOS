@@ -6,6 +6,7 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import { elevateDemoSession } from "@/lib/demo-totp";
 import { IconAlert, IconShield, IconCheck, IconClipboardCheck } from "@/components/icons";
 import { BrandLogo } from "@/components/logo";
+import { GradientField } from "@/components/gradient-field";
 
 const DEMO_MODE = process.env.NEXT_PUBLIC_CAREOS_DEMO_MODE === "true";
 
@@ -70,32 +71,37 @@ export default function LoginPage() {
           Decorative on small screens (the form is the task), so it collapses to a
           short banner rather than pushing the fields below the fold. */}
       <section className="auth-art hidden flex-col justify-between p-10 lg:flex xl:p-14">
+        <GradientField className="auth-art-canvas" />
+
         <div className="auth-art-body flex items-center gap-3">
           <BrandLogo size={34} />
           <span className="text-[17px] font-semibold tracking-[-0.01em]">CareOS</span>
         </div>
 
-        <div className="auth-art-body max-w-[30rem]">
-          <h2 className="title-lg text-[clamp(1.75rem,2.4vw,2.5rem)] leading-[1.12] tracking-[-0.02em]">
-            Care records that can&apos;t be lost.
+        <div className="auth-art-body max-w-[32rem]">
+          <h2 className="title-lg text-[clamp(1.875rem,2.6vw,2.75rem)] leading-[1.08] tracking-[-0.025em]">
+            Your team trained to give care.
+            <br />
+            Not to chase paperwork.
           </h2>
-          <p className="auth-art-muted mt-4 text-[15px] leading-relaxed">
-            Every note, signature and correction is written once and kept. Nothing is
-            overwritten — so what happened, and who did it, stays recoverable.
+          <p className="auth-art-muted mt-5 text-[15.5px] leading-relaxed">
+            CareOS is the AI-native operating system for home-care agencies. Intake,
+            scheduling, verified visits, compliance and billing run in one place — and the
+            admin is handled before anyone has to ask for it.
           </p>
 
-          <ul className="mt-7 flex flex-wrap gap-2" aria-label="What this platform guarantees">
+          <ul className="mt-7 flex flex-wrap gap-2" aria-label="Compliance and platform coverage">
+            <li className="auth-chip">
+              <IconShield width={13} height={13} aria-hidden />
+              HIPAA compliant
+            </li>
             <li className="auth-chip">
               <IconClipboardCheck width={13} height={13} aria-hidden />
-              Append-only records
+              COMAR 10.07.05
             </li>
             <li className="auth-chip">
               <IconCheck width={13} height={13} aria-hidden />
-              Verified visits
-            </li>
-            <li className="auth-chip">
-              <IconShield width={13} height={13} aria-hidden />
-              MFA-protected
+              Verified EVV visits
             </li>
           </ul>
         </div>
