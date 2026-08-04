@@ -4,10 +4,16 @@
 -- insert/update grants that bypassed it ("guard outside the perimeter"). From this
 -- migration, every scheduling mutation flows through a definer RPC that proves
 -- eligibility in the same transaction, and the direct grants are revoked.
--- Audit: the existing app.audit_visit / app.audit_schedule_exception AFTER-triggers
--- (0011) already emit visit.schedule / visit.status_change / visit.reassign /
--- schedule_exception.<kind> — RPC bodies do not double-emit. Outbox events are added
--- when public.domain_event lands (0027, invariant 7 follow-up noted there).
+-- Audit: visit and schedule_exception writes are covered by the 0011 AFTER-triggers
+-- (visit.schedule / visit.status_change / visit.reassign / schedule_exception.<kind>);
+-- shift had NO trigger under the old direct-write model ("low-consequence" rationale,
+-- 0011), which stopped being true the moment shift creation became an AAL2-gated,
+-- permission-gated Lane-B write — so this migration adds trg_shift_audit. RPC bodies do
+-- not double-emit. Outbox events are added when public.domain_event lands (0027).
+-- Concurrency: every mutation that puts a caregiver on a visit takes the per-caregiver
+-- scheduling advisory lock FIRST (same key and order as the credential sweep, 0024), so
+-- an assignment can never interleave with a lapse sweep and leave an ineligible
+-- caregiver staffed (write-skew closure).
 -- @trace: ST-121, 2026-08-03 §7 blocker 3, S4-3 groundwork
 
 -- ── schedule_exception gains the 'callout' kind (expand-phase CHECK widening) ─────────
@@ -51,6 +57,15 @@ begin
     raise exception 'CAREOS_NOT_FOUND: client' using errcode = 'P0001';
   end if;
   if p_caregiver is not null then
+    -- The caregiver principal must be OUR active staff — assert_schedulable derives its
+    -- credential context from the caregiver's own tenant, so without this gate a
+    -- cross-tenant (or separated) principal could pass eligibility and be scheduled.
+    if not exists (select 1 from public.app_user u
+                   where u.id = p_caregiver and u.tenant_id = v_tenant
+                     and u.kind = 'staff' and u.status = 'active') then
+      raise exception 'CAREOS_NOT_FOUND: active staff caregiver' using errcode = 'P0001';
+    end if;
+    perform pg_advisory_xact_lock(hashtextextended('careos_sched:' || p_caregiver::text, 0));
     v_guard := app.assert_schedulable(p_caregiver, p_client, tstzrange(p_start, p_end));
     if not (v_guard ->> 'schedulable')::boolean then
       raise exception 'CAREOS_NOT_SCHEDULABLE: %', (v_guard -> 'blockers')::text using errcode = 'P0001';
@@ -100,6 +115,15 @@ declare
   v_guard jsonb;
 begin
   perform app.assert_scheduler();
+  -- Caregiver principal gate: our tenant, staff, active (see schedule_visit note).
+  if not exists (select 1 from public.app_user u
+                 where u.id = p_caregiver and u.tenant_id = app.current_tenant_id()
+                   and u.kind = 'staff' and u.status = 'active') then
+    raise exception 'CAREOS_NOT_FOUND: active staff caregiver' using errcode = 'P0001';
+  end if;
+  -- Advisory lock BEFORE the visit row lock — the same order the sweep (0024) uses, so
+  -- assignment and lapse-sweep serialize per caregiver instead of write-skewing.
+  perform pg_advisory_xact_lock(hashtextextended('careos_sched:' || p_caregiver::text, 0));
   select * into v from public.visit
    where id = p_visit and tenant_id = app.current_tenant_id()
    for update;
@@ -187,6 +211,33 @@ begin
    where id = v.id;   -- back on the open-shift board (idx_visit_open)
   return jsonb_build_object('ok', true, 'visit_id', v.id, 'open', true);
 end $$;
+
+-- ── Shift audit: Lane-B raised shift writes to consequential — the ledger follows ─────
+-- Mirrors app.audit_visit (0011): definer, IDs/enums only, null-tenant seed guard.
+create or replace function app.audit_shift() returns trigger
+language plpgsql security definer set search_path = public, audit, extensions as $$
+begin
+  if app.current_tenant_id() is null then
+    return null;                                  -- seed / system path: not a user action
+  end if;
+  if tg_op = 'INSERT' then
+    perform app.emit_audit('shift.created', 'shift', new.id,
+      jsonb_build_object('caregiver_id', new.caregiver_id, 'status', new.status));
+  elsif tg_op = 'UPDATE' then
+    if new.status is distinct from old.status then
+      perform app.emit_audit('shift.status_change', 'shift', new.id,
+        jsonb_build_object('from', old.status, 'to', new.status));
+    end if;
+    if new.caregiver_id is distinct from old.caregiver_id then
+      perform app.emit_audit('shift.reassign', 'shift', new.id,
+        jsonb_build_object('from_caregiver', old.caregiver_id,
+                           'to_caregiver', new.caregiver_id));
+    end if;
+  end if;
+  return null;                                    -- AFTER trigger: result ignored
+end $$;
+create trigger trg_shift_audit after insert or update on public.shift
+  for each row execute function app.audit_shift();
 
 -- ── Grants: RPCs in, direct writes out ────────────────────────────────────────────────
 revoke all on function

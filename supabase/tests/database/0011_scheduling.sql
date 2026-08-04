@@ -389,6 +389,95 @@ select ok(not has_function_privilege('authenticated',
   'app.sweep_ineligible_assignments(uuid,uuid)', 'execute'),
   'sweep: authenticated cannot call the sweep engine directly');
 
+-- ═══ Review amendments: principal gate, shift audit, sweep coverage ════════
+-- A separated tenant-A user for the principal-gate probes.
+reset role;
+insert into auth.users (id, email) values
+  ('aaaaaaaa-0000-0000-0000-0000000000a4', 'gone.a@meadowbrook.test');
+insert into public.app_user (id, tenant_id, full_name, work_email, kind, status, separated_at) values
+  ('aaaaaaaa-0000-0000-0000-0000000000a4', 'aaaaaaaa-0000-0000-0000-000000000001',
+   'Gone A4', 'gone.a@meadowbrook.test', 'staff', 'separated', now());
+
+select pg_temp.login('aaaaaaaa-0000-0000-0000-0000000000ad', 'aal2');
+select lives_ok(
+  $$select app.schedule_visit('aaaaaaaa-0000-0000-0000-00000000c001',
+      now() + interval '4 days', now() + interval '4 days 2 hours',
+      p_note => 'principal-probe-visit')$$,
+  'principal gate: admin opens the probe visit');
+select throws_like(
+  $$select app.assign_visit(
+      (select id from public.visit where note = 'principal-probe-visit'),
+      'bbbbbbbb-0000-0000-0000-0000000000ad')$$,
+  '%CAREOS_NOT_FOUND%',
+  'principal gate: a cross-tenant principal cannot be assigned');
+select throws_like(
+  $$select app.assign_visit(
+      (select id from public.visit where note = 'principal-probe-visit'),
+      'aaaaaaaa-0000-0000-0000-0000000000a4')$$,
+  '%CAREOS_NOT_FOUND%',
+  'principal gate: a separated staff member cannot be assigned');
+select throws_like(
+  $$select app.schedule_visit('aaaaaaaa-0000-0000-0000-00000000c001',
+      now() + interval '5 days', now() + interval '5 days 2 hours',
+      p_caregiver => 'bbbbbbbb-0000-0000-0000-0000000000ad')$$,
+  '%CAREOS_NOT_FOUND%',
+  'principal gate: a cross-tenant principal cannot be scheduled at creation either');
+
+-- Shift creation lands on the ledger (trg_shift_audit).
+select lives_ok(
+  $$select app.create_shift('aaaaaaaa-0000-0000-0000-0000000000c2',
+      now() + interval '4 days', now() + interval '4 days 8 hours',
+      p_note => 'shift-audit-probe')$$,
+  'shift audit: admin creates a roster shift via the RPC');
+reset role;
+select is(
+  (select count(*)::int from audit.audit_event
+    where action = 'shift.created' and entity_type = 'shift'
+      and entity_id = (select id from public.shift where note = 'shift-audit-probe')),
+  1, 'shift audit: creating a shift emits one shift.created audit event (invariant 7)');
+
+-- Sweep coverage: verified→pending is a lapse (the old status-only hook missed it).
+select pg_temp.login('aaaaaaaa-0000-0000-0000-0000000000ad', 'aal2');
+update public.credential set status = 'verified'
+ where id = 'aaaaaaaa-0000-0000-0000-0000000cd002';   -- A2's CPR back in good standing
+select lives_ok(
+  $$select app.assign_visit(
+      (select id from public.visit where note = 'principal-probe-visit'),
+      'aaaaaaaa-0000-0000-0000-0000000000c2')$$,
+  'sweep coverage: re-verified A2 takes the probe visit');
+update public.credential set status = 'pending'
+ where id = 'aaaaaaaa-0000-0000-0000-0000000cd002';   -- sent back for re-verification
+reset role;
+select is(
+  (select caregiver_id from public.visit where note = 'principal-probe-visit'),
+  null, 'sweep coverage: verified→pending vacates the future visit');
+select is(
+  (select count(*)::int from public.schedule_exception se
+    where se.visit_id = (select id from public.visit where note = 'principal-probe-visit')
+      and se.kind = 'credential_lapse'),
+  1, 'sweep coverage: the send-back left its credential_lapse trail row');
+
+-- Sweep coverage: a shortened expires_on (status untouched) is a lapse too.
+select pg_temp.login('aaaaaaaa-0000-0000-0000-0000000000ad', 'aal2');
+update public.credential set status = 'verified'
+ where id = 'aaaaaaaa-0000-0000-0000-0000000cd002';
+select lives_ok(
+  $$select app.assign_visit(
+      (select id from public.visit where note = 'principal-probe-visit'),
+      'aaaaaaaa-0000-0000-0000-0000000000c2')$$,
+  'sweep coverage: A2 takes the probe visit again');
+update public.credential set expires_on = current_date - 1
+ where id = 'aaaaaaaa-0000-0000-0000-0000000cd002';   -- data-entry correction: lapsed
+reset role;
+select is(
+  (select caregiver_id from public.visit where note = 'principal-probe-visit'),
+  null, 'sweep coverage: shortening expires_on vacates the future visit');
+select is(
+  (select count(*)::int from public.schedule_exception se
+    where se.visit_id = (select id from public.visit where note = 'principal-probe-visit')
+      and se.kind = 'credential_lapse'),
+  2, 'sweep coverage: the expiry correction left a second credential_lapse trail row');
+
 reset role;
 select * from finish();
 rollback;

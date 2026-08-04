@@ -10,10 +10,18 @@
 -- Scope notes:
 -- * Past visits and in-progress/completed visits are never touched — history is not
 --   rewritten (invariant 1); a lapsed-mid-window visit is an exception-report matter.
--- * Natural date expiry with no status write has no trigger; the nightly compliance
---   evaluator gains a sweep pass when the automation runtime lands (Phase 2) — the
---   status-transition hook here covers every write-path lapse (HR marks expired,
---   verification rejected).
+-- * The hook fires on ANY change of status or expires_on for a blocking credential —
+--   not only verified→expired/rejected. A send-back to re-verification
+--   (verified→pending) and a corrected-shorter expires_on are lapses too per
+--   assert_schedulable ('unverified' / 'lapsed'), and the sweep is idempotent, so
+--   firing on improvements (pending→verified, renewal) is a harmless no-op re-proof.
+-- * Two lanes have NO write to hook and wait for the Phase-2 nightly sweep pass:
+--   natural date expiry (no UPDATE happens), and the assert_schedulable
+--   most-current-pick quirk where INSERTING a later-expiring unverified credential
+--   displaces a valid one.
+-- * Both this sweep and the assignment RPCs (0023) take the per-caregiver
+--   'careos_sched:' advisory lock first, so assignment and sweep serialize — neither
+--   order can leave an ineligible caregiver staffed.
 -- * The sweep requires a named actor for the exception trail (created_by is NOT NULL by
 --   design). Identity-less system paths defer visibly via credential.sweep_deferred
 --   rather than sweeping anonymously; Phase 2 agent identities close that lane.
@@ -48,6 +56,8 @@ begin
   if v_tenant is null then
     raise exception 'CAREOS_NOT_FOUND: staff member' using errcode = 'P0001';
   end if;
+  -- Serialize with the assignment RPCs (0023): same key, same first-lock order.
+  perform pg_advisory_xact_lock(hashtextextended('careos_sched:' || p_user::text, 0));
 
   for r in
     select v.id, v.tenant_id, v.client_id, v.scheduled_start, v.scheduled_end
@@ -84,9 +94,20 @@ revoke all on function app.sweep_ineligible_assignments(uuid, uuid) from public,
 create or replace function app.sweep_on_credential_block() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  if old.status = 'verified' and new.status in ('expired','rejected')
+  -- Any eligibility-relevant change on a blocking credential re-proves the holder's
+  -- future visits: status moves in EITHER direction (verified→pending is a lapse;
+  -- pending→verified is a harmless no-op re-proof) and expires_on edits (a shortened
+  -- date is a lapse the old status-only condition missed).
+  if (new.status is distinct from old.status
+      or new.expires_on is distinct from old.expires_on)
      and exists (select 1 from public.credential_type ct
                   where ct.id = new.credential_type_id and ct.blocks_scheduling) then
+    -- Nothing to sweep, nothing to defer: skip the noise early.
+    if not exists (select 1 from public.visit v
+                    where v.caregiver_id = new.app_user_id
+                      and v.status = 'scheduled' and v.scheduled_start > now()) then
+      return null;
+    end if;
     if auth.uid() is null then
       -- No lawful actor (seed / identity-less system path): defer visibly, never sweep
       -- anonymously. Phase-2 agent identities make this lane disappear.
