@@ -127,17 +127,20 @@ select throws_ok(
   '42501', null,
   'visit -: caregiver without schedule.write cannot insert a visit');
 
--- ── visit audit: a scheduled visit emits exactly one visit.schedule audit event ──
+-- ── visit audit: scheduling via the Lane-B RPC emits exactly one visit.schedule ──
+-- (0023: direct inserts are revoked; app.schedule_visit is the only way in.)
 reset role;
 select pg_temp.login('aaaaaaaa-0000-0000-0000-0000000000ad', 'aal2');   -- schedule.write + AAL2
-insert into public.visit (id, tenant_id, client_id, scheduled_start, scheduled_end) values
-  ('aaaaaaaa-0000-0000-0000-00000000e777', 'aaaaaaaa-0000-0000-0000-000000000001',
-   'aaaaaaaa-0000-0000-0000-00000000c001', now() + interval '1 day', now() + interval '1 day 2 hours');
+select lives_ok(
+  $$select app.schedule_visit('aaaaaaaa-0000-0000-0000-00000000c001',
+      now() + interval '1 day', now() + interval '1 day 2 hours',
+      p_note => 'audit-probe-0011')$$,
+  'visit +: admin with schedule.write schedules an open visit via the RPC');
 reset role;   -- postgres bypasses RLS to read the append-only ledger
 select is(
   (select count(*)::int from audit.audit_event
     where action = 'visit.schedule' and entity_type = 'visit'
-      and entity_id = 'aaaaaaaa-0000-0000-0000-00000000e777'),
+      and entity_id = (select id from public.visit where note = 'audit-probe-0011')),
   1, 'visit audit: scheduling a visit emits one visit.schedule audit event (invariant 7)');
 
 -- ── schedule_exception: positive + negative policy probes ──────────────────
@@ -250,6 +253,91 @@ select is(
     'aaaaaaaa-0000-0000-0000-0000000000c2', 'aaaaaaaa-0000-0000-0000-00000000c001',
     tstzrange(now(), now() + interval '2 hours', '[)')) ->> 'schedulable',
   'false', 'assert_schedulable -: a missing required credential blocks scheduling');
+
+-- ═══ Lane-B perimeter (0023): the guard has no bypass ══════════════════════
+-- Give A2 the missing TB screen so exactly one eligible caregiver exists (A2);
+-- A1 remains blocked by the lapsed CPR.
+reset role;
+insert into public.credential
+  (id, tenant_id, app_user_id, credential_type_id, issued_on, expires_on, status, verified_by, verified_at) values
+  ('aaaaaaaa-0000-0000-0000-0000000cd003', 'aaaaaaaa-0000-0000-0000-000000000001',
+   'aaaaaaaa-0000-0000-0000-0000000000c2', 'aaaaaaaa-0000-0000-0000-0000000c7002',
+   current_date - 10, current_date + 300, 'verified',
+   'aaaaaaaa-0000-0000-0000-0000000000ad', now());
+
+-- No direct write grants remain — even for schedule.write holders.
+select ok(not has_table_privilege('authenticated', 'public.visit', 'insert'),
+  'lane-b: authenticated has no INSERT grant on visit');
+select ok(not has_table_privilege('authenticated', 'public.visit', 'update'),
+  'lane-b: authenticated has no UPDATE grant on visit');
+select ok(not has_table_privilege('authenticated', 'public.shift', 'insert'),
+  'lane-b: authenticated has no INSERT grant on shift');
+select ok(not has_table_privilege('authenticated', 'public.shift', 'update'),
+  'lane-b: authenticated has no UPDATE grant on shift');
+
+select pg_temp.login('aaaaaaaa-0000-0000-0000-0000000000ad', 'aal2');
+select throws_ok(
+  $$insert into public.visit (tenant_id, client_id, scheduled_start, scheduled_end)
+    values ('aaaaaaaa-0000-0000-0000-000000000001',
+            'aaaaaaaa-0000-0000-0000-00000000c001', now(), now() + interval '1 hour')$$,
+  '42501', null,
+  'lane-b: even the admin with schedule.write cannot insert a visit directly');
+
+-- Open a visit, then assign it: the blocked caregiver is refused at WRITE time,
+-- the eligible one lands.
+select lives_ok(
+  $$select app.schedule_visit('aaaaaaaa-0000-0000-0000-00000000c001',
+      now() + interval '2 days', now() + interval '2 days 2 hours',
+      p_note => 'lane-b-open-visit')$$,
+  'lane-b: admin schedules an open visit');
+select throws_like(
+  $$select app.assign_visit(
+      (select id from public.visit where note = 'lane-b-open-visit'),
+      'aaaaaaaa-0000-0000-0000-0000000000c1')$$,
+  '%CAREOS_NOT_SCHEDULABLE%',
+  'lane-b: assigning a caregiver with a lapsed required credential is refused in-transaction');
+select lives_ok(
+  $$select app.assign_visit(
+      (select id from public.visit where note = 'lane-b-open-visit'),
+      'aaaaaaaa-0000-0000-0000-0000000000c2')$$,
+  'lane-b: assigning the fully-credentialed caregiver succeeds');
+select is(
+  (select caregiver_id from public.visit where note = 'lane-b-open-visit'),
+  'aaaaaaaa-0000-0000-0000-0000000000c2'::uuid,
+  'lane-b: the visit is assigned to the eligible caregiver');
+
+-- Call-out vacates the visit back to the open board with a callout exception.
+select throws_like(
+  $$select app.record_callout(
+      (select id from public.visit where note = 'lane-b-open-visit'), '')$$,
+  '%CAREOS_REASON_REQUIRED%',
+  'lane-b: a call-out without a reason is refused');
+select lives_ok(
+  $$select app.record_callout(
+      (select id from public.visit where note = 'lane-b-open-visit'), 'sick call, 6am')$$,
+  'lane-b: recording a call-out succeeds');
+select is(
+  (select caregiver_id from public.visit where note = 'lane-b-open-visit'),
+  null, 'lane-b: the call-out vacated the visit (open again)');
+select is(
+  (select count(*)::int from public.schedule_exception se
+    where se.visit_id = (select id from public.visit where note = 'lane-b-open-visit')
+      and se.kind = 'callout'),
+  1, 'lane-b: the call-out left its exception-trail row');
+
+-- Cancellation needs a reason and lands the terminal state.
+select throws_like(
+  $$select app.cancel_visit(
+      (select id from public.visit where note = 'lane-b-open-visit'), null)$$,
+  '%CAREOS_REASON_REQUIRED%',
+  'lane-b: a cancellation without a reason is refused');
+select lives_ok(
+  $$select app.cancel_visit(
+      (select id from public.visit where note = 'lane-b-open-visit'), 'client hospitalized')$$,
+  'lane-b: cancelling with a reason succeeds');
+select is(
+  (select status from public.visit where note = 'lane-b-open-visit'),
+  'cancelled', 'lane-b: the visit reached cancelled');
 
 reset role;
 select * from finish();
