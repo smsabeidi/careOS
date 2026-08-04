@@ -51,6 +51,7 @@ tables:
   public.visit_event:       { scope: tenant, authenticated: select-self-or-schedule.read-aal2, writes: rpc, delete: none, append_only: true }
   # ── HR spine (0028) ──
   public.employee:          { scope: tenant, authenticated: select-self-or-staff.manage-or-credential.read.all-aal2, writes: rpc }
+  public.document:          { scope: tenant, authenticated: select-scoped-aal2, writes: rpc, delete: retention-sweep-only }
   # ── Outbox (0027) ──
   public.domain_event:      { scope: tenant, authenticated: none, writes: definer-only, append_only: true }
   # ── AI plane (0014) ──
