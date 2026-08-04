@@ -161,12 +161,16 @@ async function handleIdentitySeparated(ev: DomainEvent): Promise<void> {
     p_step: "auth_ban",
     p_note: "worker: supabase admin api",
   });
+  // Defense-in-depth (0037): hard-delete auth sessions + refresh tokens so even the
+  // banned ≤1h tail cannot refresh-race during clock skew. The ban alone already
+  // blocks every refresh grant; this makes the tokens cease to exist.
+  await appRpc("revoke_auth_sessions", { p_user: userId });
   await appRpc("complete_revocation_step_system", {
     p_tenant: ev.tenant_id,
     p_user: userId,
     p_step: "refresh_revoke",
     p_note:
-      "worker: supabase admin api (ban blocks all refresh grants; no session-delete admin endpoint exists)",
+      "worker: sessions and refresh tokens hard-deleted (app.revoke_auth_sessions); ban blocks any re-grant",
   });
   // Honest no-op: there is no mobile app yet, so no push tokens can exist. Completing
   // the step with a truthful note beats leaving the checklist eternally pending.
