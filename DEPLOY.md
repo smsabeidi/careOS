@@ -14,13 +14,16 @@ cannot reach the Supabase running on your Mac). Budget ~15–20 minutes the firs
 ## 1 — Hosted Supabase backend
 
 1. Create a project at supabase.com (note the project ref, DB password, and region).
-2. From this repo, link and push the schema (migrations 0001–0019):
+2. From this repo, link and push the schema (all migrations, currently 0001–0035):
 
    > **Already deployed once?** `supabase db push` is also how you ship *new* migrations to
-   > an existing hosted project — it applies only what the remote has not seen. 0017–0019
+   > an existing hosted project — it applies only what the remote has not seen, in order. 0017–0019
    > (definition binding, legal authority, COMAR fidelity) are additive and expand-only, but
    > 0017 does run a one-time backfill `UPDATE` over `form_version` to populate the new
    > template binding. Take a PITR bookmark first on anything you care about (docs/13 §3).
+   > 0022–0035 (staff lifecycle + automation runtime) are also additive, but the runtime
+   > needs the §3 checklist below after the push — a pushed schema with no worker, no cron,
+   > and no deadman is silently inert, not broken.
    ```bash
    cd ~/careos-work
    supabase link --project-ref <your-project-ref>
@@ -72,6 +75,35 @@ cannot reach the Supabase running on your Mac). Budget ~15–20 minutes the firs
 
 5. **Deploy.** When it's live, open the URL and sign in as `sarah@meadowbrook.demo` /
    `Meadowbrook!demo1`, then use "View as" to walk every role.
+
+## 3 — Automation runtime (migrations 0022+)
+
+The staff lifecycle and automation runtime (0022–0035: seal, outbox, employee spine,
+revocation saga, onboarding engine, cron/heartbeat, agent identity) need pieces the
+schema push cannot create: dashboard toggles, an Edge Function worker, and CI secrets.
+
+> **Boundaries (docs/09 §5, D-020):** `SUPABASE_SERVICE_ROLE_KEY` and `CAREOS_WORKER_SECRET`
+> live in **Edge Function secrets only — never Vercel runtime env, never the repo**. The
+> worker's custody of the signing secret is what machine AAL2 stands on (D-020); putting it
+> anywhere else widens the perimeter.
+
+Do these in order:
+
+1. **Push the migrations.** `supabase db push` from the linked repo applies 0022+ in
+   order (only what the remote hasn't seen). Take a PITR bookmark first (docs/13 §3).
+2. **Supabase Auth dashboard:** enable **leaked password protection** (step 1.5 above).
+   The security advisor flags this as a WARN and it cannot be set via SQL — it is a
+   per-project dashboard step, easy to forget on a fresh project.
+3. **Deploy the worker Edge Function and set its secrets:**
+   ```bash
+   supabase functions deploy worker
+   supabase secrets set CAREOS_WORKER_SECRET=<value> SUPABASE_URL=https://<ref>.supabase.co SUPABASE_SERVICE_ROLE_KEY=<value>
+   ```
+4. **GitHub repo secrets** `SUPABASE_URL` + `CAREOS_DEADMAN_KEY` (Settings → Secrets →
+   Actions) so the deadman workflow can prove the heartbeat from outside Supabase.
+5. **Verify — all five before calling it deployed:** Supabase security advisors clean ·
+   pg_cron jobs listed (`select jobname from cron.job`) · at least one green worker
+   heartbeat · pgTAP suite green in CI · deadman workflow ran without alerting.
 
 ## Notes
 
