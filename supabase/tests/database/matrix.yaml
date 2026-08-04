@@ -56,6 +56,7 @@ tables:
   public.revocation_checklist: { scope: tenant, authenticated: select-staff.manage-aal2, writes: rpc }
   public.onboarding_checklist: { scope: tenant, authenticated: select-tenant, writes: none }
   public.onboarding_item:   { scope: tenant, authenticated: select-self-or-staff.manage-or-credential.read.all-aal2, writes: rpc }
+  public.job_heartbeat:     { scope: global, authenticated: none, writes: definer-only }
   # ── Outbox (0027) ──
   public.domain_event:      { scope: tenant, authenticated: none, writes: definer-only, append_only: true }
   # ── AI plane (0014) ──
