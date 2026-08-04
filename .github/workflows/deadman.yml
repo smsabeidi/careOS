@@ -1,0 +1,48 @@
+name: deadman
+# ST-152 · The OUTER deadman layer (layer 3 of 3) — guards against pg_cron itself wedging.
+#
+# Layers (0034): (1) every job/worker pass writes public.job_heartbeat; (2) the pg_cron
+# 'careos_deadman' job runs app.check_heartbeats inside the DB every 5 min; (3) THIS
+# workflow probes app.health_check from entirely outside the Supabase boundary every
+# 30 min — if pg_cron, pg_net, or the whole runtime plane goes quiet, layers 1–2 go
+# quiet with it, and only an external prodder still notices (S1-6/S8-1/S8-2).
+#
+# Required repo secrets:
+#   SUPABASE_URL       — the project URL (https://<ref>.supabase.co)
+#   CAREOS_DEADMAN_KEY — a service key; CI already holds DB credentials per docs/09 §5,
+#                        so this adds no new vendor or custody location.
+#
+# app.health_check returns {ok, checked_at, stalled[]} — job keys and timestamps only,
+# no tenant data (job_heartbeat is platform-level by design), so echoing it is PHI-safe.
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  probe:
+    name: probe app.health_check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call health_check and fail loudly on stall
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          CAREOS_DEADMAN_KEY: ${{ secrets.CAREOS_DEADMAN_KEY }}
+        run: |
+          # -f fails the step on any HTTP error (401/500/timeout), which is the point:
+          # an unreachable health endpoint is itself a dead man's signal.
+          resp="$(curl -sf -X POST "$SUPABASE_URL/rest/v1/rpc/health_check" \
+            -H "apikey: $CAREOS_DEADMAN_KEY" \
+            -H "Authorization: Bearer $CAREOS_DEADMAN_KEY" \
+            -H "Content-Profile: app" \
+            -H "Accept-Profile: app" \
+            -H "Content-Type: application/json" \
+            -d '{}')"
+          echo "$resp" | jq .
+          ok="$(echo "$resp" | jq -r '.ok')"
+          stalled="$(echo "$resp" | jq '.stalled | length')"
+          if [ "$ok" != "true" ] || [ "$stalled" != "0" ]; then
+            echo "::error::CareOS deadman: health_check reports ok=$ok, stalled=$stalled job(s) — see output above"
+            exit 1
+          fi
+          echo "healthy: no stalled jobs"
