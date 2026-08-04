@@ -339,6 +339,56 @@ select is(
   (select status from public.visit where note = 'lane-b-open-visit'),
   'cancelled', 'lane-b: the visit reached cancelled');
 
+-- ═══ Credential lapse sweep (0024, S2-9) ═══════════════════════════════════
+-- A2 is fully credentialed and assigned to a future visit and an old scheduled
+-- visit. Rejecting A2's CPR must vacate the FUTURE visit only, leaving a
+-- credential_lapse exception; the past visit is history and stays untouched.
+reset role;
+-- Both credential permissions: an UPDATE whose WHERE references existing columns
+-- must satisfy the SELECT policy as well as the UPDATE policy (Postgres RLS rule),
+-- and credential_select_scoped needs credential.read.all for non-self rows.
+insert into public.role_permission (role_id, permission_key) values
+  ('aaaaaaaa-0000-0000-0000-00000000e0ad', 'credential.write'),   -- keys exist from 0008
+  ('aaaaaaaa-0000-0000-0000-00000000e0ad', 'credential.read.all');
+
+insert into public.visit (id, tenant_id, client_id, caregiver_id,
+                          scheduled_start, scheduled_end, note) values
+  ('aaaaaaaa-0000-0000-0000-00000000e801', 'aaaaaaaa-0000-0000-0000-000000000001',
+   'aaaaaaaa-0000-0000-0000-00000000c001', 'aaaaaaaa-0000-0000-0000-0000000000c2',
+   now() + interval '3 days', now() + interval '3 days 2 hours', 'sweep-future'),
+  ('aaaaaaaa-0000-0000-0000-00000000e802', 'aaaaaaaa-0000-0000-0000-000000000001',
+   'aaaaaaaa-0000-0000-0000-00000000c001', 'aaaaaaaa-0000-0000-0000-0000000000c2',
+   now() - interval '3 days', now() - interval '3 days' + interval '2 hours', 'sweep-past');
+
+select pg_temp.login('aaaaaaaa-0000-0000-0000-0000000000ad', 'aal2');
+update public.credential
+   set status = 'rejected', row_version = row_version + 1
+ where id = 'aaaaaaaa-0000-0000-0000-0000000cd002';   -- A2's CPR, was verified
+
+reset role;
+select is(
+  (select caregiver_id from public.visit where note = 'sweep-future'),
+  null, 'sweep: the future visit of the now-blocked caregiver is vacated');
+select is(
+  (select caregiver_id from public.visit where note = 'sweep-past'),
+  'aaaaaaaa-0000-0000-0000-0000000000c2'::uuid,
+  'sweep: the past visit is history and keeps its caregiver');
+select is(
+  (select count(*)::int from public.schedule_exception se
+    where se.visit_id = 'aaaaaaaa-0000-0000-0000-00000000e801'
+      and se.kind = 'credential_lapse'),
+  1, 'sweep: the vacated visit carries its credential_lapse exception-trail row');
+select is(
+  (select count(*)::int from audit.audit_event
+    where action = 'visit.reassign'
+      and entity_id = 'aaaaaaaa-0000-0000-0000-00000000e801'),
+  1, 'sweep: the vacate is on the audit ledger as a visit.reassign');
+
+-- The sweep engine is definer-only plumbing — not directly callable by clients.
+select ok(not has_function_privilege('authenticated',
+  'app.sweep_ineligible_assignments(uuid,uuid)', 'execute'),
+  'sweep: authenticated cannot call the sweep engine directly');
+
 reset role;
 select * from finish();
 rollback;
