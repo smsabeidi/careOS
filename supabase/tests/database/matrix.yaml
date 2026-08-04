@@ -49,6 +49,8 @@ tables:
   public.visit:             { scope: tenant, authenticated: select-scoped-aal2, writes: rpc }
   public.schedule_exception: { scope: tenant, authenticated: select-scoped-aal2, insert: scoped-aal2, delete: none, append_only: true }
   public.visit_event:       { scope: tenant, authenticated: select-self-or-schedule.read-aal2, writes: rpc, delete: none, append_only: true }
+  # ── Outbox (0027) ──
+  public.domain_event:      { scope: tenant, authenticated: none, writes: definer-only, append_only: true }
   # ── AI plane (0014) ──
   public.ai_capability:     { scope: tenant, authenticated: select-tenant, writes: none }
   public.knowledge_document: { scope: tenant, authenticated: select-tenant, insert: ai.manage-or-client.write, delete: none }
