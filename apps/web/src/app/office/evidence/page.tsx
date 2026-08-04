@@ -24,7 +24,7 @@ import {
   IconUsers,
 } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
-import { requireRole } from "@/lib/profile";
+import { requirePerm } from "@/lib/profile";
 import { buildEvidencePacket, type EvidenceManifest } from "./actions";
 
 /**
@@ -47,7 +47,6 @@ import { buildEvidencePacket, type EvidenceManifest } from "./actions";
 export const metadata = { title: "Evidence" };
 export const dynamic = "force-dynamic";
 
-const ROLES = ["owner", "admin", "compliance"];
 const CLIENT_LIMIT = 20;
 const PACKET_LIMIT = 10;
 
@@ -140,7 +139,9 @@ export default async function EvidencePage({
   const packetId = (params.packet ?? "").trim();
   const errorNotice = params.error ? (ERRORS[params.error] ?? ERRORS.denied) : null;
 
-  const profile = await requireRole(ROLES);
+  // Permission gate, not role keys (ST-124): the old guard named a 'compliance' role
+  // key that no seed defines — owners and admins were the only ones through, by luck.
+  const profile = await requirePerm("compliance.read");
   const supabase = await supabaseServer();
 
   // ── Client picker (RLS-scoped; a name search, not an id box) ────────────────

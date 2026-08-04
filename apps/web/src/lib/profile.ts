@@ -48,3 +48,18 @@ export async function requireRole(allowed: string[]): Promise<Profile> {
   if (!profile.roles.some((r) => allowed.includes(r))) redirect(homeFor(profile.roles));
   return profile;
 }
+
+/**
+ * Permission-based surface guard (ST-124): asks the same app.has_perm() the RLS
+ * policies use, so the page gate and the data gate can never drift apart the way
+ * role-key guards did (/office/evidence guarded on a role key that no seed defines).
+ * New surfaces use this; requireRole survives for existing pages until each migrates.
+ */
+export async function requirePerm(perm: string): Promise<Profile> {
+  const profile = await getProfile();
+  if (!profile) redirect("/login");
+  const supabase = await supabaseServer();
+  const { data: allowed } = await supabase.schema("app").rpc("has_perm", { p: perm });
+  if (allowed !== true) redirect(homeFor(profile.roles));
+  return profile;
+}

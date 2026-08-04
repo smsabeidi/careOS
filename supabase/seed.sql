@@ -48,6 +48,24 @@ join lateral (values
 where r.tenant_id = '11111111-1111-1111-1111-111111111111'
 on conflict do nothing;
 
+-- 0026 grant parity (ST-124): fresh environments mirror the migration's key-based
+-- repairs — orphaned grants wired, admin form parity, staff-lifecycle vocabulary.
+insert into public.role_permission (role_id, permission_key)
+select r.id, p.perm
+from public.role r
+join lateral (values
+  ('owner',       'staff.manage'), ('owner', 'careteam.manage'), ('owner', 'document.write'),
+  ('owner',       'platform.manage'), ('owner', 'audit.read'),
+  ('admin',       'staff.manage'), ('admin', 'careteam.manage'), ('admin', 'document.write'),
+  ('admin',       'audit.read'),   ('admin', 'form.write.all'),  ('admin', 'form.finalize'),
+  ('admin',       'form.correct'),
+  ('coordinator', 'careteam.manage'), ('coordinator', 'family.manage'),
+  ('owner',       'family.manage'), ('owner', 'compliance.authority.publish'),
+  ('hr',          'staff.manage'), ('hr', 'document.write')
+) as p(role_key, perm) on p.role_key = r.key
+where r.tenant_id = '11111111-1111-1111-1111-111111111111'
+on conflict do nothing;
+
 -- ── Demo personas (LOCAL/PREVIEW ONLY — synthetic, D-006) ────────────────────
 -- Password for both demo accounts: Meadowbrook!demo1
 insert into auth.users (instance_id, id, aud, role, email, encrypted_password,

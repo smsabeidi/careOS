@@ -58,6 +58,9 @@ tables:
   public.ai_disposition:    { scope: tenant, authenticated: select-self-or-ai.read, insert: self-pinned, delete: none, append_only: true }
   public.huddle_brief:      { scope: tenant, authenticated: select-role-or-self-or-ai.read-aal2, insert: self-pinned-aal2, delete: none, append_only: true }
   public.knowledge_chunk:   { scope: tenant, authenticated: select-tenant, insert: ai.manage-or-client.write, update: embedding-column-only-ai.manage, delete: none }
+  # ── Config controls (0026) ──
+  public.state_transition:  { scope: global, authenticated: select, writes: none }
+  public.feature_flag:      { scope: tenant, authenticated: select-tenant, writes: rpc }
   # ── AI action plane (0016) ──
   # public.ai_proposal_status is a security_invoker VIEW over ai_proposal +
   # ai_proposal_event — it holds no rows of its own and inherits both policies.
