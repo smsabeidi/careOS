@@ -60,5 +60,14 @@ select ok(exists(
    where conname = 'fk_signature_version_hash' and contype = 'f'),
   'signature (form_version_id, content_hash) composite FK exists');
 
+-- Every app./audit. function pins search_path (0025; advisor 0011) — permanent invariant.
+select is(
+  (select count(*)::int
+     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname in ('app','audit')
+      and (p.proconfig is null
+           or not exists (select 1 from unnest(p.proconfig) c where c like 'search_path=%'))),
+  0, 'every function in app/audit pins search_path');
+
 select * from finish();
 rollback;

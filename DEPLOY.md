@@ -38,6 +38,10 @@ cannot reach the Supabase running on your Mac). Budget ~15–20 minutes the firs
    ```
 4. From the dashboard: **Project Settings → API** → copy the **Project URL** and the
    **anon public** key (you'll paste these into Vercel).
+5. Auth hardening (ST-123): **Authentication → Providers → Email** — enable **leaked
+   password protection** (HaveIBeenPwned check). The security advisor flags any hosted
+   project without it; the local stack has no equivalent toggle, so this is a
+   per-project dashboard step.
 
 > **Known gotcha — demo MFA on hosted Supabase.** The persona auto-login reaches AAL2 by
 > completing a real TOTP challenge against a seeded factor (`seeds/demo_users.sql`) whose

@@ -34,6 +34,56 @@ select results_eq(
   $$values (true, null::bigint)$$,
   'verify_chain: tenant B chain is intact');
 
+-- ── Guarded read path (0025): the ledger is readable via RPC, never the tables ──
+insert into auth.users (id, email) values
+  ('aaaaaaaa-0000-0000-0000-000000000a0d', 'auditor.a@meadowbrook.test'),
+  ('aaaaaaaa-0000-0000-0000-000000000c99', 'plain.a@meadowbrook.test');
+insert into public.app_user (id, tenant_id, full_name, work_email, kind) values
+  ('aaaaaaaa-0000-0000-0000-000000000a0d', 'aaaaaaaa-0000-0000-0000-000000000001', 'Auditor A', 'auditor.a@meadowbrook.test', 'staff'),
+  ('aaaaaaaa-0000-0000-0000-000000000c99', 'aaaaaaaa-0000-0000-0000-000000000001', 'Plain A', 'plain.a@meadowbrook.test', 'staff');
+insert into public.role (id, tenant_id, key, name) values
+  ('aaaaaaaa-0000-0000-0000-00000000ea0d', 'aaaaaaaa-0000-0000-0000-000000000001', 'auditor', 'Auditor');
+insert into public.role_permission (role_id, permission_key) values
+  ('aaaaaaaa-0000-0000-0000-00000000ea0d', 'audit.read');
+insert into public.user_role (user_id, role_id) values
+  ('aaaaaaaa-0000-0000-0000-000000000a0d', 'aaaaaaaa-0000-0000-0000-00000000ea0d');
+
+create function pg_temp.login(p_user uuid, p_aal text) returns void
+language plpgsql as $$
+begin
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', p_user, 'role', 'authenticated', 'aal', p_aal)::text, true);
+end $$;
+
+select pg_temp.login('aaaaaaaa-0000-0000-0000-000000000a0d', 'aal2');
+select is(
+  (select count(*)::int from app.read_audit_trail()),
+  3, 'read_audit_trail: the auditor sees exactly the three tenant-A events, never B''s');
+select is(
+  (select count(*)::int from app.read_audit_trail(p_entity_type => 'thing')),
+  3, 'read_audit_trail: entity_type filter matches');
+select is(
+  (select r.action from app.read_audit_trail(p_limit => 1) r),
+  'e.three', 'read_audit_trail: newest first');
+select is(
+  (app.verify_audit_chain() ->> 'ok'), 'true',
+  'verify_audit_chain: the auditor proves an intact tenant chain');
+
+reset role;
+select pg_temp.login('aaaaaaaa-0000-0000-0000-000000000a0d', 'aal1');
+select throws_like(
+  $$select * from app.read_audit_trail()$$,
+  '%CAREOS_AAL2_REQUIRED%', 'read_audit_trail: AAL1 session is refused');
+
+reset role;
+select pg_temp.login('aaaaaaaa-0000-0000-0000-000000000c99', 'aal2');
+select throws_like(
+  $$select * from app.read_audit_trail()$$,
+  '%CAREOS_FORBIDDEN%', 'read_audit_trail: a user without audit.read is refused');
+
+reset role;
+
 -- Simulated insider tamper (docs/12 §3): superuser disables the guard and edits a row
 alter table audit.audit_event disable trigger trg_audit_ao;
 update audit.audit_event set payload = '{"n":999}'
