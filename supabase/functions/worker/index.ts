@@ -313,8 +313,17 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") {
     return new Response("method not allowed", { status: 405 });
   }
-  if (!(await authorized(req))) {
-    return new Response("unauthorized", { status: 401 });
+  // The gate itself can fail (secret RPC unreachable ≠ bad secret) — that's a 503 with
+  // an error class, never the runtime's raw 500 (which is what masked the unexposed-
+  // schema misconfiguration this function once boot-crashed on).
+  try {
+    if (!(await authorized(req))) {
+      return new Response("unauthorized", { status: 401 });
+    }
+  } catch (e) {
+    const cls = classOf(e);
+    console.error(`worker: auth gate unavailable: ${cls}`);
+    return Response.json({ error: "auth_gate_unavailable", class: cls }, { status: 503 });
   }
 
   try {
