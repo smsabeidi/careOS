@@ -17,11 +17,11 @@
 -- seeds exactly (omar = staff #51 = 0x33, dee = staff #9 = 0x09).
 --
 --   Persona       Email                     Password           Home surface
---   owner         sarah@meadowbrook.demo     Meadowbrook!demo1  /exec
---   coordinator   omar@meadowbrook.demo      Meadowbrook!demo1  /office/clients
---   rn            nina@meadowbrook.demo      Meadowbrook!demo1  /clinical
---   caregiver     dee@meadowbrook.demo       Meadowbrook!demo1  /today
---   family        family@meadowbrook.demo    Meadowbrook!demo1  /family
+--   owner         fatima@americancareteam.demo     AmericanCare!demo1  /exec
+--   coordinator   hussien@americancareteam.demo      AmericanCare!demo1  /office/clients
+--   rn            nina@americancareteam.demo      AmericanCare!demo1  /clinical
+--   caregiver     dee@americancareteam.demo       AmericanCare!demo1  /today
+--   family        family@americancareteam.demo    AmericanCare!demo1  /family
 -- @trace: ST-013
 
 -- ── Family role ──────────────────────────────────────────────────────────────
@@ -41,14 +41,14 @@ insert into auth.users (instance_id, id, aud, role, email, encrypted_password,
                         created_at, updated_at, confirmation_token, recovery_token,
                         email_change_token_new, email_change)
 select '00000000-0000-0000-0000-000000000000', p.uid, 'authenticated', 'authenticated',
-       p.email, extensions.crypt('Meadowbrook!demo1', extensions.gen_salt('bf')),
+       p.email, extensions.crypt('AmericanCare!demo1', extensions.gen_salt('bf')),
        now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', ''
 from (values
-  ('11111111-1111-1111-1111-0000000ce001'::uuid, 'sarah@meadowbrook.demo'),
-  ('11111111-1111-1111-1111-0000000ce002'::uuid, 'nina@meadowbrook.demo'),
-  ('22222222-0000-0000-0000-000000000033'::uuid, 'omar@meadowbrook.demo'),
-  ('22222222-0000-0000-0000-000000000009'::uuid, 'dee@meadowbrook.demo'),
-  ('11111111-1111-1111-1111-0000000ce003'::uuid, 'family@meadowbrook.demo')
+  ('11111111-1111-1111-1111-0000000ce001'::uuid, 'fatima@americancareteam.demo'),
+  ('11111111-1111-1111-1111-0000000ce002'::uuid, 'nina@americancareteam.demo'),
+  ('22222222-0000-0000-0000-000000000033'::uuid, 'hussien@americancareteam.demo'),
+  ('22222222-0000-0000-0000-000000000009'::uuid, 'dee@americancareteam.demo'),
+  ('11111111-1111-1111-1111-0000000ce003'::uuid, 'family@americancareteam.demo')
 ) as p(uid, email)
 on conflict (id) do nothing;
 
@@ -59,11 +59,11 @@ select gen_random_uuid(), p.uid, p.uid::text,
        jsonb_build_object('sub', p.uid::text, 'email', p.email, 'email_verified', true),
        'email', now(), now(), now()
 from (values
-  ('11111111-1111-1111-1111-0000000ce001'::uuid, 'sarah@meadowbrook.demo'),
-  ('11111111-1111-1111-1111-0000000ce002'::uuid, 'nina@meadowbrook.demo'),
-  ('22222222-0000-0000-0000-000000000033'::uuid, 'omar@meadowbrook.demo'),
-  ('22222222-0000-0000-0000-000000000009'::uuid, 'dee@meadowbrook.demo'),
-  ('11111111-1111-1111-1111-0000000ce003'::uuid, 'family@meadowbrook.demo')
+  ('11111111-1111-1111-1111-0000000ce001'::uuid, 'fatima@americancareteam.demo'),
+  ('11111111-1111-1111-1111-0000000ce002'::uuid, 'nina@americancareteam.demo'),
+  ('22222222-0000-0000-0000-000000000033'::uuid, 'hussien@americancareteam.demo'),
+  ('22222222-0000-0000-0000-000000000009'::uuid, 'dee@americancareteam.demo'),
+  ('11111111-1111-1111-1111-0000000ce003'::uuid, 'family@americancareteam.demo')
 ) as p(uid, email)
 on conflict do nothing;
 
@@ -71,11 +71,11 @@ on conflict do nothing;
 insert into public.app_user (id, tenant_id, full_name, work_email, kind)
 select p.uid, '11111111-1111-1111-1111-111111111111', p.full_name, p.email, p.kind
 from (values
-  ('11111111-1111-1111-1111-0000000ce001'::uuid, 'sarah@meadowbrook.demo',  'Sarah Okafor',     'staff'),
-  ('11111111-1111-1111-1111-0000000ce002'::uuid, 'nina@meadowbrook.demo',   'Nina Vasquez, RN', 'staff'),
-  ('22222222-0000-0000-0000-000000000033'::uuid, 'omar@meadowbrook.demo',   'Omar Reid',        'staff'),
-  ('22222222-0000-0000-0000-000000000009'::uuid, 'dee@meadowbrook.demo',    'Dee Alvarez',      'staff'),
-  ('11111111-1111-1111-1111-0000000ce003'::uuid, 'family@meadowbrook.demo', 'Grace Vance',      'family')
+  ('11111111-1111-1111-1111-0000000ce001'::uuid, 'fatima@americancareteam.demo',  'Dr. Fatima',       'staff'),
+  ('11111111-1111-1111-1111-0000000ce002'::uuid, 'nina@americancareteam.demo',   'Nina Vasquez, RN', 'staff'),
+  ('22222222-0000-0000-0000-000000000033'::uuid, 'hussien@americancareteam.demo',   'Hussien Barre',    'staff'),
+  ('22222222-0000-0000-0000-000000000009'::uuid, 'dee@americancareteam.demo',    'Dee Alvarez',      'staff'),
+  ('11111111-1111-1111-1111-0000000ce003'::uuid, 'family@americancareteam.demo', 'Grace Vance',      'family')
 ) as p(uid, email, full_name, kind)
 on conflict (id) do nothing;
 

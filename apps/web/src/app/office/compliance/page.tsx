@@ -6,6 +6,7 @@ import {
 import { IconClipboardCheck, IconAlert, IconCheck, IconClock, IconUsers, IconShield } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/profile";
+import { getT } from "@/lib/i18n/server";
 
 export const metadata = { title: "Compliance" };
 export const dynamic = "force-dynamic";
@@ -64,6 +65,7 @@ export default async function CompliancePage({
   const params = await searchParams;
   const filter = FILTERS.some((f) => f.key === params.filter) ? params.filter! : "attention";
   await requireRole(ROLES);
+  const t = await getT();
   const supabase = await supabaseServer();
 
   const { data: rows, error } = await supabase
@@ -89,10 +91,10 @@ export default async function CompliancePage({
     return (
       <AppShell active="/office/compliance">
         <div className="rise">
-          <PageHeader title="Compliance" sub="All COMAR obligations, tracked by software" />
+          <PageHeader title={t("page.compliance")} sub="All COMAR obligations, tracked by software" />
           <ErrorState
-            title="Couldn't load obligations"
-            body="Nothing was changed. Refresh to try again."
+            title={t("states.errorTitle")}
+            body={t("states.errorBody")}
           />
         </div>
       </AppShell>
@@ -137,7 +139,7 @@ export default async function CompliancePage({
     <AppShell active="/office/compliance">
       <div className="rise">
         <PageHeader
-          title="Compliance"
+          title={t("page.compliance")}
           sub={sub}
           actions={
             <Link href="/office/evidence" className="btn btn-secondary btn-sm">
@@ -167,7 +169,7 @@ export default async function CompliancePage({
         {!shown.length ? (
           <EmptyState
             icon={<IconCheck />}
-            title={filter === "all" ? "No obligations tracked yet" : "No obligations in this view"}
+            title={filter === "all" ? "No obligations tracked yet" : t("states.noResults")}
             body={
               filter === "all"
                 ? "Admitting a client generates their COMAR obligations — assessments, reassessments, and supervisory visits, each with its regulation reference."
@@ -175,7 +177,7 @@ export default async function CompliancePage({
             }
             action={
               filter === "all" ? undefined : (
-                <Link href="/office/compliance?filter=all" className="btn btn-secondary btn-sm">View all obligations</Link>
+                <Link href="/office/compliance?filter=all" className="btn btn-secondary btn-sm">{t("common.showAll")}</Link>
               )
             }
           />

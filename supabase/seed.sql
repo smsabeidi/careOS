@@ -7,7 +7,7 @@
 -- @trace: ST-006
 
 insert into public.tenant (id, name) values
-  ('11111111-1111-1111-1111-111111111111', 'Meadowbrook Home Care (SYNTHETIC)')
+  ('11111111-1111-1111-1111-111111111111', 'American Care Team (SYNTHETIC)')
 on conflict (id) do nothing;
 
 insert into public.permission (key, description) values
@@ -67,19 +67,19 @@ where r.tenant_id = '11111111-1111-1111-1111-111111111111'
 on conflict do nothing;
 
 -- ── Demo personas (LOCAL/PREVIEW ONLY — synthetic, D-006) ────────────────────
--- Password for both demo accounts: Meadowbrook!demo1
+-- Password for both demo accounts: AmericanCare!demo1
 insert into auth.users (instance_id, id, aud, role, email, encrypted_password,
                         email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
                         created_at, updated_at, confirmation_token, recovery_token,
                         email_change_token_new, email_change)
 values
   ('00000000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-0000000ce001',
-   'authenticated', 'authenticated', 'sarah@meadowbrook.demo',
-   extensions.crypt('Meadowbrook!demo1', extensions.gen_salt('bf')),
+   'authenticated', 'authenticated', 'fatima@americancareteam.demo',
+   extensions.crypt('AmericanCare!demo1', extensions.gen_salt('bf')),
    now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000', '11111111-1111-1111-1111-0000000ce002',
-   'authenticated', 'authenticated', 'nina@meadowbrook.demo',
-   extensions.crypt('Meadowbrook!demo1', extensions.gen_salt('bf')),
+   'authenticated', 'authenticated', 'nina@americancareteam.demo',
+   extensions.crypt('AmericanCare!demo1', extensions.gen_salt('bf')),
    now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '')
 on conflict (id) do nothing;
 
@@ -87,18 +87,18 @@ insert into auth.identities (id, user_id, provider_id, identity_data, provider,
                              last_sign_in_at, created_at, updated_at)
 values
   (gen_random_uuid(), '11111111-1111-1111-1111-0000000ce001', '11111111-1111-1111-1111-0000000ce001',
-   jsonb_build_object('sub','11111111-1111-1111-1111-0000000ce001','email','sarah@meadowbrook.demo','email_verified',true),
+   jsonb_build_object('sub','11111111-1111-1111-1111-0000000ce001','email','fatima@americancareteam.demo','email_verified',true),
    'email', now(), now(), now()),
   (gen_random_uuid(), '11111111-1111-1111-1111-0000000ce002', '11111111-1111-1111-1111-0000000ce002',
-   jsonb_build_object('sub','11111111-1111-1111-1111-0000000ce002','email','nina@meadowbrook.demo','email_verified',true),
+   jsonb_build_object('sub','11111111-1111-1111-1111-0000000ce002','email','nina@americancareteam.demo','email_verified',true),
    'email', now(), now(), now())
 on conflict do nothing;
 
 insert into public.app_user (id, tenant_id, full_name, work_email, kind) values
   ('11111111-1111-1111-1111-0000000ce001', '11111111-1111-1111-1111-111111111111',
-   'Sarah Okafor', 'sarah@meadowbrook.demo', 'staff'),
+   'Dr. Fatima', 'fatima@americancareteam.demo', 'staff'),
   ('11111111-1111-1111-1111-0000000ce002', '11111111-1111-1111-1111-111111111111',
-   'Nina Vasquez, RN', 'nina@meadowbrook.demo', 'staff')
+   'Nina Vasquez, RN', 'nina@americancareteam.demo', 'staff')
 on conflict (id) do nothing;
 
 insert into public.user_role (user_id, role_id)

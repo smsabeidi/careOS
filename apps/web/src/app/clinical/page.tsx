@@ -10,19 +10,24 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/profile";
 import { getOrGenerateBrief } from "@/lib/ai/huddle";
 import { HuddleBriefCard } from "@/components/huddle-brief";
+import { getLocale, getT } from "@/lib/i18n/server";
+import type { TranslationKey } from "@/lib/i18n/dictionaries";
 import { FlagsPanel, type FlagView } from "./flags-panel";
 import { CarePlanReviewPanel, type CarePlanRowView } from "./careplan-review";
 import type { FlagKind, FlagSeverity } from "./clinical-actions";
 
-export const metadata = { title: "Clinical" };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: t("page.clinical") };
+}
 export const dynamic = "force-dynamic";
 
-const TABS = [
-  { key: "signatures", label: "Needs signature" },
-  { key: "flags", label: "Flags" },
-  { key: "careplans", label: "Care plans" },
-  { key: "supervisory", label: "Supervisory" },
-  { key: "caseload", label: "Caseload" },
+const TABS: { key: string; labelKey: TranslationKey }[] = [
+  { key: "signatures", labelKey: "clinical.tabSignatures" },
+  { key: "flags", labelKey: "clinical.tabFlags" },
+  { key: "careplans", labelKey: "clinical.tabCarePlans" },
+  { key: "supervisory", labelKey: "clinical.tabSupervisory" },
+  { key: "caseload", labelKey: "clinical.tabCaseload" },
 ];
 
 /** A plan is in its review window this many days before the platform's review date. */
@@ -30,9 +35,12 @@ const REVIEW_WINDOW_DAYS = 14;
 const FLAG_KINDS = ["condition_trend", "mood_trend", "exception_spike", "visit_shortfall"];
 const FLAG_SEVERITIES = ["info", "medium", "high"];
 
-function nameOf<T extends { first_name: string; last_name: string }>(c: T | T[] | null): string {
+function nameOf<T extends { first_name: string; last_name: string }>(
+  c: T | T[] | null,
+  fallback: string
+): string {
   const x = Array.isArray(c) ? c[0] : c;
-  return x ? `${x.first_name} ${x.last_name}` : "Client";
+  return x ? `${x.first_name} ${x.last_name}` : fallback;
 }
 
 export default async function ClinicalPage({
@@ -41,7 +49,10 @@ export default async function ClinicalPage({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const params = await searchParams;
-  const tab = TABS.some((t) => t.key === params.tab) ? params.tab! : "signatures";
+  const tab = TABS.some((item) => item.key === params.tab) ? params.tab! : "signatures";
+  const t = await getT();
+  const locale = await getLocale();
+  const clientFallback = t("clinical.clientFallback");
   const profile = await requireRole(["rn", "owner", "admin"]);
   const supabase = await supabaseServer();
 
@@ -117,8 +128,8 @@ export default async function ClinicalPage({
     .map((p) => ({
       id: p.id,
       clientId: p.client_id,
-      clientName: nameOf(p.client),
-      title: p.title ?? "Care plan",
+      clientName: nameOf(p.client, clientFallback),
+      title: p.title ?? t("clinical.carePlanFallback"),
       version: p.version,
       status: p.status,
       reviewDueOn: p.review_due_on,
@@ -143,7 +154,7 @@ export default async function ClinicalPage({
     .map((f) => ({
       id: f.id,
       clientId: f.client_id,
-      clientName: nameOf(f.client),
+      clientName: nameOf(f.client, clientFallback),
       kind: f.kind as FlagKind,
       severity: f.severity as FlagSeverity,
       summary: f.summary,
@@ -174,65 +185,73 @@ export default async function ClinicalPage({
   const sub =
     tab === "signatures"
       ? queue.length
-        ? `${queue.length} ${queue.length === 1 ? "record needs" : "records need"} your signature`
-        : "No records awaiting signature"
+        ? t(queue.length === 1 ? "clinical.subSignaturesOne" : "clinical.subSignaturesMany", {
+            count: queue.length,
+          })
+        : t("clinical.subSignaturesNone")
       : tab === "flags"
         ? openFlags.length
-          ? `${openFlags.length} ${openFlags.length === 1 ? "flag is" : "flags are"} waiting on your review`
-          : "No flags are waiting on your review"
-        : `${caseClients.length} ${caseClients.length === 1 ? "client" : "clients"} on your caseload`;
+          ? t(openFlags.length === 1 ? "clinical.subFlagsOne" : "clinical.subFlagsMany", {
+              count: openFlags.length,
+            })
+          : t("clinical.subFlagsNone")
+        : t(caseClients.length === 1 ? "clinical.subCaseloadOne" : "clinical.subCaseloadMany", {
+            count: caseClients.length,
+          });
 
   const brief = await getOrGenerateBrief(supabase, "rn", profile.userId);
 
   return (
     <AppShell active="/clinical">
       <div className="rise">
-        <PageHeader title="Clinical" sub={sub} />
+        <PageHeader title={t("page.clinical")} sub={sub} />
 
         <HuddleBriefCard brief={brief} canRegenerate />
 
         <div className="mb-6">
           <Tabs
             active={`/clinical${tab === "signatures" ? "" : `?tab=${tab}`}`}
-            items={TABS.map((t) => ({
-              href: `/clinical${t.key === "signatures" ? "" : `?tab=${t.key}`}`,
-              label: t.label,
-              count: counts[t.key as keyof typeof counts],
+            items={TABS.map((item) => ({
+              href: `/clinical${item.key === "signatures" ? "" : `?tab=${item.key}`}`,
+              label: t(item.labelKey),
+              count: counts[item.key as keyof typeof counts],
             }))}
           />
         </div>
 
         {tab === "signatures" && (
           <section>
-            <SectionTitle icon={<IconPen width={16} height={16} />}>Needs your signature</SectionTitle>
+            <SectionTitle icon={<IconPen width={16} height={16} />}>{t("clinical.needsYourSignature")}</SectionTitle>
             {!queue.length ? (
               <div className="card flex items-center gap-3.5 px-5 py-4">
                 <TintTile icon={<IconCheck width={20} height={20} />} tone="success" size={40} />
                 <p className="text-[15px]" style={{ color: "var(--text-secondary)" }}>
-                  No assessments pending signature.
+                  {t("clinical.noPendingSignature")}
                 </p>
               </div>
             ) : (
               <div className="card stagger divide-y hairline overflow-hidden">
                 {queue.slice(0, 40).map((q) => {
-                  const t = Array.isArray(q.form_template) ? q.form_template[0] : q.form_template;
+                  const tpl = Array.isArray(q.form_template) ? q.form_template[0] : q.form_template;
                   const c = Array.isArray(q.client) ? q.client[0] : q.client;
                   return (
                     <Link key={q.id} href={`/office/forms/${q.id}`} className="row-link">
                       <TintTile icon={<IconClipboard width={20} height={20} />} size={40} />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[15px] font-medium">
-                          {t?.title ?? "Record"}
+                          {tpl?.title ?? t("clinical.recordFallback")}
                           {c && <span style={{ color: "var(--text-muted)" }}> · {c.first_name} {c.last_name}</span>}
                         </p>
                         <p className="mt-0.5 text-[13px]" style={{ color: "var(--text-muted)" }}>
-                          Last updated {new Date(q.updated_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                          {t("clinical.lastUpdated", {
+                            date: new Date(q.updated_at).toLocaleDateString(locale, { month: "short", day: "numeric" }),
+                          })}
                         </p>
                       </div>
                       <StatusChip status={q.status} />
                       <span className="btn btn-primary btn-sm shrink-0">
                         <IconPen width={14} height={14} />
-                        Review &amp; sign
+                        {t("clinical.reviewAndSign")}
                       </span>
                     </Link>
                   );
@@ -252,43 +271,52 @@ export default async function ClinicalPage({
 
         {tab === "supervisory" && (
           <section>
-            <SectionTitle icon={<IconClipboardCheck width={16} height={16} />}>Supervisory visits (45/90/120-day)</SectionTitle>
+            <SectionTitle icon={<IconClipboardCheck width={16} height={16} />}>{t("clinical.supervisoryTitle")}</SectionTitle>
             {!supervisory.length ? (
               <EmptyState
                 icon={<IconClipboardCheck />}
-                title="No supervisory visits assigned"
-                body="COMAR-mandated 45, 90 and 120-day supervisory visits for your clients appear here with their due dates."
+                title={t("clinical.noSupervisoryTitle")}
+                body={t("clinical.noSupervisoryBody")}
               />
             ) : (
               <DataTable
                 columns={[
-                  { header: "Client" },
-                  { header: "Visit" },
-                  { header: "Due", align: "right" },
-                  { header: "Status", align: "right" },
+                  { header: t("clinical.colClient") },
+                  { header: t("clinical.colVisit") },
+                  { header: t("clinical.colDue"), align: "right" },
+                  { header: t("clinical.colStatus"), align: "right" },
                 ]}
-                rows={supervisory.map((s) => ({
+                rows={supervisory.map((s) => {
+                  // "45_day" → the cadence reads "45-day supervisory" / "supervisión de
+                  // 45 días". Anything non-numeric falls back to the raw kind, untranslated.
+                  const days = /^\d+/.exec(s.kind)?.[0];
+                  return {
                   key: s.id,
                   cells: [
                     <span key="c" className="flex items-center gap-2.5">
-                      <Avatar name={nameOf(s.client)} size={28} />
-                      <span className="font-medium">{nameOf(s.client)}</span>
+                      <Avatar name={nameOf(s.client, clientFallback)} size={28} />
+                      <span className="font-medium">{nameOf(s.client, clientFallback)}</span>
                     </span>,
-                    <span key="k">{s.kind.replace("_", "-")} supervisory</span>,
+                    <span key="k">
+                      {days
+                        ? t("clinical.supervisoryDay", { days })
+                        : t("clinical.supervisoryOther", { kind: s.kind.replace(/_/g, "-") })}
+                    </span>,
                     s.completed_on ? (
-                      <Badge key="d" tone="success" icon={<IconCheck />}>Completed</Badge>
+                      <Badge key="d" tone="success" icon={<IconCheck />}>{t("clinical.visitCompleted")}</Badge>
                     ) : (
                       <DueChip key="d" due={s.due_on} />
                     ),
                     s.completed_on ? (
-                      <Badge key="s" tone="success">Completed</Badge>
+                      <Badge key="s" tone="success">{t("clinical.visitCompleted")}</Badge>
                     ) : s.status === "missed" ? (
-                      <Badge key="s" tone="danger">Missed</Badge>
+                      <Badge key="s" tone="danger">{t("clinical.visitMissed")}</Badge>
                     ) : (
-                      <Badge key="s" tone="info">Scheduled</Badge>
+                      <Badge key="s" tone="info">{t("clinical.visitScheduled")}</Badge>
                     ),
                   ],
-                }))}
+                  };
+                })}
               />
             )}
           </section>
@@ -296,12 +324,12 @@ export default async function ClinicalPage({
 
         {tab === "caseload" && (
           <section>
-            <SectionTitle icon={<IconUsers width={16} height={16} />}>Your caseload</SectionTitle>
+            <SectionTitle icon={<IconUsers width={16} height={16} />}>{t("clinical.yourCaseload")}</SectionTitle>
             {!caseClients.length ? (
               <EmptyState
                 icon={<IconUsers />}
-                title="No caseload assigned yet"
-                body="Clients you case-manage appear here once your coordinator assigns them."
+                title={t("clinical.noCaseloadTitle")}
+                body={t("clinical.noCaseloadBody")}
               />
             ) : (
               <div className="card stagger divide-y hairline overflow-hidden">

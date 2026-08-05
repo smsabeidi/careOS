@@ -5,6 +5,7 @@ import { Avatar, Badge, EmptyState, PageHeader, SectionTitle, StatusChip } from 
 import { IconCalendar, IconClipboard, IconHeart, IconLock, IconShield, IconUsers } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
 import { requirePerm } from "@/lib/profile";
+import { getT } from "@/lib/i18n/server";
 import { InviteForm, QuickAction } from "./staff-forms";
 
 export const metadata = { title: "Staff" };
@@ -42,6 +43,7 @@ type InvitationRow = { id: string; email: string; full_name: string; role_title:
 
 export default async function StaffPage() {
   await requirePerm("user.read");
+  const t = await getT();
   const supabase = await supabaseServer();
 
   const [
@@ -117,7 +119,7 @@ export default async function StaffPage() {
     <AppShell active="/office/staff">
       <div className="rise">
         <PageHeader
-          title="Staff"
+          title={t("page.staff")}
           sub={`${activeCount} active · ${onboardingCount} onboarding · ${wallProblems} lapsed blocking credential${wallProblems === 1 ? "" : "s"}`}
         />
 

@@ -99,3 +99,29 @@ Incumbents (AlayaCare, WellSky, AxisCare, Axxess, HHAeXchange) are broad, legacy
 ## 6. Package conventions
 
 Requirement IDs: `FR-Mx-nnn`/`NFR-x-nnn` (Doc 01), `FR-AI-nnn` (Doc 05), stories `ST-nnn` (Doc 15), decisions `D-nnn` (here), verifications `V-nn` (§4). Error codes `CAREOS_*` (Doc 08 §2). All documents are version-fronted; substantive edits bump the version and land a line in §3 or the doc's own change note. The package is maintained in the engagement repo (`docs/`) alongside the code it governs — documentation drift is treated as a bug, same as policy-catalog drift (Doc 07 §11).
+
+### D-014 — Appearance (light/dark) and language (EN/ES) become user choices
+
+**Date:** 2026-08-02 · **Status:** Ratified · **Supersedes:** part of D-012 (light-only)
+
+D-012 ratified an Apple-2026 rebrand that was deliberately **light-only**. That constraint is
+lifted: the product now ships a full dark appearance and a Spanish locale, both chosen by the
+user from a control cluster in the top-right chrome.
+
+**Why the reversal is safe.** The rebrand put every component on semantic tokens
+(`--bg`, `--panel`, `--text`, …) rather than hardcoded colours, so dark is a token override
+plus a sweep of the few literal rules — no component file changed to support it. Contrast was
+computed, not eyeballed: body text 15.4:1, secondary 6.7:1, and filled buttons received
+dedicated AA-verified fill tokens because Apple's vivid dark blue under white text is only
+3.65:1. Printing is locked to light tokens, since evidence packets are compliance artifacts
+and browsers drop background colours but keep text colours.
+
+**Why Spanish, and why only Spanish.** `client.primary_language` already carries `es`, and
+docs/16 F2 calls for Spanish family communication. A locale that serves real recorded data is
+a product feature; a dropdown of half-translated languages is decoration. The dictionary is
+typed so a missing Spanish key fails the build.
+
+**Coverage, stated honestly:** application chrome (navigation, appearance/language controls,
+sign-out, persona switcher) and the persona surfaces are translated. Generated content — the
+huddle brief narration, AI drafts, seeded demo records — remains in the language it was
+written in; translating model output is capability F2, not chrome.

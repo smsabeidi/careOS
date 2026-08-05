@@ -6,6 +6,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/profile";
 import { getOrGenerateBrief } from "@/lib/ai/huddle";
 import { HuddleBriefCard } from "@/components/huddle-brief";
+import { getT } from "@/lib/i18n/server";
 
 export const metadata = { title: "Clients" };
 export const dynamic = "force-dynamic";
@@ -34,6 +35,7 @@ export default async function ClientsPage({
 }: {
   searchParams: Promise<{ q?: string; status?: string; page?: string }>;
 }) {
+  const t = await getT();
   const params = await searchParams;
   const q = (params.q ?? "").replace(/[%,()]/g, "").trim();
   const status = STATUS_FILTERS.some((f) => f.key === params.status) ? (params.status ?? "") : "";
@@ -67,7 +69,7 @@ export default async function ClientsPage({
       <div className="rise">
         {brief && <HuddleBriefCard brief={brief} canRegenerate />}
         <PageHeader
-          title="Clients"
+          title={t("page.clients")}
           sub={total ? `${total} ${total === 1 ? "client" : "clients"}${status ? ` · ${STATUS_FILTERS.find((f) => f.key === status)?.label.toLowerCase()}` : ""}${q ? ` · matching "${q}"` : ""}` : undefined}
         />
 
@@ -114,13 +116,13 @@ export default async function ClientsPage({
         {error ? (
           <EmptyState
             icon={<IconUsers />}
-            title="Couldn't load clients"
-            body="Nothing was changed. Refresh to try again. If the problem continues, contact your coordinator."
+            title={t("states.errorTitle")}
+            body={t("states.errorBody")}
           />
         ) : !clients?.length ? (
           <EmptyState
             icon={<IconUsers />}
-            title={q || status ? "No matching clients" : "No clients yet"}
+            title={q || status ? t("states.noResults") : "No clients yet"}
             body={
               q || status
                 ? "Adjust the search or clear the filters to see all clients you have access to."
@@ -166,18 +168,18 @@ export default async function ClientsPage({
                 <div className="flex gap-2">
                   {page > 1 ? (
                     <Link href={pageHref(q, status, page - 1)} className="btn btn-secondary btn-sm">
-                      Previous
+                      {t("common.previous")}
                     </Link>
                   ) : (
-                    <span className="btn btn-secondary btn-sm opacity-40" aria-disabled>Previous</span>
+                    <span className="btn btn-secondary btn-sm opacity-40" aria-disabled>{t("common.previous")}</span>
                   )}
                   <span className="tabular self-center">Page {page} of {lastPage}</span>
                   {page < lastPage ? (
                     <Link href={pageHref(q, status, page + 1)} className="btn btn-secondary btn-sm">
-                      Next
+                      {t("common.next")}
                     </Link>
                   ) : (
-                    <span className="btn btn-secondary btn-sm opacity-40" aria-disabled>Next</span>
+                    <span className="btn btn-secondary btn-sm opacity-40" aria-disabled>{t("common.next")}</span>
                   )}
                 </div>
               </div>

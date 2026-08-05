@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { IconAlert, IconLock } from "@/components/icons";
 import { TintTile } from "@/components/ui";
+import { useT } from "@/lib/i18n/client";
 
 type Mode = "loading" | "enroll" | "challenge" | "error";
 
 export default function MfaPage() {
+  const t = useT();
   const router = useRouter();
   const supabase = useRef(supabaseBrowser()).current;
   const [mode, setMode] = useState<Mode>("loading");
@@ -38,7 +40,7 @@ export default function MfaPage() {
     }
     const { data: factors, error: fErr } = await supabase.auth.mfa.listFactors();
     if (fErr) {
-      setError("Couldn't check your security setup. Your sign-in is intact. Try again.");
+      setError(t("auth.mfaCheckError"));
       setMode("error");
       return;
     }
@@ -60,7 +62,7 @@ export default function MfaPage() {
       friendlyName: "Authenticator app",
     });
     if (eErr || !enrolled) {
-      setError("Couldn't start authenticator setup. Your sign-in is intact. Try again.");
+      setError(t("auth.mfaEnrollError"));
       setMode("error");
       return;
     }
@@ -68,7 +70,7 @@ export default function MfaPage() {
     setQr(enrolled.totp.qr_code);
     setSecret(enrolled.totp.secret);
     setMode("enroll");
-  }, [router, supabase]);
+  }, [router, supabase, t]);
 
   useEffect(() => {
     void bootstrap();
@@ -81,7 +83,7 @@ export default function MfaPage() {
     setError(null);
     const { data: challenge, error: cErr } = await supabase.auth.mfa.challenge({ factorId });
     if (cErr || !challenge) {
-      setError("Couldn't start verification. Try again.");
+      setError(t("auth.mfaChallengeError"));
       setBusy(false);
       return;
     }
@@ -91,7 +93,7 @@ export default function MfaPage() {
       code: code.trim(),
     });
     if (vErr) {
-      setError("Code didn't match. Codes refresh every 30 seconds. Enter the current code.");
+      setError(t("auth.mfaCodeError"));
       setBusy(false);
       return;
     }
@@ -106,16 +108,16 @@ export default function MfaPage() {
           <TintTile icon={<IconLock width={26} height={26} />} size={56} tone="accent" />
           <div>
             <h1 className="title-lg text-[28px]">
-              {mode === "enroll" ? "Set up your authenticator" : "Verify your identity"}
+              {mode === "enroll" ? t("auth.mfaEnrollTitle") : t("auth.mfaVerifyTitle")}
             </h1>
             <p className="mx-auto mt-2 max-w-xs text-[15px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-              Patient records open only in a verified session.
+              {t("auth.mfaSubtitle")}
             </p>
           </div>
         </div>
 
         {mode === "loading" && (
-          <div className="card flex flex-col gap-4 p-7" aria-busy="true" aria-label="Checking your security setup">
+          <div className="card flex flex-col gap-4 p-7" aria-busy="true" aria-label={t("auth.mfaChecking")}>
             <div className="skeleton h-4 w-3/4" />
             <div className="skeleton mx-auto size-40 rounded-[var(--radius-lg)]" />
             <div className="skeleton h-14 w-full rounded-[var(--radius-md)]" />
@@ -128,7 +130,7 @@ export default function MfaPage() {
             <TintTile icon={<IconAlert width={24} height={24} />} size={52} tone="danger" />
             <p className="text-[15px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>{error}</p>
             <button className="btn btn-secondary mt-2" onClick={() => { setMode("loading"); void bootstrap(); }}>
-              Try again
+              {t("common.tryAgain")}
             </button>
           </div>
         )}
@@ -138,18 +140,17 @@ export default function MfaPage() {
             {mode === "enroll" && (
               <>
                 <p className="text-[15px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                  Scan this with any authenticator app (1Password, Google Authenticator, Authy), then
-                  enter the 6-digit code it shows.
+                  {t("auth.mfaScanHelp")}
                 </p>
                 {qr && (
                   <div className="mx-auto rounded-[var(--radius-lg)] border p-3.5 hairline" style={{ background: "#fff" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={qr} alt="Authenticator enrollment QR code" width={168} height={168} />
+                    <img src={qr} alt={t("auth.mfaQrAlt")} width={168} height={168} />
                   </div>
                 )}
                 {secret && (
                   <p className="text-center text-[13px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                    If you can't scan, enter this key manually:{" "}
+                    {t("auth.mfaManualKey")}{" "}
                     <code data-testid="totp-secret" className="tabular font-medium tracking-wide" style={{ color: "var(--text)" }}>{secret}</code>
                   </p>
                 )}
@@ -157,7 +158,7 @@ export default function MfaPage() {
             )}
 
             <div>
-              <label className="label" htmlFor="code">6-digit code</label>
+              <label className="label" htmlFor="code">{t("auth.mfaCodeLabel")}</label>
               <input
                 id="code"
                 inputMode="numeric"
@@ -182,7 +183,7 @@ export default function MfaPage() {
             )}
 
             <button className="btn btn-primary btn-lg btn-block" disabled={busy || code.length !== 6} type="submit">
-              {busy ? "Verifying…" : "Verify and continue"}
+              {busy ? t("auth.mfaVerifying") : t("auth.mfaVerifyCta")}
             </button>
           </form>
         )}
