@@ -7,8 +7,10 @@ import { NextResponse, type NextRequest } from "next/server";
  *  - authenticated at AAL1 on a PHI surface → /mfa step-up
  * RLS is the real perimeter; this is UX convenience on top of it.
  */
-const PUBLIC_PATHS = ["/login"];
-const AAL1_ALLOWED = ["/login", "/mfa"];
+const PUBLIC_PATHS = ["/login", "/accept"];
+/* /accept is AAL1 by design: a brand-new hire has no TOTP factor yet, and invitation
+ * acceptance exposes no PHI (0030 header). MFA enrollment follows immediately after. */
+const AAL1_ALLOWED = ["/login", "/mfa", "/accept"];
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * DEMO-ONLY AAL2 BYPASS — READ BEFORE TOUCHING.

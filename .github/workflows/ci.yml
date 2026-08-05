@@ -28,3 +28,13 @@ jobs:
           fetch-depth: 0
       - name: Drift gate
         run: bash scripts/spec-drift-gate.sh "${{ github.event.pull_request.base.sha || 'HEAD~1' }}..HEAD"
+
+  matrix-coverage:
+    name: pgTAP matrix coverage (ST-110)
+    # matrix.yaml has claimed this gate existed since 0005; until ST-110 the script did
+    # not exist and the manifest had drifted badly behind the schema.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Matrix manifest completeness
+        run: bash scripts/check-matrix.sh

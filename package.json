@@ -8,6 +8,10 @@
     "db:start": "supabase db start",
     "db:reset": "supabase db reset",
     "db:test": "supabase test db",
-    "drift:gate": "bash scripts/spec-drift-gate.sh"
+    "drift:gate": "bash scripts/spec-drift-gate.sh",
+    "check:matrix": "bash scripts/check-matrix.sh",
+    "typecheck": "pnpm --filter @careos/web typecheck",
+    "lint": "bash scripts/check-matrix.sh && bash scripts/spec-drift-gate.sh",
+    "test": "supabase test db"
   }
 }

@@ -1,8 +1,8 @@
 # Doc 16 — CareOS AI Automation Master Plan
 
-Status: Draft for ratification (proposes decision-log entries; see §7)
+Status: Partially ratified — provider ratified as D-013 (2026-08-01); §2.8 staff-lifecycle rows ratified as D-021 (2026-08-04); remaining §7 proposals open
 Owner: Head of AI Product
-Date: 2026-08-01
+Date: 2026-08-01 (amended 2026-08-04: §2.8 added per D-021)
 Cross-references: docs/00 (decision log), docs/07 (schema), docs/08 (API), docs/09 (security/vendor register), docs/10 (frontend), docs/11 (AI implementation spec), docs/15 (build plan), `supabase/migrations/0014_ai_plane.sql`, `supabase/seeds/zz_ai.sql`, `apps/web/src/lib/ai/client.ts`
 
 ---
@@ -19,7 +19,7 @@ This codebase is unusually well positioned to absorb that burden, for three reas
 
 The competitive whitespace this plan claims: compliance-grade AI provenance, governed autonomy, the automated daily huddle (no vendor ships one; LTC literature shows formalized huddles measurably reduce staff moral distress — source: PMC 2023/2024 LTC huddle studies), and documentation AI for private-duty/Medicaid personal care (the entire scribe race — WellSky Scribe, Netsmart Bells, HCHB Curate — is skilled home health/OASIS; our RSA/COMAR beachhead has none).
 
-The plan below maps 37 workflows, assigns each a tier and an OpenAI primitive, sequences them into six waves, and shows the unit economics close: full deployment for a 100-staff, 300-client agency costs roughly $130–300/month in model spend against an estimated 230–280 staff-hours/week returned.
+The plan below maps 41 workflows, assigns each a tier and an OpenAI primitive, sequences them into six waves, and shows the unit economics close: full deployment for a 100-staff, 300-client agency costs roughly $130–300/month in model spend against an estimated 230–280 staff-hours/week returned.
 
 ---
 
@@ -101,7 +101,18 @@ AI treatment legend: **Auto (T0/T1)** = runs without per-item approval (notify/l
 | B1 | EVV exception pre-adjudication (clock pair vs schedule vs auth window reconciliation, drafted fix narratives) | EVV↔billing↔auth misalignment is the biggest claims-error source (source: vertexsystems.com); 11.8% first-pass denial rate industry-wide, $25–181 rework per denial (source: Experian State of Claims 2025; aptarro.com) | Det rules classify every exception; Draft+approve (T2) for the documented correction narrative (manual corrections require reasons); billing export stays gated to EVV-verified visits — deterministic, per FR-AI-070 | luna for narratives only | visit_event, visit windows, schedule_exception, method=manual anomalies | 6 | M |
 | B2 | Denial-risk pre-check before claim export | Errors surface ~60 days later as denials | Det completeness gates (signatures, EVV pair, note finalized); Insight narration of gaps | luna | signature completeness, visit_event, form status | 3 | M |
 
-**Estimated total: ~230–280 staff-hours/week returned** for a 100-staff agency at full deployment (~6–7% of total paid hours), dominated by voice-to-note. Roughly 60% of mapped items are drafting/chasing workflows where the data already sits in-system and the human glue is a phone/text loop.
+### 2.8 Staff lifecycle (H)
+
+Ratified by D-021 (2026-08-04). The employee spine these rows ride on landed as migrations 0027–0033 (outbox, employee, documents, invitations, admin RPCs, revocation saga, onboarding engine); the agent identities that will run them land with 0034–0035 under D-020. The H rows deliberately **reuse existing machinery instead of duplicating rows**: C9 (onboarding checklist), C4 (credential chase + document extraction), C5 (obligation sweep), C1 (outreach/offer plumbing), C3/C8 (chase drafting), O4 (coverage-impact narration), X5 (huddle surfacing). What H adds is the lifecycle triggers and approval lanes, not new engines. Triggers are outbox events (0027), not polling.
+
+| # | Workflow | Manual cost today | AI treatment | OpenAI primitive | Data it feeds on | Impact (hrs/wk) | Size |
+|---|---|---|---|---|---|---|---|
+| H1 | Hiring pipeline (candidate → invite → complete employee file) | Hiring runs off-system (texts, spreadsheets); at 75% annual caregiver turnover (§1) a 100-staff agency hires ~1–2/wk forever; file gaps surface at scheduling time | Det gate: `employee_file_status` (pure SQL) is the readiness verdict; Draft+approve (T2) for LLM-drafted outreach only — Coordinator disposes drafts, **Owner disposes the hire itself** | luna structured outputs (drafting only) | identity.invited / candidate outbox events (0027, 0030), employee_file_status (0033), credential requirements per role (reuses C9, C4) | 3 | M |
+| H2 | Offboarding | Separation is a same-day scramble across accounts, schedules, and paperwork; every missed step is an access-revocation finding | The revocation saga (0032) is fully deterministic; Draft+approve (T2) for separation comms + file-closure narrative, Owner lane. **The system never proposes termination** — separation is always human-initiated; automation begins after the human act | luna (narratives only; reuses C3/C8 chase drafting) | identity.separated outbox event (0032), revocation_checklist, employee file, O4 coverage impact | 1 | S |
+| H3 | In-service / training-hours tracking | COMAR in-service hours live on paper or spreadsheets; shortfalls surface at renewal or survey time | Det+narrate: hours ledger = `credential(category='training')` + staff-side cadence obligations (deterministic); Draft+approve (T2) reminder drafts; RN/Coordinator lane | luna; Batch nightly sweep (reuses C5's obligation machinery, surfaces via X5) | credential(category='training'), staff-side cadence_obligation_status, credential_event | 2 | S |
+| H4 | Background-check orchestration | CHRC status chased by phone/fax; pathway ambiguity stalls hires | Det rules for chasing and status (stale `onboarding_item(chrc_background)` trigger); Draft+approve (T2) chase drafts. **Adjudication is a permanent human anti-capability (FR-AI-052)** — enforced structurally by the `verified_by` FK + human-verifier trigger (0033), not by prompt. The Maryland CHRC two-pathway question (Health-General §19-1902 vs Board of Nursing) stays an HR-advisor item, never auto-resolved | luna (chase drafts only; C8 pattern); Checkr integration gated on V8 | onboarding_item(chrc_background) staleness, employee_file_status, advisor_note | 1 | M |
+
+**Estimated total: ~235–285 staff-hours/week returned** for a 100-staff agency at full deployment (~6–7% of total paid hours), dominated by voice-to-note. Roughly 60% of mapped items are drafting/chasing workflows where the data already sits in-system and the human glue is a phone/text loop.
 
 ---
 
@@ -146,7 +157,7 @@ OpenAI's hosted Evals platform is deprecated (read-only Oct 31 2026, shutdown No
 
 Sequence, strictly: (1) today — PHI-minimizer keeps model inputs de-identified/ID-based; the synthetic Meadowbrook universe is the only "realistic" data any non-production environment or eval sees. (2) Execute the **OpenAI BAA + Safety Retention provisioning** (API BAAs are available; self-serve tiers are not BAA-eligible) and register it in docs/09 §6 — this is the prerequisite for any real PHI in prompts. (3) Per-workload lane choice: ZDR-eligible endpoints (responses, embeddings, transcription, realtime) for synchronous PHI paths where retention is unacceptable; BAA/Safety-Retention lane for Batch and Files. (4) Allowlist PHI-minimizer + redaction manifest + planted-PHI canary suite (Doc 11) ship before the first PHI-bearing capability, not after. Abuse-monitoring retention (≤30 days) and Modified Abuse Monitoring are noted in the vendor-register entry.
 
-**Divergence to ratify:** Doc 11 mandates Anthropic-BAA-direct via Vercel AI SDK; the built v1 and this plan run on OpenAI. This is a ratified-spec conflict and must not stand silently — §7 proposes the decision-log entry (either ratify OpenAI as primary with the BAA path above, or plan the provider migration; the chokepoint architecture of `client.ts` makes either cheap).
+**Divergence to ratify:** Doc 11 mandates Anthropic-BAA-direct via Vercel AI SDK; the built v1 and this plan run on OpenAI. This is a ratified-spec conflict and must not stand silently — §7 proposes the decision-log entry (either ratify OpenAI as primary with the BAA path above, or plan the provider migration; the chokepoint architecture of `client.ts` makes either cheap). *Resolved: ratified as D-013 (docs/00 §3, 2026-08-01) — OpenAI primary, STT consolidated on OpenAI transcription.*
 
 ---
 
@@ -223,7 +234,9 @@ Gross-margin sanity: ~$130–300/month is **under $1 per client per month** of m
 
 ## 7. Proposed decision-log entries (docs/00 §3)
 
-1. **D-0XX Provider ratification.** Resolve the Doc 11 (Anthropic-BAA-direct) vs built-v1 (OpenAI) divergence: ratify OpenAI as the primary model provider with BAA + Safety Retention + per-workload ZDR lanes, or schedule the provider migration. The `client.ts` chokepoint makes either cheap; the vendor register (docs/09 §6) must reflect the outcome. Includes consolidating STT on OpenAI transcription in place of Doc 11's Deepgram (one BAA fewer) — or reaffirming Deepgram.
+Status of this list: item 1 is **ratified** (D-013); the §2.8 staff-lifecycle rows this doc did not originally map were proposed and ratified separately as **D-021** (2026-08-04), alongside **D-020** (machine AAL2 — the agent-identity basis the H rows and every agent-run capability in §2 execute under). Items 2–5 remain open proposals.
+
+1. ~~**D-0XX Provider ratification.**~~ **Ratified as D-013 (2026-08-01):** OpenAI is the primary model provider with BAA + Safety Retention + per-workload ZDR lanes; STT consolidated on OpenAI transcription in place of Doc 11's Deepgram. Still pending from that entry: the docs/09 §6 vendor-register amendment and Doc 11 provider-section updates.
 2. **D-0XX Doc 05 reconstruction.** The AI thesis document (FR-AI-* catalog) is absent from the repo; this document plus Doc 11 cross-references are the recovered source of record until Doc 05 is restored or this doc is ratified as its successor.
 3. **D-0XX Client geocoding.** GPS/geofence anomaly detection (B1, G2 adjacencies) requires stored client geocodes; client address is text-only today. Additive column + geocoding step — new external data flow, needs vendor-register review.
 4. **D-0XX Disposition capture schema.** Ratify the §3.2 correction/disposition linkage (extraction diffs, accept/reject pairs, reason codes) as an append-only extension of the AI plane, migrated in Wave 0.

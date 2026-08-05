@@ -706,6 +706,126 @@
 @keyframes sheet-in { from { opacity: 0; transform: translateY(12px) scale(0.985); } to { opacity: 1; transform: none; } }
 @keyframes popover-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
 
+/* ── Auth split-screen (sign-in) ──────────────────────────────────────────────
+   The photograph is an INSET CARD, not a full-bleed background with a wash over it.
+   That is the whole point of the layout: a tint covering the entire image is what makes
+   stock photography look cheap, and it was the first thing to go. The image now renders
+   at true colour across ~60% of its height and is darkened only in a tight band at its
+   base, which reads as photographic falloff rather than a filter.
+
+   That band is not decoration — it is load-bearing. Measured earlier, white copy sits at
+   4.12:1 over this photo's bright regions, i.e. a fail. Confining the darkening to the
+   text's own band keeps the image honest AND the copy at AA. Anything laid over the
+   upper 60% would undo the reason this was changed.
+
+   The brand mark deliberately sits on the panel, above the card, rather than on the
+   photograph: over a bright interior wall a white logo disappears, and no amount of
+   scrim fixes that without dirtying the top of the image. */
+.auth-art {
+  --auth-photo: none;
+  position: relative;
+  isolation: isolate;
+  background-color: #0a1020;
+  background-image:
+    radial-gradient(120% 80% at 15% 0%,  rgb(20 42 84 / 0.85) 0%, transparent 60%),
+    radial-gradient(100% 70% at 90% 100%, rgb(12 24 52 / 0.9) 0%, transparent 62%);
+}
+
+/* The photo card. One corner is notched with a radial mask — the concave cut from the
+   reference — while the rest carry a large radius. */
+.auth-photo-card {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  border-radius: 26px;
+  overflow: hidden;
+  background-color: #12203a;
+  background-image: var(--auth-photo);
+  background-size: cover;
+  /* Biased above centre: the figures sit in the upper half, and the base of the frame is
+     floor. Pulling the crop up keeps both faces clear of the text band. */
+  background-position: center 22%;
+  -webkit-mask-image: radial-gradient(circle at top left, transparent 0 34px, #000 34.5px);
+  mask-image: radial-gradient(circle at top left, transparent 0 34px, #000 34.5px);
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.4), 0 2px 8px rgb(0 0 0 / 0.25);
+}
+
+/* Bottom-only falloff. Neutral ink, not a brand tint — a coloured wash reads as a filter
+   on the photograph, which is exactly what was removed. */
+.auth-photo-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* Ramp shaped around the copy, measured rather than eyeballed. The headline's top edge
+     sits ~35% up the card; at the first pass the falloff had decayed to 0.49 there, i.e.
+     3.7:1 over a white worst case. That technically passes — at ~36px bold it is WCAG
+     large text, which needs 3:1 — but 0.7 of margin evaporates the moment this photo is
+     swapped for one with a brighter lower third. Pulling the 0.62 stop up to 38% puts the
+     headline at ~6.3:1, clearing even the 4.5:1 body-text bar, while the top 62% of the
+     image is still completely untouched. */
+  background: linear-gradient(to top,
+    rgb(4 8 16 / 0.95) 0%,
+    rgb(4 8 16 / 0.90) 20%,
+    rgb(4 8 16 / 0.62) 38%,
+    rgb(4 8 16 / 0.22) 50%,
+    transparent 62%);
+}
+
+.auth-art-body  { position: relative; z-index: 1; color: #fff; }
+.auth-art-muted { color: rgb(255 255 255 / 0.82); }
+
+/* ── Liquid glass pills ──────────────────────────────────────────────────────
+   Real glass, not a translucent rectangle: a saturating blur so colour bleeds through
+   from the photo beneath, a bright top inset for the specular edge, a dark bottom inset
+   for thickness, and a hairline border. Each still carries icon + label — the
+   colour-plus-icon-plus-text rule holds whatever the material is. */
+.auth-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  padding: 0.4375rem 0.8125rem;
+  border-radius: var(--radius-pill);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  color: #fff;
+  background: rgb(255 255 255 / 0.13);
+  border: 1px solid rgb(255 255 255 / 0.22);
+  backdrop-filter: blur(14px) saturate(190%);
+  -webkit-backdrop-filter: blur(14px) saturate(190%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.34),
+    inset 0 -1px 0 rgb(0 0 0 / 0.16),
+    0 2px 10px rgb(0 0 0 / 0.18);
+}
+
+/* No backdrop-filter support (or it is disabled): fall back to a solid tint that still
+   clears AA, rather than a transparent pill with unreadable text on top of a photo. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .auth-chip { background: rgb(10 16 32 / 0.72); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .auth-chip {
+    background: rgb(10 16 32 / 0.82);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+@media (prefers-contrast: more) {
+  .auth-chip { background: rgb(0 0 0 / 0.8); border-color: #fff; box-shadow: none; }
+  .auth-photo-card::after {
+    background: linear-gradient(to top, rgb(0 0 0 / 0.97) 0%, rgb(0 0 0 / 0.7) 40%, rgb(0 0 0 / 0.25) 62%, transparent 74%);
+  }
+}
+
+/* Declared only where the panel exists. Below lg the panel is display:none, but Chrome
+   still resolves the url() inside the custom property and fetches it — 150 KB pulled
+   down for a panel that is never painted. Scoping to the media query is what actually
+   prevents the request; display:none does not. */
+@media (min-width: 1024px) {
+  .auth-art { --auth-photo: url("/auth-art.jpg"); }
+}
+
 /* ─────────────────────────────────────────────────────────────────────────────
    Browser-painted surfaces the tokens don't reach on their own
 ──────────────────────────────────────────────────────────────────────────── */

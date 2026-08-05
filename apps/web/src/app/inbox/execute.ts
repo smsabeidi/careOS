@@ -151,29 +151,32 @@ async function executeAssignment(
     };
   }
 
-  // The authority on eligibility, re-run at the moment of the write (invariant 13).
-  const { data: guard } = await supabase.schema("app").rpc("assert_schedulable", {
+  // One atomic Lane-B call (0023): row lock, eligibility re-proof, and the write share
+  // a transaction — the guard can no longer be raced between check and assignment.
+  const { error } = await supabase.schema("app").rpc("assign_visit", {
+    p_visit: visitId,
     p_caregiver: caregiverId,
-    p_client: v.client_id,
-    p_window: `[${v.scheduled_start},${v.scheduled_end})`,
   });
-  const verdict = guard as { schedulable?: boolean; blockers?: { name?: string; reason?: string }[] } | null;
-  if (verdict && verdict.schedulable === false) {
-    const first = verdict.blockers?.[0];
-    const why = first?.name ? `${first.name} is ${first.reason ?? "not valid"}` : "a credential is not valid";
-    return {
-      executed: false,
-      message: `Approved and recorded, but the assignment was refused: ${why}. The shift is still open.`,
-      revalidate: ["/schedule"],
-    };
-  }
-
-  const { error } = await supabase
-    .from("visit")
-    .update({ caregiver_id: caregiverId, updated_at: new Date().toISOString() })
-    .eq("id", visitId);
 
   if (error) {
+    if (error.message.includes("CAREOS_NOT_SCHEDULABLE")) {
+      let why = "a required credential is not valid";
+      const start = error.message.indexOf("[");
+      if (start !== -1) {
+        try {
+          const blockers = JSON.parse(error.message.slice(start)) as { name?: string; reason?: string }[];
+          const first = blockers[0];
+          if (first?.name) why = `${first.name} is ${first.reason ?? "not valid"}`;
+        } catch {
+          // keep the generic phrasing
+        }
+      }
+      return {
+        executed: false,
+        message: `Approved and recorded, but the assignment was refused: ${why}. The shift is still open.`,
+        revalidate: ["/schedule"],
+      };
+    }
     return {
       executed: false,
       message: "Approved and recorded. The assignment was not written — scheduling permission is required.",
