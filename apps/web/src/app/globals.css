@@ -824,6 +824,7 @@
    prevents the request; display:none does not. */
 @media (min-width: 1024px) {
   .auth-art { --auth-photo: url("/auth-art.jpg"); }
+}
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Browser-painted surfaces the tokens don't reach on their own
