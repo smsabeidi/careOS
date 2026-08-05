@@ -107,6 +107,10 @@ select ok(has_function_privilege('service_role', 'app.health_check()', 'execute'
   'grants: service_role probes health (the GH deadman''s path)');
 select ok(not has_table_privilege('authenticated', 'public.job_heartbeat', 'select'),
   'grants: heartbeats are platform telemetry, not client data');
+select ok(not has_function_privilege('authenticated', 'app.read_worker_shared_secret()', 'execute'),
+  'grants: the worker shared secret is service_role custody only (0040)');
+select ok(has_function_privilege('service_role', 'app.read_worker_shared_secret()', 'execute'),
+  'grants: the worker reads its secret through its own lane (0040)');
 
 reset role;
 select * from finish();

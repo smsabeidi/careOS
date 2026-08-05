@@ -23,7 +23,19 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 // Function; CAREOS_WORKER_SECRET is set explicitly (`supabase secrets set`).
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const WORKER_SECRET = Deno.env.get("CAREOS_WORKER_SECRET") ?? "";
+// The shared secret is DB-custodied (0040): Vault generates it server-side and both
+// parties read the same row — the pump via vault directly, this worker via a
+// service_role RPC. The value never transits a deploy pipeline, an env file, or a
+// human. Env remains as an optional override for local runs only.
+let workerSecretCache: string | null = null;
+async function workerSecret(): Promise<string> {
+  const env = Deno.env.get("CAREOS_WORKER_SECRET");
+  if (env) return env;
+  if (workerSecretCache) return workerSecretCache;
+  const val = await appRpc<string>("read_worker_shared_secret", {});
+  workerSecretCache = typeof val === "string" ? val : "";
+  return workerSecretCache;
+}
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -111,11 +123,12 @@ async function heartbeat(jobKey: string, ok: boolean, error?: string): Promise<v
 // timing leaks nothing about where the secrets diverge — no extra dependency needed.
 async function authorized(req: Request): Promise<boolean> {
   const given = req.headers.get("x-careos-worker-secret");
-  if (!WORKER_SECRET || !given) return false;
+  const expected = await workerSecret();
+  if (!expected || !given) return false;
   const enc = new TextEncoder();
   const [a, b] = await Promise.all([
     crypto.subtle.digest("SHA-256", enc.encode(given)),
-    crypto.subtle.digest("SHA-256", enc.encode(WORKER_SECRET)),
+    crypto.subtle.digest("SHA-256", enc.encode(expected)),
   ]);
   const av = new Uint8Array(a);
   const bv = new Uint8Array(b);
