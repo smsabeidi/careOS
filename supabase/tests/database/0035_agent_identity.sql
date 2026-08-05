@@ -51,6 +51,12 @@ select ok(
        and tenant_id = 'aaaaaaaa-0000-0000-0000-000000000001'),
   'agent: autonomy is opt-in — the fleet ships disabled');
 
+-- 0039: sessions require enabled=true — switch the probe agent ON first.
+reset role;
+update public.agent_identity set enabled = true
+ where agent_key = 'compliance_watch'
+   and tenant_id = 'aaaaaaaa-0000-0000-0000-000000000001';
+
 -- ── Under a broker-minted session, RLS treats the agent like anyone ────────
 create function pg_temp.login(p_user uuid, p_aal text) returns void
 language plpgsql as $$
@@ -93,6 +99,31 @@ select lives_ok(
             (select id from public.ai_proposal where title like '%(probe)'),
             'approve', 'aaaaaaaa-0000-0000-0000-0000000000ad')$$,
   'invariant 8: a staff actor disposes normally');
+
+-- ── M5 (0039): the kill switch has EFFECT, not just a value ────────────────
+reset role;
+update public.agent_identity set enabled = true
+ where agent_key = 'compliance_watch'
+   and tenant_id = 'aaaaaaaa-0000-0000-0000-000000000001';
+select pg_temp.login(
+  (select app_user_id from public.agent_identity where agent_key = 'compliance_watch'
+       and tenant_id = 'aaaaaaaa-0000-0000-0000-000000000001'),
+  'aal2');
+select ok(app.current_tenant_id() is not null,
+  'kill switch: an ENABLED agent has tenant context');
+reset role;
+update public.agent_identity set enabled = false
+ where agent_key = 'compliance_watch'
+   and tenant_id = 'aaaaaaaa-0000-0000-0000-000000000001';
+select pg_temp.login(
+  (select app_user_id from public.agent_identity where agent_key = 'compliance_watch'
+       and tenant_id = 'aaaaaaaa-0000-0000-0000-000000000001'),
+  'aal2');
+select ok(app.current_tenant_id() is null,
+  'kill switch: flipping enabled=false kills the agent MID-TOKEN (0039, M5)');
+select ok(not app.is_active_user(),
+  'kill switch: a disabled agent is not an active principal');
+reset role;
 
 -- ── Oversight visibility + posture ─────────────────────────────────────────
 select pg_temp.login('aaaaaaaa-0000-0000-0000-0000000000ad', 'aal2');

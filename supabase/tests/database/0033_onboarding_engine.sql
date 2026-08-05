@@ -17,6 +17,11 @@ insert into public.tenant (id, name) values
 insert into public.app_user (id, tenant_id, full_name, work_email, kind) values
   ('aaaaaaaa-0000-0000-0000-0000000000ad', 'aaaaaaaa-0000-0000-0000-000000000001', 'Admin A', 'admin.a@meadowbrook.test', 'staff'),
   ('aaaaaaaa-0000-0000-0000-000000005e5e', 'aaaaaaaa-0000-0000-0000-000000000001', 'Agent Bot', 'agent.bot@meadowbrook.test', 'system');
+-- 0039: system principals need an enabled agent_identity row for tenant context —
+-- without it the RPC refuses at NOT_FOUND before the human-verifier trigger can speak.
+insert into public.agent_identity (tenant_id, agent_key, app_user_id, charter, enabled)
+values ('aaaaaaaa-0000-0000-0000-000000000001', 'probe_agent',
+        'aaaaaaaa-0000-0000-0000-000000005e5e', 'test probe', true);
 
 insert into public.permission (key, description) values
   ('staff.manage', 'test'), ('credential.write', 'test'), ('credential.read.all', 'test')

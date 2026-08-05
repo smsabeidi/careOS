@@ -56,17 +56,17 @@ end $$;
 
 -- ── Notifications ──────────────────────────────────────────────────────────
 select ok(
-  app.queue_notification('aaaaaaaa-0000-0000-0000-0000000000c1', 'probe.note',
+  app.queue_notification('aaaaaaaa-0000-0000-0000-0000000000c1', 'credential.expiring',
     'A probe notification', p_dedupe_key => 'probe:1') is not null,
   'notify: a notification queues');
 select is(
-  app.queue_notification('aaaaaaaa-0000-0000-0000-0000000000c1', 'probe.note',
+  app.queue_notification('aaaaaaaa-0000-0000-0000-0000000000c1', 'credential.expiring',
     'A probe notification', p_dedupe_key => 'probe:1'),
   null, 'notify: the same dedupe_key is a silent no-op');
 update public.app_user set status = 'separated'
  where id = 'aaaaaaaa-0000-0000-0000-0000000000c2';
 select is(
-  app.queue_notification('aaaaaaaa-0000-0000-0000-0000000000c2', 'probe.note', 'x'),
+  app.queue_notification('aaaaaaaa-0000-0000-0000-0000000000c2', 'credential.expiring', 'x'),
   null, 'notify: a dead account is never notified');
 update public.app_user set status = 'active'
  where id = 'aaaaaaaa-0000-0000-0000-0000000000c2';
@@ -75,8 +75,12 @@ select pg_temp.login('aaaaaaaa-0000-0000-0000-0000000000c1', 'aal2');
 select is((select count(*)::int from public.notification), 1,
   'notify: the recipient reads their own inbox');
 select lives_ok(
-  $$update public.notification set read_at = now(), status = 'read'$$,
+  $$update public.notification set read_at = now()$$,
   'notify: the recipient marks their own notification read');
+select throws_ok(
+  $$update public.notification set status = 'delivered'$$,
+  '42501', null,
+  'notify: delivery telemetry is not the recipient''s to forge (0039, L2)');
 reset role;
 select pg_temp.login('aaaaaaaa-0000-0000-0000-0000000000c2', 'aal2');
 select is((select count(*)::int from public.notification), 0,
@@ -187,6 +191,65 @@ select ok(not has_function_privilege('authenticated', 'app.expire_offers()', 'ex
   'posture: expiry is cron plumbing');
 select ok(not has_function_privilege('authenticated', 'app.revoke_auth_sessions(uuid)', 'execute'),
   'posture: session revocation is worker-only');
+
+-- ═══ 0039 hardening probes (review 2026-08-05) ═════════════════════════════
+-- C1: a non-active principal cannot take or decline an offer, loudly.
+reset role;
+select pg_temp.login('aaaaaaaa-0000-0000-0000-0000000000ad', 'aal2');
+select lives_ok(
+  $$select app.schedule_visit('aaaaaaaa-0000-0000-0000-00000000c001',
+      now() + interval '3 days', now() + interval '3 days 2 hours',
+      p_note => 'c1-probe-visit')$$,
+  'c1: a third open visit');
+select lives_ok(
+  $$select app.create_offers(
+      (select id from public.visit where note = 'c1-probe-visit'),
+      array['aaaaaaaa-0000-0000-0000-0000000000c2'::uuid])$$,
+  'c1: the candidate is offered');
+reset role;
+update public.app_user set status = 'separated', separated_at = now()
+ where id = 'aaaaaaaa-0000-0000-0000-0000000000c2';
+select is(
+  (select status from public.offer
+    where candidate_user_id = 'aaaaaaaa-0000-0000-0000-0000000000c2'
+      and visit_id = (select id from public.visit where note = 'c1-probe-visit')),
+  'superseded',
+  'c1: leaving active closed the live offer at the moment of deactivation');
+select pg_temp.login('aaaaaaaa-0000-0000-0000-0000000000c2', 'aal2');
+select throws_like(
+  $$select app.accept_offer(
+      (select o.id from public.offer o
+        where o.candidate_user_id = 'aaaaaaaa-0000-0000-0000-0000000000c2'
+        order by o.created_at desc limit 1))$$,
+  '%CAREOS_FORBIDDEN%',
+  'c1: even against a somehow-live offer, a separated principal is refused by name');
+reset role;
+update public.app_user set status = 'active', separated_at = null
+ where id = 'aaaaaaaa-0000-0000-0000-0000000000c2';
+
+-- M3: dispositions are on the AUDIT ledger, not just the offer trail.
+select ok(
+  (select count(*) >= 1 from audit.audit_event where action = 'offer.accepted'),
+  'm3: acceptance is on the audit ledger');
+select ok(
+  (select count(*) >= 1 from audit.audit_event where action = 'offer.declined'),
+  'm3: decline is on the audit ledger');
+select ok(
+  (select count(*) >= 1 from public.offer_event where actor is not null),
+  'm3: the offer trail carries its actor');
+
+-- M4: free-text titles are structurally refused.
+select throws_like(
+  $$select app.queue_notification('aaaaaaaa-0000-0000-0000-0000000000c2',
+      'evil.template', 'Jane Doe has dementia — call me')$$,
+  '%CAREOS_BAD_TEMPLATE%',
+  'm4: an unregistered template cannot smuggle free text into a notification');
+
+-- H1: the worker heartbeats are pre-seeded and red until earned.
+select is(
+  (select count(*)::int from public.job_heartbeat
+    where job_key in ('worker.q_events','worker.q_notify') and last_ok_at is null),
+  2, 'h1: a worker that never came up is visibly stalled, not unknown');
 
 reset role;
 select * from finish();
