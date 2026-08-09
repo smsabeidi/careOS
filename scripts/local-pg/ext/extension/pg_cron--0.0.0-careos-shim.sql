@@ -1,0 +1,3 @@
+-- careOS local-pg harness — marker extension for pg_cron. Intentionally empty.
+-- See scripts/local-pg/bootstrap.sql §7/§8/§9 for the actual shim objects and
+-- their documented fidelity limits, and scripts/local-pg/README.md for why.
