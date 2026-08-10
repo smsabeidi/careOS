@@ -75,6 +75,39 @@ const BUILT_IN: Record<
     requires_human: true,
     prompt_version: "coordination.builtin",
   },
+  // ── Verified Visit & Workforce Intelligence (docs/17 §11, migration 0052) ──
+  // Tier, human-disposer and model pin mirror app.seed_visit_ai_capabilities exactly, so
+  // a tenant whose registry rows have not been provisioned degrades to the RATIFIED
+  // posture rather than to a guess. Models are stated rather than inherited from
+  // OPENAI_MODEL for the same reason: 0052 pins luna for per-item narration and terra for
+  // synthesis, and an env var is not a decision log.
+  "visit.exception_triage": {
+    tier: "T1",
+    requires_human: false,
+    model: DEFAULT_MODEL,
+    prompt_version: "visit.triage.builtin",
+  },
+  "workforce.weekly_report": {
+    tier: "T1",
+    requires_human: false,
+    model: SYNTHESIS_MODEL,
+    prompt_version: "workforce.weekly.builtin",
+  },
+  "payroll.readiness_brief": {
+    tier: "T1",
+    requires_human: false,
+    model: SYNTHESIS_MODEL,
+    prompt_version: "payroll.readiness.builtin",
+  },
+  // T2 + human disposer required (D-028, D-021): it characterises one employee. 0052 also
+  // ships its kill switch OFF, and lib/ai/visit-intelligence.ts refuses to call it unless
+  // an enabled registry row actually exists — for this one capability, absent means off.
+  "visit.operational_profile": {
+    tier: "T2",
+    requires_human: true,
+    model: SYNTHESIS_MODEL,
+    prompt_version: "visit.profile.builtin",
+  },
 };
 
 /** Unknown keys get the safest posture: T2, human required (invariant 8). */
