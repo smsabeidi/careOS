@@ -105,12 +105,25 @@ select is((select count(*)::int from public.visit_event), 0,
 
 -- ── RPC privilege posture ───────────────────────────────────────────────────
 reset role;
+-- D-029 re-signed this RPC: the five-argument function was DROPPED and re-created with six
+-- additional defaulted parameters, so five-argument call sites (every one above) still
+-- resolve while the capture fields stay additive. The privilege probe therefore names the
+-- new identity signature — the same assertion pointed at the function that now exists, not
+-- a relaxed one. An overload was rejected deliberately (D-016: ambiguous overloads break
+-- PostgREST's named-argument resolution).
 select ok(has_function_privilege('authenticated',
-  'app.clock_visit(uuid,text,double precision,double precision,double precision)', 'execute'),
+  'app.clock_visit(uuid,text,double precision,double precision,double precision,text,timestamptz,boolean,text,text,text)',
+  'execute'),
   'authenticated can call app.clock_visit');
 select ok(not has_function_privilege('anon',
-  'app.clock_visit(uuid,text,double precision,double precision,double precision)', 'execute'),
+  'app.clock_visit(uuid,text,double precision,double precision,double precision,text,timestamptz,boolean,text,text,text)',
+  'execute'),
   'anon cannot call app.clock_visit');
+-- The old five-argument identity is gone, not shadowed: proving the drop-and-create in
+-- D-029 actually happened and no stale overload survives to make calls ambiguous.
+select ok(to_regprocedure(
+  'app.clock_visit(uuid,text,double precision,double precision,double precision)') is null,
+  'the pre-D-029 five-argument clock_visit identity no longer exists (no ambiguous overload)');
 
 reset role;
 select * from finish();

@@ -437,6 +437,15 @@ Behaviour, in order:
 6. Compute distance and `location_status`.
 7. Decide:
    - `verified` → append `clock_in`/`clock_out`.
+   - **nothing to verify against** (the client has no service location, or its current
+     version has no human-attested pin) → **append the event and start the visit, with no
+     reason asked**. This is an agency *configuration* gap, not a caregiver failure: they
+     cannot see or edit the record that is missing, so demanding a justification from them
+     would be asking them to apologise for someone else's omission. The event keeps its
+     honest `unavailable` status and the visit lands in `verification_status='exception'`,
+     so the coordinator who *can* fix it sees it in the queue. Distinct from a device that
+     returned no fix, which the caregiver *can* act on and which does take the reason path
+     below.
    - not verified **and** policy allows exception **and** a `reason_code` was supplied → append the
      event with the status, and raise the matching `visit_exception`.
    - not verified **and** policy allows exception **and** no reason yet → append

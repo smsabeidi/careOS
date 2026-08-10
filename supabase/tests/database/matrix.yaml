@@ -97,6 +97,25 @@ tables:
   public.family_link:       { scope: tenant, authenticated: select-self-or-staff, insert: family.manage-aal2, update: family.manage-aal2, delete: none }
   public.family_update:     { scope: tenant, authenticated: select-scoped-or-family-aal2, insert: family.manage-or-careteam-aal2, delete: none, append_only: true }
   public.shared_document:   { scope: tenant, authenticated: select-scoped-or-family-aal2, insert: family.manage-or-careteam-aal2, delete: none, append_only: true }
+  # ── Verified Visit: geo + service locations (0043) ──
+  public.service_type:      { scope: tenant, authenticated: select-tenant, insert: schedule.write, update: schedule.write, delete: none }
+  public.service_location:  { scope: tenant, authenticated: select-scoped-aal2, writes: rpc }
+  public.service_location_version: { scope: tenant, authenticated: select-follows-parent-aal2, writes: rpc, delete: none, append_only: true }
+  # ── Verified Visit: policy engine (0044) ──
+  public.visit_policy:      { scope: tenant, authenticated: select-tenant, writes: rpc, delete: none, append_only: true }
+  # ── Verified Visit: exception engine (0047) ──
+  public.visit_exception:   { scope: tenant, authenticated: select-scoped-aal2, writes: rpc, delete: none, append_only: true }
+  public.visit_exception_disposition: { scope: tenant, authenticated: select-scoped-aal2, writes: rpc, delete: none, append_only: true }
+  # ── Verified Visit: trust score (0048) ──
+  public.visit_trust_assessment: { scope: tenant, authenticated: select-verify.read-aal2, writes: definer-only, delete: none, append_only: true }
+  # ── Verified Visit: canonical EVV + adapters (0049) ──
+  public.evv_adapter:       { scope: tenant, authenticated: select-evv.read, writes: rpc }
+  public.evv_record:        { scope: tenant, authenticated: select-evv.read-aal2, writes: rpc, delete: none, append_only: true }
+  public.evv_submission:    { scope: tenant, authenticated: select-evv.read, writes: definer-only, delete: none, append_only: true }
+  # ── Verified Visit: payroll boundary (0050) ──
+  public.approved_work_segment: { scope: tenant, authenticated: select-own-or-payroll.read-aal2, writes: rpc, delete: none, append_only: true }
+  public.payroll_period:    { scope: tenant, authenticated: select-payroll.read, writes: rpc, no_delete: true }
+  public.payroll_export:    { scope: tenant, authenticated: select-payroll.read, writes: rpc, delete: none, append_only: true }
 tests:
   - 001_schema_invariants.sql
   - 002_rls_matrix.sql
@@ -115,3 +134,28 @@ tests:
   - 0017_definition_binding.sql
   - 0018_legal_authority.sql
   - 0019_comar_fidelity.sql
+  # The manifest had drifted: 0027–0038 shipped test files that were never listed here.
+  # check-matrix Rule 5 only asserts that listed files EXIST, so the omission was silent.
+  # Listed in full so the manifest is once again the inventory it claims to be.
+  - 0027_domain_event_outbox.sql
+  - 0028_employee.sql
+  - 0029_document_store.sql
+  - 0030_invitation_flow.sql
+  - 0031_identity_admin_rpcs.sql
+  - 0032_revocation_saga.sql
+  - 0033_onboarding_engine.sql
+  - 0034_automation_runtime.sql
+  - 0035_agent_identity.sql
+  - 0036_0037_actuator.sql
+  - 0038_staff_compliance.sql
+  # ── Verified Visit & Workforce Intelligence (0043–0052) ──
+  - 0043_geo_service_location.sql
+  - 0044_visit_policy.sql
+  - 0045_verified_visit.sql
+  - 0046_clock_engine.sql
+  - 0047_exception_engine.sql
+  - 0048_trust_score.sql
+  - 0049_evv_canonical.sql
+  - 0050_payroll_boundary.sql
+  - 0051_workforce_analytics.sql
+  - 0052_visit_ai_capabilities.sql

@@ -61,8 +61,15 @@ for t in $tables; do
 done
 
 # --- Rule 4: append_only claims match the actual triggers -------------------
-ao_tables=$(grep -hoE 'create trigger [a-z_]+ before update or delete on (public|audit)\.[a-z_]+' \
-            "$MIGRATIONS"/*.sql | sed -E 's/.* on //' | sort -u)
+# The statement is matched on a WHITESPACE-NORMALISED stream, not line by line. A trigger
+# like `trg_visit_exception_disposition_ao before update or delete on
+# public.visit_exception_disposition` is 95 characters and cannot be written on one line
+# without breaking the repo's ~88-column wrap convention, so a line-oriented grep silently
+# scored a correctly-guarded table as unguarded — a false PASS direction on an invariant-1
+# check, which is the worst way for this gate to be wrong.
+ao_tables=$(cat "$MIGRATIONS"/*.sql | tr '\n' ' ' | tr -s ' ' \
+            | grep -oE 'create trigger [a-z_]+ before update or delete on (public|audit)\.[a-z_]+' \
+            | sed -E 's/.* on //' | sort -u)
 for t in $ao_tables; do
   line=$(grep -E "^  $t:" "$MATRIX" || true)
   [ -z "$line" ] && continue
@@ -82,7 +89,10 @@ for t in $(grep -E '^  (public|audit)\.[a-z_]+:.*append_only: true' "$MATRIX" \
 done
 
 # --- Rule 5: listed test files exist ----------------------------------------
-for f in $(sed -n '/^tests:/,$p' "$MATRIX" | grep -oE '[0-9]+_[a-z_]+\.sql'); do
+# Take the whole list item after "- ", not a regex substring of it: the old pattern
+# extracted `0037_actuator.sql` out of the real file `0036_0037_actuator.sql` (one test
+# file covering two migrations) and then failed because that name does not exist.
+for f in $(sed -n '/^tests:/,$p' "$MATRIX" | sed -nE 's/^[[:space:]]*-[[:space:]]+([A-Za-z0-9_.]+\.sql)[[:space:]]*$/\1/p'); do
   if [ ! -f "$TESTDIR/$f" ]; then
     echo "CHECK-MATRIX FAIL: $MATRIX lists test $f but $TESTDIR/$f does not exist."
     fail=1
