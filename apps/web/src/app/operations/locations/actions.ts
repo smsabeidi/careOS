@@ -27,7 +27,7 @@ export type ActionResult = { ok: boolean; error?: string; message?: string };
 
 /** CAREOS_* refusals → plain language. Everything else stays generic. */
 function friendly(raw: string | undefined): string {
-  const code = raw?.match(/CAREOS_[A-Z_]+/)?.[0];
+  const code = raw?.match(/CAREOS_[A-Z0-9_]+/)?.[0];
   switch (code) {
     case "CAREOS_AAL2_REQUIRED":
       return "Your session needs a fresh verification — unlock with your authenticator and try again. Nothing was saved.";

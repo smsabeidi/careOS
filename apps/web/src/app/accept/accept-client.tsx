@@ -12,7 +12,7 @@ const inputStyle = { borderColor: "var(--separator, #d1d1d6)", background: "var(
 
 /** CAREOS_* refusals → plain language, mirroring the office actions. */
 function friendly(raw: string | undefined): string {
-  const code = raw?.match(/CAREOS_[A-Z_]+/)?.[0];
+  const code = raw?.match(/CAREOS_[A-Z0-9_]+/)?.[0];
   switch (code) {
     case "CAREOS_NOT_FOUND":
       return "That invitation link isn't valid. Check you copied the whole link, or ask for a new one.";
@@ -25,7 +25,11 @@ function friendly(raw: string | undefined): string {
     case "CAREOS_BAD_STATE":
       return "This invitation was already used or withdrawn.";
     default:
-      return raw ?? "Something went wrong. Nothing was saved.";
+      // NEVER echo `raw` here. It is rpcError.message straight off the wire, and a
+      // Postgres message can name a table, a constraint, or a row value — on a screen
+      // shown BEFORE the visitor is authenticated (invariant 5). The generic sentence
+      // costs a support question; the raw one is a disclosure.
+      return "Something went wrong. Nothing was saved. Ask your coordinator for a new invitation link.";
   }
 }
 

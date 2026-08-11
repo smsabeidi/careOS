@@ -58,7 +58,13 @@ import {
       a Spanish-speaking caregiver reads Spanish in a stairwell at 6am. ─────── */
 
 function messageKeyFor(raw: string | undefined): TranslationKey {
-  const code = raw?.match(/CAREOS_[A-Z_]+/)?.[0];
+  // [A-Z0-9_], not [A-Z_]: CAREOS_AAL2_REQUIRED carries a digit, and a class without one
+  // truncates it to CAREOS_AAL — which matches no case below, falls to the default, and
+  // tells a caregiver whose session dropped to AAL1 "something went wrong" instead of
+  // "unlock with your authenticator". They then retry into the same wall. Pinned by
+  // src/lib/careos-error-codes.test.ts, which drives this regex against every code the
+  // migrations can raise.
+  const code = raw?.match(/CAREOS_[A-Z0-9_]+/)?.[0];
   switch (code) {
     case "CAREOS_AAL2_REQUIRED":
       return "clock.errAal2";
@@ -83,7 +89,7 @@ function messageKeyFor(raw: string | undefined): TranslationKey {
 }
 
 function codeOf(raw: string | undefined): string | undefined {
-  return raw?.match(/CAREOS_[A-Z_]+/)?.[0];
+  return raw?.match(/CAREOS_[A-Z0-9_]+/)?.[0];
 }
 
 /** app.clock_visit's jsonb, restated. Cast at the boundary — no generated DB types exist. */

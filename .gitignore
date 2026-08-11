@@ -7,6 +7,7 @@ supabase/.temp/
 supabase/.branches/
 dist/
 .next/
+coverage/
 .claude/settings.local.json
 *.tsbuildinfo
 .vercel

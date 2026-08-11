@@ -175,6 +175,15 @@ export function rankAll<T extends RankInput>(items: T[], now: Date): (T & { rank
     .map((item) => ({ ...item, rank: rank(item, now) }))
     .sort((a, b) => {
       if (b.rank.score !== a.rank.score) return b.rank.score - a.rank.score;
-      return new Date(b.detectedAt).getTime() - new Date(a.detectedAt).getTime();
+      const byTime = new Date(b.detectedAt).getTime() - new Date(a.detectedAt).getTime();
+      if (byTime !== 0) return byTime;
+      // Total order, not merely a consistent one. Score+time ties are COMMON, not rare:
+      // app.sweep_visit_exceptions inserts every finding of a run in one transaction, so
+      // they share an instant, and the page's ORDER BY detected_at has no unique
+      // secondary key — Postgres may hand back tied rows in any order. Without this
+      // tiebreak the queue can silently reshuffle between two renders of identical data,
+      // which is exactly what this module's header promises it will not do. exceptionId
+      // is a uuid: arbitrary, but stable, which is the whole point.
+      return a.exceptionId < b.exceptionId ? -1 : a.exceptionId > b.exceptionId ? 1 : 0;
     });
 }

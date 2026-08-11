@@ -81,12 +81,12 @@ const MAX_MANUAL_MINUTES = 1440;
 type Ctx = "approve" | "reject" | "period" | "export";
 
 function codeOf(raw: string | undefined): string | null {
-  return raw?.match(/CAREOS_[A-Z_]+/)?.[0] ?? null;
+  return raw?.match(/CAREOS_[A-Z0-9_]+/)?.[0] ?? null;
 }
 
 /** The count the database put in its own message. Counts only — never PHI. */
 function countIn(raw: string | undefined): number | undefined {
-  const m = raw?.match(/CAREOS_[A-Z_]+:\s*(\d+)/);
+  const m = raw?.match(/CAREOS_[A-Z0-9_]+:\s*(\d+)/);
   return m ? Number.parseInt(m[1], 10) : undefined;
 }
 
