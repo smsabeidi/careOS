@@ -295,6 +295,19 @@ export function OpenPeriodForm({
     async (_prev: ActionResult, fd: FormData) => openPayrollPeriod(fd),
     idle
   );
+  /**
+   * NOTHING re-renders this surface after the action, deliberately.
+   *
+   * `revalidatePath` in the action and `router.refresh()` here both do the same thing — ask
+   * this route to re-render in place — and an in-place re-render of a route never commits
+   * in this app (a tab link on this page or on /operations/exceptions hangs the same way).
+   * The transition stays pending, so the button reads "Opening…" for good even though the
+   * period was created, and the next thing the person presses is wedged behind it.
+   *
+   * So the outcome below is the whole answer, and the table it describes is one reload
+   * behind. That is worth saying plainly rather than papering over: a message that arrives
+   * beats a spinner that never stops. Restore the refresh once a route can re-render.
+   */
 
   if (!canManage) {
     return (
@@ -362,6 +375,8 @@ export function PeriodActions({
     },
     idleExport
   );
+  /* No refresh here either — see OpenPeriodForm above. The row keeps saying "Open" until
+   * the page is reloaded; the outcome line is what tells the person the close landed. */
 
   /**
    * The file is built on the server, from the rows and in the order the database returned

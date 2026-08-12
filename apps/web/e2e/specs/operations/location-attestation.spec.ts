@@ -38,6 +38,9 @@ test.describe("Operations · places of care", () => {
     await signIn(page, "admin");
     await gotoVerified(page, "/operations/locations");
     await expect(page.getByRole("heading", { name: "Places of care", level: 1 })).toBeVisible();
+    /* ./loading.tsx mirrors the real layout down to the <h1>, so the heading is not proof
+     * the page arrived; wait on the skeleton's own `aria-busy` region instead. */
+    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
   });
 
   test("says a pin is signed for, refuses an unticked confirmation, and records the person", async ({
@@ -49,24 +52,30 @@ test.describe("Operations · places of care", () => {
     ).toBeVisible();
 
     /* ── Open the attestation for the first place on file ─────────────────────── */
-    const disclosure = page.getByText(/^Confirm this pin( again)?$/).first();
+    /* Every place on the page carries its own copy of this wording, so a page-wide locator
+     * matches all of them and says nothing about the one being signed for. Scope to the
+     * place whose disclosure is opened, and stay inside it for the rest of the journey. */
+    const place = page
+      .locator("article")
+      .filter({ has: page.getByText(/^Confirm this pin( again)?$/) })
+      .first();
     await expect(
-      disclosure,
+      place,
       "No place of care is on file for this tenant, so there is nothing to attest to. " +
         "Seed a client with a service location before running this journey."
     ).toBeVisible();
-    await disclosure.click();
+    await place.getByText(/^Confirm this pin( again)?$/).click();
 
     await expect(
-      page.getByText("You are saying: this pin is where that address is."),
+      place.getByText("You are saying: this pin is where that address is."),
       "The screen states what is being claimed before it asks for the claim."
     ).toBeVisible();
     await expect(
-      page.getByText(/Confirming appends a new version — the one on file now is kept/),
+      place.getByText(/Confirming appends a new version — the one on file now is kept/),
       "invariant 1: the attestation appends; it never overwrites the pin in use."
     ).toBeVisible();
 
-    const form = page.locator("form").filter({ hasText: "I have checked this against the address" }).first();
+    const form = place.locator("form").filter({ hasText: "I have checked this against the address" }).first();
     const latitude = form.getByLabel("Latitude");
     const longitude = form.getByLabel("Longitude");
     const attest = form.getByRole("checkbox");
@@ -88,7 +97,7 @@ test.describe("Operations · places of care", () => {
         "signature just went through without the signature."
     ).toHaveCount(1);
     await expect(
-      page.getByText(/Confirmed as version/),
+      place.getByText(/Confirmed as version/),
       "Nothing may be confirmed while the attestation is unticked."
     ).toHaveCount(0);
 
@@ -109,8 +118,11 @@ test.describe("Operations · places of care", () => {
     /* ── 3. The record names the human, on the page ──────────────────────────── */
     await page.reload();
     await expect(page.getByRole("heading", { name: "Places of care", level: 1 })).toBeVisible();
+    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+    /* The same place, read back from the server: the confirmation has to be on the record,
+     * not merely in the reply the browser was handed. */
     await expect(
-      page.getByText(/· confirmed by .+ on /).first(),
+      page.locator("article").first().getByText(/· confirmed by .+ on /),
       "D-025: the pin block must name who confirmed it and when. `a coordinator` is the " +
         "fallback only when RLS hides the name — never the normal case."
     ).toBeVisible();

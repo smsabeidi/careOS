@@ -47,7 +47,7 @@ test.describe("Caregiver · offline capture and replay", () => {
     const today = new TodayPage(page);
     await today.open();
 
-    const card = today.firstClockableCard();
+    const card = await today.firstClockableCard();
     await expect(
       card,
       "The seeded caregiver has no visit today still waiting to be clocked in."

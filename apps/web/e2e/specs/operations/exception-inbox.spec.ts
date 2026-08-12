@@ -57,6 +57,11 @@ test.describe("Operations · exception inbox", () => {
     await signIn(page, "coordinator");
     await gotoVerified(page, "/operations/exceptions");
     await expect(page.getByRole("heading", { name: "Findings", level: 1 })).toBeVisible();
+    /* ./loading.tsx mirrors the real layout down to the <h1>, which is the point of a
+     * layout-mirroring skeleton — and the reason the heading above is NOT proof the queue
+     * arrived. Wait on the skeleton's own `aria-busy` region instead; until it is gone,
+     * every finding is still parked in React's streaming buffer and a reader sees nothing. */
+    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
   });
 
   test("ranks the queue deterministically and explains every position", async ({ page }) => {
@@ -105,15 +110,28 @@ test.describe("Operations · exception inbox", () => {
   test("refuses to close a finding without a reason, then records the decision beside it", async ({
     page,
   }) => {
-    const card = page
-      .locator("article.card")
-      .filter({ has: page.getByRole("button", { name: "Resolve", exact: true }) })
-      .first();
+    const cards = page.locator("article.card");
     await expect(
-      card,
+      cards.filter({ has: page.getByRole("button", { name: "Resolve", exact: true }) }).first(),
       "No open finding is available to this coordinator. Either the queue is clear or the " +
         "persona lacks visit.verify.act — both make this journey unprovable, so seed one."
     ).toBeVisible();
+
+    /* Pin the card by position before touching it. A locator that FILTERS on the Resolve
+     * button cannot be used past the click: choosing a decision replaces that button with
+     * the reason form, so the filter stops matching this card and `.first()` silently
+     * slides onto the next one — every later assertion would then be made about a finding
+     * nobody opened. Position is stable for as long as the card is on screen. */
+    const total = await cards.count();
+    let index = -1;
+    for (let i = 0; i < total; i += 1) {
+      if (await cards.nth(i).getByRole("button", { name: "Resolve", exact: true }).count()) {
+        index = i;
+        break;
+      }
+    }
+    expect(index, "The first finding offering a decision must be findable.").toBeGreaterThanOrEqual(0);
+    const card = cards.nth(index);
 
     /* ── 1. Choosing a decision opens the reason first ───────────────────────── */
     await card.getByRole("button", { name: "Resolve", exact: true }).click();

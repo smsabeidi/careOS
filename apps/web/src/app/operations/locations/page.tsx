@@ -129,6 +129,19 @@ type VersionRow = {
   created_at: string;
 };
 
+/**
+ * How many ids may ride in one `.in()` filter. PostgREST takes the list in the query
+ * string, so the cap is a URL length, not a row count: 40 UUIDs plus this column list sits
+ * comfortably inside the 8 KB a proxy will carry, where 200 did not.
+ */
+const ID_BATCH = 40;
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
 const VERSION_COLUMNS =
   "id, service_location_id, supersedes_id, created_by, version_no, original_address, " +
   "address_line1, address_line2, city, state, postal_code, country, geo, geo_precision, " +
@@ -326,21 +339,35 @@ export default async function LocationsPage({
   const locationIds = locations.map((l) => l.id);
   const clientIds = [...new Set(locations.map((l) => l.client_id))];
 
-  const [versionRes, clientRes] = await Promise.all([
-    locationIds.length
-      ? supabase
-          .from("service_location_version")
-          .select(VERSION_COLUMNS)
-          .in("service_location_id", locationIds)
-          .order("version_no", { ascending: false })
-          .limit(1000)
-      : Promise.resolve({ data: [] as VersionRow[], error: null }),
-    clientIds.length
-      ? supabase.from("client").select("id, first_name, last_name").in("id", clientIds)
-      : Promise.resolve({ data: [] as { id: string; first_name: string; last_name: string }[], error: null }),
-  ]);
+  /**
+   * The address versions, asked for in batches of ID_BATCH.
+   *
+   * `.in()` puts every id in the query string, so one request for 200 places builds a URL
+   * of nearly 8 KB — and past that the request comes back empty rather than large. The
+   * failure was silent and total: every place on the page read "No address version is on
+   * file for this place", which is the sentence for a place that has never had an address,
+   * on 200 places that all had one. The pin, the address and the confirm control all went
+   * with it. Batching keeps each URL short; the batches are merged below exactly as one
+   * result would have been.
+   */
+  const versionBatches = await Promise.all(
+    chunk(locationIds, ID_BATCH).map((ids) =>
+      supabase
+        .from("service_location_version")
+        .select(VERSION_COLUMNS)
+        .in("service_location_id", ids)
+        .order("version_no", { ascending: false })
+        .limit(1000)
+    )
+  );
+  const clientRes = clientIds.length
+    ? await supabase.from("client").select("id, first_name, last_name").in("id", clientIds)
+    : { data: [] as { id: string; first_name: string; last_name: string }[], error: null };
 
-  const versions = (versionRes.data ?? []) as unknown as VersionRow[];
+  /* A batch that failed is not "no address on file" — say so rather than render the
+   * sentence that means something else entirely. */
+  const versionsUnreadable = versionBatches.some((b) => b.error);
+  const versions = versionBatches.flatMap((b) => (b.data ?? [])) as unknown as VersionRow[];
   const versionById = new Map(versions.map((v) => [v.id, v]));
   const versionsByLocation = new Map<string, VersionRow[]>();
   for (const v of versions) {
@@ -580,7 +607,9 @@ export default async function LocationsPage({
 
                   {!current ? (
                     <p className="mt-4 text-[13px]" style={{ color: "var(--text-muted)" }}>
-                      No address version is on file for this place, so there is nothing to show or confirm yet.
+                      {versionsUnreadable
+                        ? "The address on file for this place could not be read just now. Nothing has been changed or removed — refresh to try again."
+                        : "No address version is on file for this place, so there is nothing to show or confirm yet."}
                     </p>
                   ) : (
                     <>

@@ -1,5 +1,22 @@
 "use server";
 
+/*
+ * A note on revalidatePath, which you will notice is absent below.
+ *
+ * On Next 15.5.21 (production `next start`), an action that WRITES to a table the current
+ * route renders and then calls revalidatePath() for that same route never closes its
+ * response stream. Headers and the full RSC payload arrive in ~150 ms and the request then
+ * hangs, so the caller's transition never settles and the control stays disabled — while
+ * the write is already durably committed. Bisected on /today: a no-op action settles in
+ * 65 ms, revalidatePath with no write in 100 ms, the same RPC refused in 111 ms, and a
+ * plain GET of the mutated page in 224 ms. Only write + revalidate-the-current-route hangs.
+ * Full evidence in src/app/today/actions.ts.
+ *
+ * Clients re-sync with router.refresh() after the action resolves, which streams over its
+ * own request. See src/app/operations/timesheets/timesheet-client.tsx for the pattern.
+ */
+
+
 /**
  * /operations server actions — the human's decision over a detected exception
  * (docs/17 §6.3, §7.2).
@@ -26,7 +43,6 @@
  * never cost the coordinator the queue they were working.
  */
 
-import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/profile";
 
@@ -123,8 +139,8 @@ export async function disposeVisitException(
 
   const result = (data ?? {}) as { unchanged?: boolean; disposition?: string };
 
-  revalidatePath("/operations/exceptions");
-  revalidatePath("/operations");
+
+
 
   return {
     ok: true,

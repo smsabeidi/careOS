@@ -52,13 +52,38 @@ export class TodayPage {
   }
 
   /**
-   * The first card that still offers a clock-in. Skipping the already-clocked cards keeps
-   * the journey deterministic when the seeded day has a mixture of states.
+   * The first card that still offers a clock-in, PINNED BY POSITION.
+   *
+   * The obvious spelling — `visitCards.filter({ has: <Clock in> }).first()` — is wrong for
+   * a journey, and wrong in the way that hurts: a Playwright locator is re-resolved on
+   * every assertion, so the moment the tap succeeds and that card stops rendering `Clock
+   * in`, the same expression starts pointing at the NEXT caregiver's card. Every
+   * post-clock-in assertion then runs against the wrong visit and reports "element not
+   * found" about a screen that is in fact correct.
+   *
+   * So the clockable card is resolved ONCE, its index in the day's list is kept, and the
+   * journey holds that position. Cards are ordered by `scheduled_start` and none is added
+   * or removed while a visit is being clocked, so the index is stable for the whole
+   * journey — and it stays honest, because it goes on referring to the visit the caregiver
+   * actually tapped rather than to whichever card currently looks untouched.
    */
-  firstClockableCard(): Locator {
-    return this.visitCards
-      .filter({ has: this.page.getByRole("button", { name: "Clock in", exact: true }) })
-      .first();
+  async firstClockableCard(): Promise<Locator> {
+    await expect(
+      this.visitCards.first(),
+      "The seeded caregiver has no visit on today's schedule at all."
+    ).toBeVisible();
+
+    const count = await this.visitCards.count();
+    for (let index = 0; index < count; index += 1) {
+      const card = this.visitCards.nth(index);
+      if (await card.getByRole("button", { name: "Clock in", exact: true }).count()) return card;
+    }
+
+    // Return the (empty) filtered locator so the caller's own `toBeVisible` failure message
+    // — the one naming the seed to re-run — is what the reader sees, not an exception here.
+    return this.visitCards.filter({
+      has: this.page.getByRole("button", { name: "Clock in", exact: true }),
+    });
   }
 
   /** The connectivity chip in the page header: Live · Syncing (n) · Offline. */

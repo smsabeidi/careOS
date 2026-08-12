@@ -1,5 +1,22 @@
 "use server";
 
+/*
+ * A note on revalidatePath, which you will notice is absent below.
+ *
+ * On Next 15.5.21 (production `next start`), an action that WRITES to a table the current
+ * route renders and then calls revalidatePath() for that same route never closes its
+ * response stream. Headers and the full RSC payload arrive in ~150 ms and the request then
+ * hangs, so the caller's transition never settles and the control stays disabled — while
+ * the write is already durably committed. Bisected on /today: a no-op action settles in
+ * 65 ms, revalidatePath with no write in 100 ms, the same RPC refused in 111 ms, and a
+ * plain GET of the mutated page in 224 ms. Only write + revalidate-the-current-route hangs.
+ * Full evidence in src/app/today/actions.ts.
+ *
+ * Clients re-sync with router.refresh() after the action resolves, which streams over its
+ * own request. See src/app/operations/timesheets/timesheet-client.tsx for the pattern.
+ */
+
+
 /**
  * Service-location write paths — thin wrappers over the §6.1 Lane-B RPCs (migration 0043).
  *
@@ -20,7 +37,6 @@
  *     address lives — an error message travels much further than a row does.
  */
 
-import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export type ActionResult = { ok: boolean; error?: string; message?: string };
@@ -127,7 +143,7 @@ export async function createServiceLocation(formData: FormData): Promise<ActionR
   if (error) return { ok: false, error: friendly(error.message) };
 
   const result = (data ?? {}) as { version_no?: number };
-  revalidatePath("/operations/locations");
+
   return {
     ok: true,
     message:
@@ -164,7 +180,7 @@ export async function reviseServiceLocation(formData: FormData): Promise<ActionR
   if (error) return { ok: false, error: friendly(error.message) };
 
   const result = (data ?? {}) as { unchanged?: boolean; version_no?: number };
-  revalidatePath("/operations/locations");
+
 
   if (result.unchanged) {
     return {
@@ -230,7 +246,7 @@ export async function verifyServiceLocation(formData: FormData): Promise<ActionR
   if (error) return { ok: false, error: friendly(error.message) };
 
   const result = (data ?? {}) as { unchanged?: boolean; version_no?: number };
-  revalidatePath("/operations/locations");
+
 
   if (result.unchanged) {
     return {
@@ -278,7 +294,7 @@ export async function setLocationGeofence(formData: FormData): Promise<ActionRes
   if (error) return { ok: false, error: friendly(error.message) };
 
   const result = (data ?? {}) as { unchanged?: boolean; version_no?: number };
-  revalidatePath("/operations/locations");
+
 
   if (result.unchanged) {
     return { ok: true, message: "That is already the radius for this place, so no new version was created." };

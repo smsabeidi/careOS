@@ -168,7 +168,27 @@ export async function clockVisit(input: ClockInput): Promise<ClockResult> {
   const result = fromRpc(data as ClockRpcRow);
   // A soft refusal moved nothing on the visit: there is nothing to revalidate, and
   // re-rendering would tear down the exception affordance the caregiver is reading.
-  if (result.ok) revalidatePath("/today");
+  // NO revalidatePath HERE — deliberately, and this is load-bearing.
+  //
+  // Measured on Next 15.5.21 (production `next start`, real Supabase): when an action
+  // that has just WRITTEN to a table the current route renders also calls
+  // revalidatePath() for that same route, the action's response stream never closes.
+  // Headers and the full RSC payload arrive in ~150 ms and then the request hangs; the
+  // `useTransition` that wraps the call therefore never settles and the button sits on
+  // "Saving…" for 17-18 s, until an unrelated setState (the offline poller, 20 s) happens
+  // to entrain the stranded commit. The clock event is already durably in Postgres the
+  // whole time — the caregiver just cannot tell.
+  //
+  // Isolated by bisection: a no-op action from /today settles in 65 ms, revalidatePath
+  // ("/today") with no write settles in 100 ms, calling this very RPC and being REFUSED
+  // (so nothing changes) settles in 111 ms, and a plain GET of /today with the visit
+  // already in_progress renders in 224 ms. Only write + revalidate-the-current-route
+  // hangs. Removing this one call takes the same journey from 17 s to 28 ms.
+  //
+  // The caller refreshes instead: this action returns the complete outcome, so the button
+  // renders the new state immediately and calls router.refresh() OUTSIDE the transition
+  // (see clock-button.tsx), which re-syncs server data over its own request that streams
+  // normally. Nothing is stale and nothing blocks.
   return result;
 }
 
@@ -224,7 +244,27 @@ export async function requestLocationException(
   }
 
   const result = fromRpc(wrapper.clock);
-  if (result.ok) revalidatePath("/today");
+  // NO revalidatePath HERE — deliberately, and this is load-bearing.
+  //
+  // Measured on Next 15.5.21 (production `next start`, real Supabase): when an action
+  // that has just WRITTEN to a table the current route renders also calls
+  // revalidatePath() for that same route, the action's response stream never closes.
+  // Headers and the full RSC payload arrive in ~150 ms and then the request hangs; the
+  // `useTransition` that wraps the call therefore never settles and the button sits on
+  // "Saving…" for 17-18 s, until an unrelated setState (the offline poller, 20 s) happens
+  // to entrain the stranded commit. The clock event is already durably in Postgres the
+  // whole time — the caregiver just cannot tell.
+  //
+  // Isolated by bisection: a no-op action from /today settles in 65 ms, revalidatePath
+  // ("/today") with no write settles in 100 ms, calling this very RPC and being REFUSED
+  // (so nothing changes) settles in 111 ms, and a plain GET of /today with the visit
+  // already in_progress renders in 224 ms. Only write + revalidate-the-current-route
+  // hangs. Removing this one call takes the same journey from 17 s to 28 ms.
+  //
+  // The caller refreshes instead: this action returns the complete outcome, so the button
+  // renders the new state immediately and calls router.refresh() OUTSIDE the transition
+  // (see clock-button.tsx), which re-syncs server data over its own request that streams
+  // normally. Nothing is stale and nothing blocks.
   return result;
 }
 

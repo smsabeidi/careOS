@@ -34,7 +34,6 @@
  * @trace ST-208, docs/17 §4.7 §7.2, D-020, D-024, D-027, D-030
  */
 
-import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -230,7 +229,14 @@ export async function approveVisitHours(fd: FormData): Promise<ActionResult> {
     pay_code?: string;
   };
 
-  revalidatePath(SURFACE);
+  /* NO revalidatePath here, deliberately. A per-visit decision moves the visit out of the
+   * "Waiting" list, so revalidating the surface from inside the action unmounts the very
+   * row that carries the confirmation — Next applies the fresh tree and the action's
+   * return value in the same commit, and the person who just approved somebody's pay is
+   * told nothing at all. (It also made ./timesheet-client.tsx's `settled` branch dead
+   * code.) The row instead stays, showing its outcome and no longer offering the buttons,
+   * exactly as that branch was written to do; the counters above it are stale until the
+   * reader reloads, which is the trade the row's own comment already states. */
 
   if (result.unchanged) {
     return {
@@ -286,7 +292,8 @@ export async function rejectVisitHours(fd: FormData): Promise<ActionResult> {
   }
 
   const result = (data ?? {}) as { unchanged?: boolean };
-  revalidatePath(SURFACE);
+  /* No revalidatePath — same reason as approveVisitHours above: it would unmount the row
+   * that carries the confirmation before anyone could read it. */
 
   return {
     ok: true,
@@ -325,7 +332,10 @@ export async function openPayrollPeriod(fd: FormData): Promise<ActionResult> {
   }
 
   const result = (data ?? {}) as { unchanged?: boolean };
-  revalidatePath(SURFACE);
+  /* No revalidatePath — see approveVisitHours above. A response that carries a
+   * revalidated tree for this surface never settles in the browser, so the form that
+   * submitted it stays on "…" forever even though the write landed. The client
+   * refreshes instead, the way ../exceptions/dispose-controls.tsx does. */
   return {
     ok: true,
     message: result.unchanged
@@ -365,7 +375,10 @@ export async function closePayrollPeriod(fd: FormData): Promise<ActionResult> {
   }
 
   const result = (data ?? {}) as { unchanged?: boolean };
-  revalidatePath(SURFACE);
+  /* No revalidatePath — see approveVisitHours above. A response that carries a
+   * revalidated tree for this surface never settles in the browser, so the form that
+   * submitted it stays on "…" forever even though the write landed. The client
+   * refreshes instead, the way ../exceptions/dispose-controls.tsx does. */
   return {
     ok: true,
     message: result.unchanged
@@ -448,7 +461,10 @@ export async function exportPayrollPeriod(fd: FormData): Promise<ExportResult> {
     ? `careos-payroll-${period.starts_on}-to-${period.ends_on}.csv`
     : `careos-payroll-${periodId}.csv`;
 
-  revalidatePath(SURFACE);
+  /* No revalidatePath — see approveVisitHours above. A response that carries a
+   * revalidated tree for this surface never settles in the browser, so the form that
+   * submitted it stays on "…" forever even though the write landed. The client
+   * refreshes instead, the way ../exceptions/dispose-controls.tsx does. */
 
   return {
     ok: true,

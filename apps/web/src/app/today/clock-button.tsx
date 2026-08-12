@@ -38,6 +38,7 @@
 ──────────────────────────────────────────────────────────────────────────── */
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { IconAlert, IconCheck, IconClock } from "@/components/icons";
 import { enqueueClock, listQueue, QUEUE_CHANGED } from "@/lib/offline/queue";
@@ -91,6 +92,15 @@ export function ClockButton({
   const [reason, setReason] = useState<ReasonCode | "">("");
   const [note, setNote] = useState("");
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
+  // Re-sync server data AFTER the transition has settled, never inside it. The action
+  // deliberately does not revalidatePath (see actions.ts): doing so from an action that
+  // just wrote to a table this route renders wedges the response stream and the button
+  // stays on "Saving…" for ~18 s. refresh() streams over its own request, so the card
+  // updates from the returned result immediately and the server view catches up behind it.
+  function resync() {
+    router.refresh();
+  }
 
   // One idempotency key per user-initiated ATTEMPT, held across that attempt's fallback
   // into the offline queue. A fresh tap mints a fresh key; reusing one would replay an
@@ -194,6 +204,7 @@ export function ClockButton({
           deviceSessionId: deviceSessionId(),
         });
         apply(result);
+        if (result.ok) resync();
       } catch {
         // The request never reached the server (signal died mid-tap). Same attempt key,
         // so if it DID reach the server the replay comes back as `replayed: true`.
@@ -209,6 +220,7 @@ export function ClockButton({
       try {
         const result = await requestLocationException(visitId, event, reason, note || null);
         apply(result);
+        if (result.ok) resync();
       } catch {
         setPhase({ kind: "error", message: t("clock.errGeneric") });
       }

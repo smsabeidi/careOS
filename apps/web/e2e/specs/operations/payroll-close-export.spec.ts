@@ -63,6 +63,10 @@ test.describe("Operations · payroll period close and export", () => {
     await signIn(page, "payroll");
     await gotoVerified(page, "/operations/timesheets");
     await expect(page.getByRole("heading", { name: "Timesheets", level: 1 })).toBeVisible();
+    /* ./loading.tsx mirrors the real layout down to the <h1>, so the heading is not proof
+     * the page arrived. Until the skeleton's own `aria-busy` region is gone, the period
+     * form is still a placeholder and its prefilled window cannot be read. */
+    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
 
     /* ── 1. Open the period the form already proposes ────────────────────────── */
     // The prefilled window is the last fourteen days — what a payroll clerk would actually
@@ -89,7 +93,18 @@ test.describe("Operations · payroll period close and export", () => {
     if (await closeButton.count()) {
       await closeButton.click();
 
+      /* Wait for the screen to say SOMETHING before deciding which branch this is. A bare
+       * `.count()` on the refusal is read the instant after the click, before the action
+       * has answered, so it is always 0 and the refusal branch below can never be taken —
+       * the journey then fails on the success message it was never going to get. */
       const notReady = row.getByText(/still waiting on approval/);
+      await expect(
+        row.getByText(
+          /(Period closed with your name against it\.|This period was already closed\.|still waiting on approval)/
+        ),
+        "Closing a period must say what happened, either way."
+      ).toBeVisible();
+
       if (await notReady.count()) {
         await expect(
           notReady,
