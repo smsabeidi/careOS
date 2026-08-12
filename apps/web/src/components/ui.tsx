@@ -361,7 +361,18 @@ export function DataTable({
   const pad = dense ? "py-2.5" : "py-3.5";
   return (
     <div className="card overflow-hidden">
-      <div className="overflow-x-auto">
+      {/* A pane that scrolls sideways has to be reachable by keyboard, or the columns past
+          the fold exist only for people using a mouse — on this surface that can be the
+          column saying whether somebody was paid. `tabindex=0` makes it focusable so the
+          arrow keys scroll it, and the region takes the table's own caption as its name so
+          a screen-reader user is told which table they have landed in rather than hearing a
+          bare "region". (axe: scrollable-region-focusable, serious.) */}
+      <div
+        className="overflow-x-auto"
+        tabIndex={0}
+        role={caption ? "region" : undefined}
+        aria-label={caption}
+      >
         <table className="w-full border-collapse text-[14px]">
           {caption && <caption className="sr-only">{caption}</caption>}
           <thead>

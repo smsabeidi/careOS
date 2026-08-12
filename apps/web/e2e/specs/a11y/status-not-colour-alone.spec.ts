@@ -70,7 +70,29 @@ test.describe("Accessibility · status is never colour alone (D-012)", () => {
 
           const survey = await page.evaluate<Survey, string>((selector) => {
             const nodes = Array.from(document.querySelectorAll<HTMLElement>(selector));
+            /* Rendered, not merely styled-visible. The node's OWN display says nothing
+             * about whether an ancestor is hiding it: a chip inside a collapsed <details>
+             * ("Earlier versions" on /operations/locations) still computes as flex and
+             * still reports a box, yet the browser renders none of it — which is why
+             * `innerText` comes back empty for a chip whose markup plainly reads "Was
+             * confirmed". Counting that as an unlabelled indicator is a false alarm: a
+             * reader is shown neither the word nor the colour.
+             *
+             * `checkVisibility` is the browser's own answer to "is this being rendered",
+             * and it accounts for the skipped subtree that `display` and client rects both
+             * miss. It only ever narrows the set to indicators a person can actually see —
+             * which is the set D-012 is about. */
             const visible = nodes.filter((node) => {
+              const check = (node as HTMLElement & {
+                checkVisibility?: (o?: Record<string, boolean>) => boolean;
+              }).checkVisibility;
+              if (check && !check.call(node, {
+                contentVisibilityAuto: true,
+                opacityProperty: true,
+                visibilityProperty: true,
+              })) {
+                return false;
+              }
               const style = window.getComputedStyle(node);
               return style.display !== "none" && style.visibility !== "hidden";
             });

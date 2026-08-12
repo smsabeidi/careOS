@@ -67,7 +67,10 @@ export const NEW_SURFACES: Surface[] = [
   {
     path: "/operations/evv",
     heading: "EVV records",
-    persona: "coordinator",
+    /* `evv.read` is held by admin and owner only — no coordinator role in the seeded
+     * tenant carries it, so sweeping this surface as a coordinator only ever measured the
+     * redirect to /office/clients. The surface is real; the reader was wrong. */
+    persona: "admin",
     permission: "evv.read",
     note: "The canonical six elements and their submissions (docs/17 §4.6).",
   },

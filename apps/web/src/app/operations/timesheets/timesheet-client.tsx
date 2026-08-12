@@ -20,7 +20,8 @@
  * @trace ST-208, docs/17 §4.7 §7.2, D-027, D-030
  */
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { IconAlert, IconCheck, IconLock, IconX } from "@/components/icons";
 import {
@@ -296,18 +297,27 @@ export function OpenPeriodForm({
     idle
   );
   /**
-   * NOTHING re-renders this surface after the action, deliberately.
+   * The table re-syncs with router.refresh() AFTER the action resolves.
    *
-   * `revalidatePath` in the action and `router.refresh()` here both do the same thing — ask
-   * this route to re-render in place — and an in-place re-render of a route never commits
-   * in this app (a tab link on this page or on /operations/exceptions hangs the same way).
-   * The transition stays pending, so the button reads "Opening…" for good even though the
-   * period was created, and the next thing the person presses is wedged behind it.
+   * This surface previously refreshed nothing at all, because an in-place re-render never
+   * committed: the actions called revalidatePath() for the route they had just written to,
+   * which on Next 15.5.21 leaves the action response stream open forever (ST-219). Both the
+   * action-side revalidate and a client-side refresh queued behind that stall, so the button
+   * read "Opening…" for good and the next press was wedged behind it.
    *
-   * So the outcome below is the whole answer, and the table it describes is one reload
-   * behind. That is worth saying plainly rather than papering over: a message that arrives
-   * beats a spinner that never stops. Restore the refresh once a route can re-render.
+   * That cause is fixed — the actions no longer revalidate the current route — so the
+   * refresh commits normally and the table is no longer one reload behind. It is called
+   * from an effect on a settled result, never inside the action's own transition, which is
+   * the distinction that matters: refresh() streams over its own request.
    */
+  const router = useRouter();
+  const lastSettled = useRef<ActionResult | null>(null);
+  useEffect(() => {
+    if (state.ok && state !== lastSettled.current) {
+      lastSettled.current = state;
+      router.refresh();
+    }
+  }, [state, router]);
 
   if (!canManage) {
     return (

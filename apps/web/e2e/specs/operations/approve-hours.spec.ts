@@ -193,7 +193,7 @@ test.describe("Operations · nobody approves their own hours (D-027)", () => {
 
     const ownShift = page
       .locator("div.card")
-      .filter({ hasText: SELF_APPROVER_NAME ?? " " })
+      .filter({ hasText: SELF_APPROVER_NAME ?? "" })
       /* …that nothing ELSE is holding. An unresolved critical exception disables the same
        * button for a different reason (D-024), and pressing a control that was already
        * dead would prove nothing about D-027: the refusal under test has to come back from
