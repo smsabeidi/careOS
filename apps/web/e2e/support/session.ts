@@ -49,7 +49,11 @@ export async function signIn(page: Page, persona: Persona): Promise<void> {
   // Either the credentials were refused (the page says so in a live region and stays put)
   // or we leave /login. Waiting on the URL alone would time out on a bad password with a
   // message that hides the real one.
-  const refusal = page.getByRole("alert");
+  // Scoped to the login form's OWN error node, not `getByRole("alert")`. Next renders a
+  // permanently-present, empty `<next-route-announcer role="alert">` on every page, so the
+  // role query matched it the instant the form submitted and reported a refusal of "" while
+  // the button still read "Signing in…". The product is right; the locator was too broad.
+  const refusal = page.locator("#signin-error");
   await Promise.race([
     page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 45_000 }),
     refusal.waitFor({ state: "visible", timeout: 45_000 }).then(async () => {
