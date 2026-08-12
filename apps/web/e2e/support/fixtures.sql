@@ -60,9 +60,9 @@ with dee_visits as (
 )
 update public.visit v
    set scheduled_start = case when d.n = 1 then now() - interval '1 minute'
-                              else now() + interval '4 hours' end,
+                              else now() + interval '2 hours' end,
        scheduled_end   = case when d.n = 1 then now() + interval '3 hours 59 minutes'
-                              else now() + interval '8 hours' end,
+                              else now() + interval '5 hours' end,
        status              = 'scheduled',
        verification_status = 'pending',   -- app.clock_visit never DOWNGRADES an exception
        approval_status     = 'pending',   -- (0046 §9), so a run left flagged stays flagged
@@ -71,14 +71,11 @@ update public.visit v
   from dee_visits d
  where v.id = d.id;
 
--- Belt and braces: the multi-column UPDATE above sometimes leaves `status` behind on a
--- visit that a previous run advanced, so state it once more on its own. Cheap, and the
--- difference between a repeatable gate and a suite that is green exactly once.
-update public.visit
-   set status = 'scheduled', updated_at = now()
- where caregiver_id = '22222222-0000-0000-0000-000000000009'
-   and scheduled_start::date = current_date
-   and status <> 'scheduled';
+-- Both of the caregiver's visits are pinned INSIDE today in UTC on purpose. An earlier
+-- draft pushed the second one four hours out, which rolls past midnight UTC when the suite
+-- runs in the evening: the row then falls out of every `scheduled_start::date = current_date`
+-- filter — including the verdict below — and the second and third caregiver journeys find
+-- nothing to clock while the data looks fine to a human reading the table.
 
 -- ── 2 · A standing pool of approvable work ──────────────────────────────────────────
 -- approve-hours and payroll-close-export need COMPLETED visits, clocked in AND out, with
@@ -133,6 +130,15 @@ update public.visit v set verification_status = 'verified'
 update public.payroll_period
    set status = 'open', locked_by = null, locked_at = null
  where tenant_id = '11111111-1111-1111-1111-111111111111';
+
+-- Stated last and unconditionally: the statements above have all had their say, so this is
+-- the state the run actually starts from. No `status <> 'scheduled'` guard — that guard
+-- silently matched nothing whenever an earlier statement had already done the work, which
+-- is exactly when a reader would most want the reset to be real.
+update public.visit
+   set status = 'scheduled', updated_at = now()
+ where caregiver_id = '22222222-0000-0000-0000-000000000009'
+   and scheduled_start::date = current_date;
 
 commit;
 
