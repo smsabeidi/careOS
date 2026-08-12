@@ -1,0 +1,13 @@
+# careOS local-pg harness — MARKER EXTENSION, NOT THE REAL pgmq.
+# The real pgmq is unavailable on Postgres.app (no arm64 build shipped, and the
+# extension directory inside the .app bundle is not writable without sudo).
+# The behaviour migrations rely on is implemented in plain SQL by
+# scripts/local-pg/bootstrap.sql, which runs BEFORE the migration chain.
+# This marker exists only so that the migrations' own
+#   create extension if not exists pgmq;
+# lines succeed unmodified (invariant: never edit supabase/migrations/**).
+# Installing it creates NO objects.
+comment = 'careOS local harness marker for pgmq (objects live in bootstrap.sql)'
+default_version = '0.0.0-careos-shim'
+relocatable = true
+superuser = false

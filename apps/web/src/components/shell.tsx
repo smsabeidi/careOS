@@ -12,7 +12,7 @@ import { StatusChip, Avatar } from "./ui";
 import {
   IconUsers, IconClipboard, IconActivity, IconHome, IconHeart, IconLogOut,
   IconPen, IconCalendar, IconClipboardCheck, IconEye, IconCheck,
-  IconSparkle, IconInbox, IconPlus, IconSearch,
+  IconSparkle, IconInbox, IconPlus, IconSearch, IconClock,
 } from "./icons";
 
 /** Rails carry a translation KEY, not a string: the label is resolved once, at
@@ -44,32 +44,51 @@ const DEMO_PERSONAS: Persona[] = [
  *  pages — the rail is the daily path, not the sitemap. */
 function navFor(roles: string[]): NavItem[] {
   if (roles.includes("owner") || roles.includes("admin")) {
-    // Command → what needs a decision → who it is about → the regulator's view,
-    // then the two AI surfaces. Schedule and Credentials are one click from Command.
+    // Command → today's floor → what needs a decision → who it is about → the
+    // regulator's view, then the two AI surfaces.
+    //
+    // ST-200 seats /operations here and, because seven is a ceiling and not a
+    // suggestion, something had to leave: Intake did. It is the least daily of
+    // the seven for an owner (a referral arrives, it does not recur), and it is
+    // already one click away from Command and from Clients — whereas the live
+    // visit board, the exception queue and the payroll blockers are the things
+    // an owner opens the app to look at. Flagged rather than done quietly.
     return [
       { href: "/exec", labelKey: "nav.command", icon: <IconActivity /> },
+      { href: "/operations", labelKey: "nav.operations", icon: <IconClock /> },
       { href: "/inbox", labelKey: "nav.approvals", icon: <IconInbox /> },
       { href: "/office/clients", labelKey: "nav.clients", icon: <IconUsers /> },
       { href: "/office/compliance", labelKey: "nav.compliance", icon: <IconClipboardCheck /> },
-      { href: "/office/intake", labelKey: "nav.intake", icon: <IconPlus /> },
       { href: "/analytics", labelKey: "nav.analytics", icon: <IconSearch /> },
       { href: "/brain", labelKey: "nav.brain", icon: <IconSparkle /> },
     ];
   }
   if (roles.includes("coordinator") || roles.includes("hr")) {
-    // Analytics is an owner/admin/coordinator surface; HR gets the same rail without it.
-    const rail: NavItem[] = [
+    // The coordinator is the operations role, so /operations leads their rail and
+    // becomes the first mobile tab. The same seven-item ceiling applies, and here
+    // Analytics is what yields: the numbers a coordinator needs during a shift
+    // (who is late, what is unverified, whose hours are blocked) now live on
+    // /operations and /operations/workforce, while /analytics remains reachable
+    // from Command-style links. HR's rail is unchanged — no visit surfaces.
+    if (roles.includes("coordinator")) {
+      return [
+        { href: "/operations", labelKey: "nav.operations", icon: <IconClock /> },
+        { href: "/schedule", labelKey: "nav.schedule", icon: <IconCalendar /> },
+        { href: "/inbox", labelKey: "nav.approvals", icon: <IconInbox /> },
+        { href: "/office/clients", labelKey: "nav.clients", icon: <IconUsers /> },
+        { href: "/office/compliance", labelKey: "nav.compliance", icon: <IconClipboardCheck /> },
+        { href: "/office/intake", labelKey: "nav.intake", icon: <IconPlus /> },
+        { href: "/brain", labelKey: "nav.brain", icon: <IconSparkle /> },
+      ];
+    }
+    return [
       { href: "/office/clients", labelKey: "nav.clients", icon: <IconUsers /> },
       { href: "/schedule", labelKey: "nav.schedule", icon: <IconCalendar /> },
       { href: "/inbox", labelKey: "nav.approvals", icon: <IconInbox /> },
       { href: "/office/compliance", labelKey: "nav.compliance", icon: <IconClipboardCheck /> },
       { href: "/office/intake", labelKey: "nav.intake", icon: <IconPlus /> },
+      { href: "/brain", labelKey: "nav.brain", icon: <IconSparkle /> },
     ];
-    if (roles.includes("coordinator")) {
-      rail.push({ href: "/analytics", labelKey: "nav.analytics", icon: <IconSearch /> });
-    }
-    rail.push({ href: "/brain", labelKey: "nav.brain", icon: <IconSparkle /> });
-    return rail;
   }
   if (roles.includes("rn")) {
     return [

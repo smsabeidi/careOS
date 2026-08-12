@@ -5,6 +5,7 @@ import "./globals.css";
 import { LocaleProvider } from "@/lib/i18n/client";
 import { LOCALE_HTML_LANG } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
+import { ServiceWorkerRegistrar } from "@/lib/offline/register-sw";
 
 /* Inter — the single corporate face: UI, display titles, and tabular numerals.
    Loaded as the full variable axis (wght 100–900) plus opsz (optical sizing)
@@ -16,9 +17,30 @@ const inter = Inter({
   display: "swap",
 });
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   Installable, because the field tool has to survive a basement (docs/17 §7.6)
+   ───────────────────────────────────────────────────────────────────────────
+   The manifest and the icons make CareOS installable to a phone's home screen;
+   the service worker registered below gives an offline navigation somewhere to
+   land. Neither one caches a PHI response — public/sw.js is an allowlist of
+   build assets and two static files, and the reasoning is written out there.
+   `start_url` is /today because the person who installs this is a caregiver.
+──────────────────────────────────────────────────────────────────────────── */
 export const metadata: Metadata = {
   title: { default: "CareOS", template: "%s · CareOS" },
   description: "Care operations, provably in order.",
+  applicationName: "CareOS",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    // iOS ignores SVG for the home screen and will fall back to a screenshot without this.
+    apple: [{ url: "/icon-180.png", sizes: "180x180", type: "image/png" }],
+  },
+  appleWebApp: { capable: true, title: "CareOS", statusBarStyle: "default" },
+  formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
@@ -83,6 +105,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <LocaleProvider locale={locale}>{children}</LocaleProvider>
+        {/* Renders nothing. Registers the offline worker after `load`, and fails silently:
+            no worker means "online only", which is exactly where the app was yesterday. */}
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );

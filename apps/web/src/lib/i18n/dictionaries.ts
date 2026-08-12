@@ -27,6 +27,7 @@ export const en = {
   "nav.analytics": "Analytics",
   "nav.brain": "Brain",
   "nav.schedule": "Schedule",
+  "nav.operations": "Operations",
   "nav.clinical": "Clinical",
   "nav.today": "Today",
   "nav.myClients": "My clients",
@@ -151,14 +152,96 @@ export const en = {
   "today.completed": "Completed",
   "today.inProgress": "In progress",
   "today.openNotes": "Open notes",
-  "today.evvNote":
-    "Clock in records a GPS-verified visit event (EVV) on the visit record. Your location is captured once at clock-in and once at clock-out. It is not tracked in between.",
+  /* Rewritten for docs/17 §7.1: a caregiver surface never says EVV, GPS, geofence,
+     accuracy or radius. What it owes them is what is recorded and when. */
+  "today.clockNote":
+    "Clocking in and out records the time and the place of the visit on the record. Your location is checked once when you start and once when you finish. It is not tracked in between.",
+  "today.flagged": "Your coordinator will take a look at this visit.",
+  "today.errorTitle": "Couldn't load your day",
+  "today.errorBody":
+    "Nothing was lost and no visit was changed. Refresh to try again — if it keeps happening, call your coordinator.",
+  "today.lockedTitle": "Verify your session to see your visits",
+  "today.lockedBody":
+    "Visit details name the people you care for, so they open only on a verified session. Your day is unchanged — nothing is missing.",
+  "today.lockedCta": "Verify session",
   "today.upcoming": "Upcoming visits",
   "today.noClients": "No clients assigned. Assigned clients appear here.",
   "today.myOpenNotes": "My open notes",
   "today.noDrafts": "No open drafts. Drafts are saved automatically and appear here.",
   "today.noteFallback": "Note",
   "today.savedAt": "saved {time}",
+
+  /* ── The clock (docs/17 §7.1) ──
+     Two actions, ever: Clock in → Clocked in · 9:02 AM · Visit in progress →
+     Complete visit. The words EVV, GPS, geofence, accuracy, radius and metres are
+     absent by design (D-030) — the database hands the UI a bucket, not a distance,
+     and every failure line says what happened, what is kept, and what to do next. */
+  "clock.in": "Clock in",
+  "clock.completeVisit": "Complete visit",
+  "clock.visitCompleted": "Visit completed",
+  "clock.checking": "Checking location…",
+  "clock.saving": "Saving…",
+  "clock.clockedInAt": "Clocked in · {time}",
+  "clock.clockedOutAt": "Clocked out · {time}",
+  "clock.visitInProgress": "Visit in progress",
+  "clock.alreadyRecorded": "Already recorded — nothing was duplicated.",
+  "clock.flaggedForReview": "Recorded. Your coordinator will take a look at this one.",
+  "clock.unverifiedTitle": "We couldn't verify your location yet.",
+  "clock.unverifiedBody":
+    "Nothing was lost and your visit isn't blocked. Try again, or tell us why and carry on.",
+  "clock.hintNear":
+    "You may be at a different entrance than the one on file. Try again, or tell us why and carry on.",
+  "clock.hintFar":
+    "This doesn't look like the address on file for this visit. Try again, or tell us why and carry on.",
+  "clock.requestException": "Request exception",
+  "clock.reasonLabel": "Reason",
+  "clock.reasonPlaceholder": "Choose a reason",
+  "clock.reasonHelp": "Your coordinator sees this with the visit, and it stays on the record.",
+  "clock.reasonSubmit": "Send and carry on",
+  "clock.noteLabel": "Anything to add (optional)",
+  "clock.notePlaceholder": "A sentence is plenty.",
+  "clock.reasonNoFix": "My phone couldn't find where I am",
+  "clock.reasonAlternate": "The visit is at a different address",
+  "clock.reasonAddressWrong": "The address on file looks wrong",
+  "clock.reasonEmergency": "This is an emergency visit",
+  "clock.reasonDevice": "Something is wrong with my phone",
+  "clock.reasonNetwork": "I have no signal here",
+  "clock.reasonOther": "Another reason",
+  "clock.queuedTitle": "Saved on this device",
+  "clock.queuedBody":
+    "You're offline. This sends by itself as soon as you have a signal — there is nothing else to do.",
+  "clock.errQueueFailed":
+    "This device wouldn't hold the entry, so nothing was recorded. Move to where you have a signal and try again.",
+  "clock.errAal2":
+    "Your session needs verifying again. Unlock with your authenticator, then try once more. Nothing was recorded.",
+  "clock.errNotYours":
+    "This visit is assigned to someone else, so it can't be clocked here. Nothing was recorded.",
+  "clock.errNotFound":
+    "That visit isn't available to you. Nothing was recorded — check your day and try again.",
+  "clock.errAlreadyIn": "You're already clocked in for this visit. Nothing was duplicated.",
+  "clock.errNotIn": "There's no open clock-in to close on this visit. Nothing was changed.",
+  "clock.errLocationRequired":
+    "This visit can only be clocked at the address on file. Nothing was recorded — call your coordinator if you're in the right place.",
+  "clock.errExceptionNotAllowed":
+    "This visit doesn't allow a reason in place of the location. Nothing was recorded — call your coordinator.",
+  "clock.errBadRequest": "Something about that wasn't right, so nothing was recorded. Try again.",
+  "clock.errGeneric": "Something went wrong and nothing was recorded. Try again.",
+  "clock.errSignedOut": "You've been signed out. Sign in again — nothing was recorded.",
+
+  /* ── Connectivity: three honest states (docs/10 §6) ── */
+  "offline.live": "Live",
+  "offline.syncing": "Syncing ({count})",
+  "offline.offline": "Offline",
+  "offline.offlineTitle": "You're offline",
+  "offline.offlineBody":
+    "You can still clock in and out. Anything you record is held on this device and sends by itself.",
+  "offline.offlineHeld":
+    "{count} held on this device. They send by themselves as soon as you have a signal.",
+  "offline.syncingTitle": "Sending what you recorded",
+  "offline.syncingBody": "{count} still to send. You can keep working — this finishes on its own.",
+  "offline.sendNow": "Send now",
+  "offline.needsAttention":
+    "{count} came back needing your attention. Open the visit and clock it again — you'll be asked what happened.",
 
   /* ── Family portal ── */
   "family.sub": "Your family member's care, shared with their consent.",
@@ -243,6 +326,7 @@ export const es: Dictionary = {
   "nav.analytics": "Análisis",
   "nav.brain": "Cerebro",
   "nav.schedule": "Programación",
+  "nav.operations": "Operaciones",
   "nav.clinical": "Clínica",
   "nav.today": "Hoy",
   "nav.myClients": "Mis clientes",
@@ -367,8 +451,16 @@ export const es: Dictionary = {
   "today.completed": "Completada",
   "today.inProgress": "En curso",
   "today.openNotes": "Abrir notas",
-  "today.evvNote":
-    "Marcar la entrada registra un evento de visita verificado por GPS (EVV) en el registro de la visita. Su ubicación se captura una vez al entrar y una vez al salir. No se rastrea en el intervalo.",
+  "today.clockNote":
+    "Marcar la entrada y la salida registra la hora y el lugar de la visita. Su ubicación se comprueba una vez al empezar y una vez al terminar. No se rastrea entre medias.",
+  "today.flagged": "Su coordinador revisará esta visita.",
+  "today.errorTitle": "No se pudo cargar su día",
+  "today.errorBody":
+    "No se perdió nada y ninguna visita cambió. Actualice para volver a intentarlo; si sigue ocurriendo, llame a su coordinador.",
+  "today.lockedTitle": "Verifique su sesión para ver sus visitas",
+  "today.lockedBody":
+    "Los detalles de las visitas nombran a las personas que usted atiende, así que solo se abren en una sesión verificada. Su día no ha cambiado: no falta nada.",
+  "today.lockedCta": "Verificar sesión",
   "today.upcoming": "Próximas visitas",
   "today.noClients": "No tiene clientes asignados. Los clientes asignados aparecen aquí.",
   "today.myOpenNotes": "Mis notas abiertas",
@@ -376,6 +468,74 @@ export const es: Dictionary = {
     "No hay borradores abiertos. Los borradores se guardan automáticamente y aparecen aquí.",
   "today.noteFallback": "Nota",
   "today.savedAt": "guardado a las {time}",
+
+  /* ── El reloj de la visita (docs/17 §7.1) ── */
+  "clock.in": "Marcar entrada",
+  "clock.completeVisit": "Finalizar visita",
+  "clock.visitCompleted": "Visita finalizada",
+  "clock.checking": "Comprobando su ubicación…",
+  "clock.saving": "Guardando…",
+  "clock.clockedInAt": "Entrada marcada · {time}",
+  "clock.clockedOutAt": "Salida marcada · {time}",
+  "clock.visitInProgress": "Visita en curso",
+  "clock.alreadyRecorded": "Ya estaba registrado: no se duplicó nada.",
+  "clock.flaggedForReview": "Registrado. Su coordinador revisará esta visita.",
+  "clock.unverifiedTitle": "Todavía no pudimos verificar su ubicación.",
+  "clock.unverifiedBody":
+    "No se perdió nada y su visita no está bloqueada. Inténtelo de nuevo, o díganos por qué y continúe.",
+  "clock.hintNear":
+    "Puede que esté en una entrada distinta a la registrada. Inténtelo de nuevo, o díganos por qué y continúe.",
+  "clock.hintFar":
+    "Esto no parece la dirección registrada para esta visita. Inténtelo de nuevo, o díganos por qué y continúe.",
+  "clock.requestException": "Solicitar excepción",
+  "clock.reasonLabel": "Motivo",
+  "clock.reasonPlaceholder": "Elija un motivo",
+  "clock.reasonHelp": "Su coordinador lo ve junto con la visita y queda en el registro.",
+  "clock.reasonSubmit": "Enviar y continuar",
+  "clock.noteLabel": "Algo que añadir (opcional)",
+  "clock.notePlaceholder": "Con una frase basta.",
+  "clock.reasonNoFix": "Mi teléfono no pudo encontrar dónde estoy",
+  "clock.reasonAlternate": "La visita es en otra dirección",
+  "clock.reasonAddressWrong": "La dirección registrada parece incorrecta",
+  "clock.reasonEmergency": "Es una visita de emergencia",
+  "clock.reasonDevice": "Mi teléfono tiene un problema",
+  "clock.reasonNetwork": "Aquí no tengo señal",
+  "clock.reasonOther": "Otro motivo",
+  "clock.queuedTitle": "Guardado en este dispositivo",
+  "clock.queuedBody":
+    "Está sin conexión. Esto se enviará solo en cuanto tenga señal; no hay nada más que hacer.",
+  "clock.errQueueFailed":
+    "Este dispositivo no pudo guardarlo, así que no se registró nada. Vaya a donde tenga señal e inténtelo de nuevo.",
+  "clock.errAal2":
+    "Su sesión necesita verificarse de nuevo. Desbloquee con su autenticador y vuelva a intentarlo. No se registró nada.",
+  "clock.errNotYours":
+    "Esta visita está asignada a otra persona, así que no se puede marcar aquí. No se registró nada.",
+  "clock.errNotFound":
+    "Esa visita no está disponible para usted. No se registró nada; revise su día e inténtelo de nuevo.",
+  "clock.errAlreadyIn": "Ya tiene la entrada marcada en esta visita. No se duplicó nada.",
+  "clock.errNotIn": "Esta visita no tiene una entrada abierta que cerrar. No se cambió nada.",
+  "clock.errLocationRequired":
+    "Esta visita solo se puede marcar en la dirección registrada. No se registró nada; llame a su coordinador si está en el lugar correcto.",
+  "clock.errExceptionNotAllowed":
+    "Esta visita no admite un motivo en lugar de la ubicación. No se registró nada; llame a su coordinador.",
+  "clock.errBadRequest": "Algo no estaba bien, así que no se registró nada. Inténtelo de nuevo.",
+  "clock.errGeneric": "Algo salió mal y no se registró nada. Inténtelo de nuevo.",
+  "clock.errSignedOut": "Su sesión se cerró. Vuelva a iniciar sesión; no se registró nada.",
+
+  /* ── Conectividad: tres estados honestos (docs/10 §6) ── */
+  "offline.live": "En línea",
+  "offline.syncing": "Enviando ({count})",
+  "offline.offline": "Sin conexión",
+  "offline.offlineTitle": "Está sin conexión",
+  "offline.offlineBody":
+    "Puede seguir marcando entradas y salidas. Lo que registre se guarda en este dispositivo y se envía solo.",
+  "offline.offlineHeld":
+    "{count} guardado(s) en este dispositivo. Se enviarán solos en cuanto tenga señal.",
+  "offline.syncingTitle": "Enviando lo que registró",
+  "offline.syncingBody": "Quedan {count} por enviar. Puede seguir trabajando: esto termina solo.",
+  "offline.sendNow": "Enviar ahora",
+  "offline.needsAttention":
+    "{count} necesita(n) su atención. Abra la visita y márquela de nuevo; se le preguntará qué pasó.",
 
   /* ── Portal familiar ── */
   "family.sub": "El cuidado de su familiar, compartido con su consentimiento.",

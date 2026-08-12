@@ -18,6 +18,15 @@ jobs:
         run: supabase db start
       - name: Run pgTAP suite
         run: supabase test db
+      # docs/07 §11 promised since v1.0 that the documented and deployed policy sets
+      # "cannot drift — drift fails the build". Until ST-217 neither db/policies.md nor
+      # its generator existed, so the promise guarded nothing. It runs in THIS job
+      # because it needs a database with the full chain applied — a grep over migration
+      # text cannot see a policy that a later migration dropped.
+      - name: RLS policy catalog has not drifted
+        run: |
+          CAREOS_PSQL="psql $(supabase status -o env | grep '^DB_URL=' | cut -d= -f2- | tr -d '\"')" \
+            bash scripts/gen-policies.sh --check
 
   spec-drift-gate:
     name: spec-corpus drift gate (E4 / ST-103, D-010)

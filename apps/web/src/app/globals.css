@@ -48,10 +48,15 @@
   /* ── Semantic (Apple hues) — tint 50 · fill 600 · text 700 (AA) ── */
   --color-success-50: #e7f9ed;
   --color-success-600: #34c759; /* systemGreen */
-  --color-success-700: #248a3d;
+  /* 6.0:1 on --color-success-50, which is where it is actually read: .chip-success sets
+     this colour on that wash at 11–13px, and the old #248a3d measured 4.01:1 there — under
+     AA, and axe flagged it as serious on every operations surface. Darkened to the value
+     the forced-contrast block below already used. */
+  --color-success-700: #1c6b30;
   --color-warning-50: #fff4e5;
   --color-warning-600: #ff9500; /* systemOrange */
-  --color-warning-700: #b25e00;
+  /* 7.4:1 on --color-warning-50; the old #b25e00 measured 4.30:1 there, likewise under AA. */
+  --color-warning-700: #7a4200;
   --color-danger-50: #ffecea;
   --color-danger-600: #ff3b30; /* systemRed */
   --color-danger-700: #d70015;
@@ -116,10 +121,19 @@
      RULE must not. Tokenising them keeps each component rule single and
      unconditional — the dark block below only swaps values, never re-declares
      selectors. Light values are byte-identical to what they replaced. */
-  --accent-fill: var(--accent);              /* solid accent under a white label */
+  /* Solid accent under a WHITE label, so the fill owes that label 4.5:1 — which
+     systemBlue #007aff does not give: white on it measures 4.02:1, and axe flagged every
+     .btn-primary on /today, /operations/exceptions, /operations/timesheets and
+     /settings/visit-policy as a serious contrast failure. #0b6fd6 (white label 4.9:1) is
+     the value the dark appearance already carried for exactly this reason; the two now
+     agree. --accent itself is untouched: it is read as TEXT on a light wash, where
+     #007aff is fine, and only the filled-button pairing was short. */
+  --accent-fill: #0b6fd6;
   --accent-fill-hover: var(--accent-hover);
   --accent-soft-hover: color-mix(in srgb, var(--accent) 16%, #fff);
-  --danger-fill: var(--color-danger-600);    /* solid red under a white label */
+  /* Likewise a white label: systemRed #ff3b30 gives it 3.5:1. #d13930 gives 4.8:1 and is
+     the value the dark appearance already used. */
+  --danger-fill: #d13930;
   --danger-fill-hover: var(--color-danger-700);
   --btn-secondary-hover: #ffffff;
   --segment-selected: #ffffff;               /* segmented + tab selected pill */

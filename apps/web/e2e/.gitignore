@@ -1,0 +1,4 @@
+# Playwright run artifacts. Traces and screenshots of a synthetic tenant are still a
+# rendered PHI-shaped surface, and they are regenerated on every run — neither belongs
+# in the repository.
+.artifacts/

@@ -82,5 +82,13 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|ico)$).*)"],
+  // sw.js and the manifest are exempt for the same reason _next/static is: they are
+  // static, PHI-free assets the browser fetches OUTSIDE a signed-in navigation. Gated,
+  // they 307 to /login, the service worker never registers, and offline clock capture
+  // silently does not exist for the caregiver who needs it most (D-022, docs/17 §7.6).
+  // The worker itself is an allowlist — non-GET, cross-origin and navigations are never
+  // cached — so exempting it exposes nothing.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|sw\\.js|manifest\\.webmanifest|.*\\.(?:svg|png|jpg|ico)$).*)",
+  ],
 };

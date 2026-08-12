@@ -12,6 +12,8 @@
     "check:matrix": "bash scripts/check-matrix.sh",
     "typecheck": "pnpm --filter @careos/web typecheck",
     "lint": "bash scripts/check-matrix.sh && bash scripts/spec-drift-gate.sh",
-    "test": "supabase test db"
+    "test": "supabase test db",
+    "test:web": "pnpm --filter @careos/web test",
+    "test:web:coverage": "pnpm --filter @careos/web test:coverage"
   }
 }
