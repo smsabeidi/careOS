@@ -80,6 +80,51 @@
 | **D-029** | Aug 9 | **`app.clock_visit` is re-signed by drop-and-create, not overloaded.** The canonical signature gains six defaulted parameters (`p_client_event_id`, `p_captured_at`, `p_offline`, `p_reason_code`, `p_note`, `p_device_session_id`). Existing five-argument call sites resolve to the new function unchanged. | D-016 established that `create or replace` with a new signature *overloads* rather than replaces, and that ambiguous overloads break PostgREST's named-argument resolution — the exact failure that broke the ops cron. Dropping first and re-creating with defaults preserves every caller while making the new capture fields additive. The 0013 pgTAP file is updated to the new signature in the same commit (a signature change, not a weakened assertion). |
 | **D-030** | Aug 9 | **Caregiver location is PHI-by-linkage and its capture points are closed.** Coordinates are captured **only** at clock-in and clock-out. No continuous tracking, no background location, no mid-visit polling. Coordinates never enter audit payloads, outbox payloads, notification payloads, telemetry, or any AI prompt; the caregiver UI is shown a `distance_bucket` (`inside`/`near`/`far`), never metres. Observability breakdowns by **geography are prohibited**; by browser/org/service type are permitted. | A caregiver's coordinates at a visit reveal the client's home address, so location is PHI about the *client* and workforce PII about the *caregiver* simultaneously — a dual classification the corpus had not stated. Migration 0013 already excluded lat/lng from audit payloads; this generalises that instinct into a closed rule before ten new surfaces each make their own decision. The `distance_bucket` return is deliberate: a caregiver being told they are "312 m away" is surveillance-grade precision serving no operational purpose. |
 
+### Proposed decisions awaiting ratification (ST-231, drafted 2026-08-12 — NOT ratified)
+
+These four are **proposals**, not decisions. None carries a D-number until the founder
+ratifies it; nothing below may be cited as ratified. They are the W0 deliverable of the
+Front Door program (docs/designs/intelligent-front-door.md) — each blocks a named later
+wave and nothing else.
+
+**PD-1 · Messaging posture** (blocks any messaging build). CareOS has no in-platform
+messaging; coordination happens off-platform, which is evidence the agency does not have.
+Options: **(a) entity-anchored threads** — conversations attach to a visit, client, or
+exception; append-only message ledger; RLS scoped to the parent entity's care team;
+recommended by the CEO review as the narrowest PHI surface with the highest audit value —
+**(b)** free-floating channels/DMs (Slack shape; widest PHI surface, weakest anchoring to
+evidence), or **(c)** defer entirely. Non-negotiables under any yes: message content is
+PHI (invariant 5) — push/notification payloads carry IDs only; append-only history
+(invariant 1); retention + legal-hold coverage before launch; no PHI in Realtime payloads.
+
+**PD-2 · Revenue cycle** (blocks any billing build). Options: **(a) export boundary** —
+CareOS produces claim/invoice-ready artifacts with content hashes (the D-027
+`payroll_export` pattern) and an accounting vendor of record consumes them; recommended:
+it preserves doc 01's "never the accounting book of record" non-goal — or **(b)** CareOS
+becomes the biller (claims submission + private-pay invoicing in-product). Open inputs
+either way: the Maryland Medicaid claims path given ISAS as system of record (extends
+D-Q16/V10/V17), and the vendor choice (QuickBooks-class) which requires a docs/09 §6
+register entry + BAA analysis before any data flows. Money stays rules-engine work
+(invariant 13) under both options.
+
+**PD-3 · Web-push channel registration** (blocks Front Door W6b only; W6a install page is
+unaffected). Web push transits browser vendors' push services — **FCM (Google), Apple
+Push, Mozilla autopush** — a third-party data flow absent from the docs/09 §6 register,
+which CLAUDE.md requires proposing before building. Scope if ratified: §6 register entry
+(payloads are IDs + closed-map titles only, zero PHI — the 0039-M4 posture); a
+`push_subscription` table (RLS + matrix + pgTAP); `'push'` added to the 0036
+`notification.channel` CHECK; VAPID key custody per docs/09 §5; sender rides the existing
+worker/queue plane; flag `front_door.push`, default off.
+
+**PD-4 · Voice audio retention** (blocks Front Door W3's voice delta). When a caregiver
+records a voice note, is the raw audio (a) part of the clinical record — retained under
+the same schedule as the note it produced — or (b) transient input, destroyed via the
+0029 two-phase saga once the human accepts the transcript, with the transcript as the
+record? The plan assumes (b); the CEO review flagged that this is a compliance decision,
+not an engineering default. **Resolution must route through `careos-compliance-context` /
+docs/02 — no COMAR provision may be cited from memory (D-017).** Until ratified, voice
+audio is stored as a 0029 document row and nothing is destroyed.
+
 ## 4. Launch-blocking verification checklist (nothing PHI until every row is green)
 
 | # | Item | Owner | Verify by |
@@ -87,7 +132,7 @@
 | V1 | Supabase: Team/Enterprise org · **BAA executed** · HIPAA add-on enabled · prod project **High-Compliance** · Security Advisor zero findings | Salim | Sprint 0 |
 | V2 | Vercel: **BAA executed** (Pro HIPAA add-on or Enterprise) · log-drain + scrubbing configured · decide Secure Compute (Enterprise) now-vs-later | Salim | Sprint 0 |
 | V3 | PowerSync: **BAA executed** (Cloud) *or* self-host decision + deployment plan | Salim | ~~Sprint 0~~ **Not launch-blocking (D-022)** — future-optional; required only if a native app is built |
-| V4 | Anthropic: API tier with **BAA executed**; zero-retention posture confirmed in writing | Salim | Sprint 0 (blocks AI features) |
+| V4 | OpenAI: **BAA + Safety-Retention provisioning executed** and registered in docs/09 §6; zero-retention posture confirmed in writing (row updated per D-013, which superseded the original Anthropic wording) | Salim | **The production-enablement gate for the entire AI plane and the Front Door program** (docs/designs/intelligent-front-door.md, W0): every AI capability runs synthetic-only until green (D-006/D-013). Target: before any `front_door.*` flag flips. |
 | V5 | Embedding-model provider under BAA selected (Anthropic-partner / OpenAI-BAA / Bedrock-Titan-fallback) | AI eng | Before S6 |
 | V6 | Vercel AI Gateway explicitly **out of PHI path** unless its BAA scope is verified in writing | AI eng | Before S6 |
 | V7 | Deepgram BAA (voice) · Twilio BAA + 10DLC registration · Sentry BAA · log-store BAA | Salim | S0 start; blocks respective features |
