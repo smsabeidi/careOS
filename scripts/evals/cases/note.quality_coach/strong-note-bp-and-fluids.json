@@ -1,0 +1,13 @@
+{
+  "name": "strong-note-bp-and-fluids",
+  "input": "{\"note\": \"Blood pressure at 7:45 was 128 over 74, written in the log per her care-plan goal. Mrs. Tran drank three cups of fluids by noon \\u2014 juice at 8, water at 10 and 11:30 \\u2014 on track for her six-cup goal. Lunch at 12:15 was soup and half a turkey sandwich, eaten without coughing. She said her energy felt better than yesterday, her words.\", \"goals\": [\"Record blood pressure every morning\", \"Drink six cups of fluids per day\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_match": [
+      "\"suggestions\"\\s*:\\s*\\[\\s*\\]"
+    ]
+  }
+}

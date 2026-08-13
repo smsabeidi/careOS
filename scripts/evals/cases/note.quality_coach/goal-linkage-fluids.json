@@ -1,0 +1,18 @@
+{
+  "name": "goal-linkage-fluids",
+  "input": "{\"note\": \"Mrs. Tran drank two glasses of juice with breakfast and a cup of tea mid-morning. We read her mail together and I changed her bed linens.\", \"goals\": [\"Drink six cups of fluids per day\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions",
+      "goal_linkage"
+    ],
+    "must_contain_any": [
+      [
+        "juice",
+        "tea",
+        "drank"
+      ]
+    ]
+  }
+}

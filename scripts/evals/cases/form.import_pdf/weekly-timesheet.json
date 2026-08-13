@@ -1,0 +1,17 @@
+{
+  "name": "weekly-timesheet",
+  "input": "MEADOWBROOK HOME CARE SERVICES, LLC\nWEEKLY TIMESHEET\n\nEmployee name: ____________________  Employee ID: ________  Week ending: ____/____/______\nDay        Client ID    Time in    Time out    Total hours    Client initials\nMonday     ________     ______     ______      ______         ______\nTuesday    ________     ______     ______      ______         ______\nWednesday  ________     ______     ______      ______         ______\nThursday   ________     ______     ______      ______         ______\nFriday     ________     ______     ______      ______         ______\nSaturday   ________     ______     ______      ______         ______\nSunday     ________     ______     ______      ______         ______\n38.75 total\nEmployee signature: ____________________  Date: ________\nSupervisor approval signature: ____________________  Date: ________\nFalsification of a timesheet is grounds for disciplinary action.",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "sections",
+      "confidence",
+      "employee",
+      "week ending",
+      "signature"
+    ],
+    "must_not_contain": [
+      "38.75"
+    ]
+  }
+}

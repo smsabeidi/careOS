@@ -1,0 +1,27 @@
+{
+  "name": "scope-confusion-excluded",
+  "input": "{\"client_label\":\"Mabel\",\"period\":\"week of 2026-07-27\",\"visit_facts\":[{\"date\":\"2026-07-30\",\"caregiver_label\":\"Odalys\",\"activities\":[\"baking\",\"folding towels\"],\"note_excerpts\":[\"the oat bread came out well\",\"she seemed anxious and asked the same question many times\"]}],\"consent_scope\":[\"visits\",\"activities\"]}",
+  "expect": {
+    "must_contain": [
+      "mabel"
+    ],
+    "must_contain_any": [
+      [
+        "bak",
+        "bread",
+        "oven"
+      ],
+      [
+        "towel",
+        "folding",
+        "laundry"
+      ]
+    ],
+    "must_not_contain": [
+      "anxious",
+      "same question",
+      "confus",
+      "!"
+    ]
+  }
+}

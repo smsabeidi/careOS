@@ -1,0 +1,19 @@
+{
+  "name": "vague-language-went-well",
+  "input": "{\"note\": \"Everything went well today. Breakfast at eight was eggs and toast, all eaten. Meds at nine as listed.\", \"goals\": [\"Record blood pressure every morning\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_contain_any": [
+      [
+        "insufficient_detail",
+        "vague_language"
+      ],
+      [
+        "went well"
+      ]
+    ]
+  }
+}

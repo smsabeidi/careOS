@@ -1,0 +1,19 @@
+{
+  "name": "vague-language-nothing-to-report",
+  "input": "{\"note\": \"Nothing to report tonight. Mrs. Delgado went to bed at nine after her shows.\", \"goals\": [\"Spend twenty minutes outdoors on nice days\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_contain_any": [
+      [
+        "insufficient_detail",
+        "vague_language"
+      ],
+      [
+        "nothing to report"
+      ]
+    ]
+  }
+}

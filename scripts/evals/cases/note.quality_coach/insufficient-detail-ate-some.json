@@ -1,0 +1,21 @@
+{
+  "name": "insufficient-detail-ate-some",
+  "input": "{\"note\": \"Made dinner for Mrs. Keating. She ate some of it and went to bed early.\", \"goals\": [\"Review the memory book together twice a week\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_contain_any": [
+      [
+        "insufficient_detail",
+        "vague_language"
+      ],
+      [
+        "some of it",
+        "ate some",
+        "dinner"
+      ]
+    ]
+  }
+}

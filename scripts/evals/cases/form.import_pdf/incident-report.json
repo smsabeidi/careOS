@@ -1,0 +1,18 @@
+{
+  "name": "incident-report",
+  "input": "MEADOWBROOK HOME CARE SERVICES, LLC\nResidential Service Agency\nCLIENT INCIDENT REPORT\n\nSection A - Client information\nClient name: ____________________\nClient ID: ____________________\nDate of incident: ____/____/______\nTime of incident: ________ AM / PM\n\nSection B - Incident details\nLocation of incident:  [ ] Client home  [ ] Community  [ ] Other\nType of incident:  [ ] Fall  [ ] Medication error  [ ] Injury  [ ] Property damage  [ ] Other\nDescription of incident (attach additional pages if needed):\nHarold Bexley slipped near the back steps at approximately 0430 hours\nWas the supervising nurse notified?  [ ] Yes  [ ] No\n\nSection C - Sign-off\nName of person completing this report: ____________________\nSignature: ____________________    Date: ____/____/______",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "sections",
+      "confidence",
+      "incident",
+      "signature"
+    ],
+    "must_not_contain": [
+      "harold bexley",
+      "0430",
+      "back steps"
+    ]
+  }
+}

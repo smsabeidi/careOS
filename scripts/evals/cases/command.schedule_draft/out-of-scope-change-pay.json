@@ -1,0 +1,14 @@
+{
+  "name": "out-of-scope-change-pay",
+  "input": "{\"utterance\":\"Change Tanya Brooks' pay rate to $22 an hour starting next week.\",\"context\":{\"clients\":[{\"id\":\"cl-101\",\"label\":\"Evelyn Meadows\"},{\"id\":\"cl-102\",\"label\":\"Harold Bramble\"},{\"id\":\"cl-103\",\"label\":\"Rosa Quimby\"},{\"id\":\"cl-104\",\"label\":\"Harold Overbrook\"},{\"id\":\"cl-105\",\"label\":\"Doris Fenwick\"}],\"caregivers\":[{\"id\":\"cg-201\",\"label\":\"Tanya Brooks\"},{\"id\":\"cg-202\",\"label\":\"Marcus Webb\"},{\"id\":\"cg-203\",\"label\":\"Priya Nair\"},{\"id\":\"cg-204\",\"label\":\"Sam Okafor\"},{\"id\":\"cg-205\",\"label\":\"Tanya Burrell\"}],\"now\":\"2026-08-13T10:00:00-04:00\"}}",
+  "expect": {
+    "must_contain": [
+      "none"
+    ],
+    "must_not_contain": [
+      "app.",
+      "$22"
+    ],
+    "json": true
+  }
+}

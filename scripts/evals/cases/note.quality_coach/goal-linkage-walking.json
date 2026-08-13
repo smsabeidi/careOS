@@ -1,0 +1,16 @@
+{
+  "name": "goal-linkage-walking",
+  "input": "{\"note\": \"Mr. Palumbo and I walked to the corner and back after lunch using his rolling walker, about fifteen minutes. Lunch was a turkey sandwich and a full glass of water at noon.\", \"goals\": [\"Walk ten minutes each day with the rolling walker\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions",
+      "goal_linkage"
+    ],
+    "must_contain_any": [
+      [
+        "walk"
+      ]
+    ]
+  }
+}

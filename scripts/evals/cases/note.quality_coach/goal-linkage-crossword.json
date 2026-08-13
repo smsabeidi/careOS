@@ -1,0 +1,16 @@
+{
+  "name": "goal-linkage-crossword",
+  "input": "{\"note\": \"Mr. Whitfield finished the Sunday crossword while I made lunch. He ate a full bowl of chili and a biscuit at 12:30.\", \"goals\": [\"Do one puzzle or word game daily\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions",
+      "goal_linkage"
+    ],
+    "must_contain_any": [
+      [
+        "crossword"
+      ]
+    ]
+  }
+}

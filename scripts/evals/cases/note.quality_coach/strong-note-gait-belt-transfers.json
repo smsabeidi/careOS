@@ -1,0 +1,13 @@
+{
+  "name": "strong-note-gait-belt-transfers",
+  "input": "{\"note\": \"Both transfers today used the gait belt per his safety goal: bed to chair at 8:15 am and chair to bed at 8:00 pm, steady both times, no dizziness reported. Mr. Palumbo ate all of breakfast, eggs and toast with coffee at 8:30, and all of dinner, spaghetti at 6. We sorted his mail together at 4.\", \"goals\": [\"Use the gait belt for every transfer\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_match": [
+      "\"suggestions\"\\s*:\\s*\\[\\s*\\]"
+    ]
+  }
+}

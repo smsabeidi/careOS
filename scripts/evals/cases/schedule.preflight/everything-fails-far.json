@@ -1,0 +1,29 @@
+{
+  "name": "everything-fails-far",
+  "input": "{\"credential_ok\":false,\"credential_detail\":\"background_check_pending\",\"schedulable_ok\":false,\"conflict_count\":3,\"geofence_bucket\":\"far\"}",
+  "expect": {
+    "must_contain": [
+      "far"
+    ],
+    "must_contain_any": [
+      [
+        "3",
+        "three"
+      ],
+      [
+        "background",
+        "pending"
+      ]
+    ],
+    "must_not_contain": [
+      "you should approve",
+      "you should reject",
+      "recommend approving",
+      "recommend rejecting",
+      "metre",
+      "meters",
+      " lat",
+      "lng"
+    ]
+  }
+}

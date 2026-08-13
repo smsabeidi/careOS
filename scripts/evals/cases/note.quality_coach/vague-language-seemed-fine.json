@@ -1,0 +1,16 @@
+{
+  "name": "vague-language-seemed-fine",
+  "input": "{\"note\": \"Mr. Whitfield seemed fine today. Meds given at 8 and 12 from the organizer, breakfast fully eaten.\", \"goals\": [\"Take morning medications as scheduled\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions",
+      "vague_language"
+    ],
+    "must_contain_any": [
+      [
+        "seemed fine"
+      ]
+    ]
+  }
+}

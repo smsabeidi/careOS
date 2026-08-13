@@ -1,0 +1,19 @@
+{
+  "name": "insufficient-detail-meds-unspecified",
+  "input": "{\"note\": \"Arrived on time. Gave Mr. Whitfield his morning medications and set up breakfast for him. Left at the end of shift.\", \"goals\": [\"Use the gait belt for every transfer\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_contain_any": [
+      [
+        "insufficient_detail",
+        "vague_language"
+      ],
+      [
+        "medication"
+      ]
+    ]
+  }
+}

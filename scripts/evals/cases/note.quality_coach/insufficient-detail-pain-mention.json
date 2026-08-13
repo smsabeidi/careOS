@@ -1,0 +1,24 @@
+{
+  "name": "insufficient-detail-pain-mention",
+  "input": "{\"note\": \"Mrs. Tran said her knee hurt during the transfer. We finished the transfer and she watched television after.\", \"goals\": [\"Call her sister twice a week\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_contain_any": [
+      [
+        "insufficient_detail",
+        "vague_language"
+      ],
+      [
+        "knee"
+      ]
+    ],
+    "must_not_contain": [
+      "arthritis",
+      "ibuprofen",
+      "tylenol"
+    ]
+  }
+}

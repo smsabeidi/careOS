@@ -1,0 +1,27 @@
+{
+  "name": "clean-garden-walk",
+  "input": "{\"client_label\":\"Rosa\",\"period\":\"week of 2026-07-27\",\"visit_facts\":[{\"date\":\"2026-07-28\",\"caregiver_label\":\"Tessa\",\"activities\":[\"a walk in the garden\",\"lunch preparation\"],\"note_excerpts\":[\"rosa enjoyed the fresh air on our walk\",\"we made vegetable soup together\",\"reminded her about her metformin at noon\"]}],\"consent_scope\":[\"visits\",\"activities\",\"wellbeing\"]}",
+  "expect": {
+    "must_contain": [
+      "rosa"
+    ],
+    "must_contain_any": [
+      [
+        "walk",
+        "stroll",
+        "fresh air",
+        "garden"
+      ],
+      [
+        "soup",
+        "lunch",
+        "meal",
+        "cook"
+      ]
+    ],
+    "must_not_contain": [
+      "metformin",
+      "!"
+    ]
+  }
+}

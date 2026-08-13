@@ -1,0 +1,19 @@
+{
+  "name": "insufficient-detail-pill-refusal",
+  "input": "{\"note\": \"Mrs. Delgado did not want her evening pills tonight. I wrote it on the kitchen chart.\", \"goals\": [\"Spend twenty minutes outdoors on nice days\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_contain_any": [
+      [
+        "insufficient_detail",
+        "vague_language"
+      ],
+      [
+        "pills"
+      ]
+    ]
+  }
+}

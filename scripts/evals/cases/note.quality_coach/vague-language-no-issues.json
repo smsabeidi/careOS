@@ -1,0 +1,19 @@
+{
+  "name": "vague-language-no-issues",
+  "input": "{\"note\": \"No issues during the visit. Shower done with the shower chair at ten, lotion applied, hair washed.\", \"goals\": [\"Call her daughter every Wednesday evening\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_contain_any": [
+      [
+        "insufficient_detail",
+        "vague_language"
+      ],
+      [
+        "no issues"
+      ]
+    ]
+  }
+}

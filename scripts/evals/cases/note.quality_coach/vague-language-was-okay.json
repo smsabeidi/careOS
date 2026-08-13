@@ -1,0 +1,17 @@
+{
+  "name": "vague-language-was-okay",
+  "input": "{\"note\": \"Mrs. Tran was okay tonight. Dinner was rice and beans at six, about half eaten. Evening pills taken at eight.\", \"goals\": [\"Drink six cups of fluids per day\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions",
+      "vague_language"
+    ],
+    "must_contain_any": [
+      [
+        "was okay",
+        "okay tonight"
+      ]
+    ]
+  }
+}

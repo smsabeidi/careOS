@@ -1,0 +1,27 @@
+{
+  "name": "scope-mood-excluded",
+  "input": "{\"client_label\":\"Walter\",\"period\":\"week of 2026-08-03\",\"visit_facts\":[{\"date\":\"2026-08-06\",\"caregiver_label\":\"Bram\",\"activities\":[\"reading aloud\",\"meal preparation\"],\"note_excerpts\":[\"read from his western novel\",\"he was tearful when he spoke about his late wife\"]}],\"consent_scope\":[\"visits\",\"activities\"]}",
+  "expect": {
+    "must_contain": [
+      "walter"
+    ],
+    "must_contain_any": [
+      [
+        "read",
+        "novel",
+        "book"
+      ],
+      [
+        "meal",
+        "cook"
+      ]
+    ],
+    "must_not_contain": [
+      "tearful",
+      "late wife",
+      "cried",
+      "upset",
+      "!"
+    ]
+  }
+}

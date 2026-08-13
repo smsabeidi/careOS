@@ -1,0 +1,13 @@
+{
+  "name": "strong-note-refusal-reported",
+  "input": "{\"note\": \"Mrs. Keating declined her 6 pm walk, saying her hip was sore at a 3 out of 10. I reported it through the app at 6:10 and the nurse acknowledged. We did her seated stretches instead, both sets, toward her flexibility goal. Dinner at 6:45 was baked chicken and peas, three-quarters eaten. She was in bed at 9:30 per her wind-down routine goal.\", \"goals\": [\"Follow the evening wind-down routine and be in bed by ten\", \"Do seated stretches twice a day\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_match": [
+      "\"suggestions\"\\s*:\\s*\\[\\s*\\]"
+    ]
+  }
+}

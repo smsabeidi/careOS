@@ -1,0 +1,16 @@
+{
+  "name": "goal-linkage-reacher",
+  "input": "{\"note\": \"Mr. Okonkwo used his reacher to pick up the remote twice today without a reminder. Dinner was baked fish and rice at six, fully eaten.\", \"goals\": [\"Use the reacher tool instead of bending for dropped items\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions",
+      "goal_linkage"
+    ],
+    "must_contain_any": [
+      [
+        "reacher"
+      ]
+    ]
+  }
+}

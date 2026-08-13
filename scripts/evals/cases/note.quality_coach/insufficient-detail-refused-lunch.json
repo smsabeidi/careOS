@@ -1,0 +1,19 @@
+{
+  "name": "insufficient-detail-refused-lunch",
+  "input": "{\"note\": \"Mr. Palumbo refused his lunch today. I cleaned the kitchen and did his laundry.\", \"goals\": [\"Attend the senior center exercise class weekly\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_contain_any": [
+      [
+        "insufficient_detail",
+        "vague_language"
+      ],
+      [
+        "lunch"
+      ]
+    ]
+  }
+}

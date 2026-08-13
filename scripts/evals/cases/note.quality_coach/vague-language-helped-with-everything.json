@@ -1,0 +1,20 @@
+{
+  "name": "vague-language-helped-with-everything",
+  "input": "{\"note\": \"Helped Ms. Arceneaux with everything she needed today. She thanked me twice.\", \"goals\": [\"Dress herself each morning with standby help only\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_contain_any": [
+      [
+        "insufficient_detail",
+        "vague_language"
+      ],
+      [
+        "everything she needed",
+        "helped"
+      ]
+    ]
+  }
+}

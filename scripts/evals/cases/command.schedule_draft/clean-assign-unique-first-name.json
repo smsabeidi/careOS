@@ -1,0 +1,18 @@
+{
+  "name": "clean-assign-unique-first-name",
+  "input": "{\"utterance\":\"Assign Priya to Harold Overbrook's visit on August 21 at 9am.\",\"context\":{\"clients\":[{\"id\":\"cl-101\",\"label\":\"Evelyn Meadows\"},{\"id\":\"cl-102\",\"label\":\"Harold Bramble\"},{\"id\":\"cl-103\",\"label\":\"Rosa Quimby\"},{\"id\":\"cl-104\",\"label\":\"Harold Overbrook\"},{\"id\":\"cl-105\",\"label\":\"Doris Fenwick\"}],\"caregivers\":[{\"id\":\"cg-201\",\"label\":\"Tanya Brooks\"},{\"id\":\"cg-202\",\"label\":\"Marcus Webb\"},{\"id\":\"cg-203\",\"label\":\"Priya Nair\"},{\"id\":\"cg-204\",\"label\":\"Sam Okafor\"},{\"id\":\"cg-205\",\"label\":\"Tanya Burrell\"}],\"now\":\"2026-08-13T10:00:00-04:00\"}}",
+  "expect": {
+    "must_contain": [
+      "app.assign_visit",
+      "cl-104",
+      "cg-203",
+      "2026-08-21"
+    ],
+    "must_contain_any": [
+      [
+        "9:00"
+      ]
+    ],
+    "json": true
+  }
+}

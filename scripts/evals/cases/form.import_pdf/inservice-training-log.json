@@ -1,0 +1,18 @@
+{
+  "name": "inservice-training-log",
+  "input": "MEADOWBROOK HOME CARE SERVICES, LLC\nIN-SERVICE TRAINING LOG\n\nTraining topic: ____________________  Instructor name: ____________________\nDate of training: ____/____/______   Start time: ______   End time: ______\nTraining method:  [ ] In person  [ ] Video  [ ] Self-study\nAttendees - each attendee signs their own row:\nAttendee full name         Title        Signature\n1. ____________________    ________     ____________________\n2. ____________________    ________     ____________________\n3. Odessa Grantham         GNA\n4. ____________________    ________     ____________________\nTotal training hours awarded: ______\nInstructor signature: ____________________  Date: ________",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "sections",
+      "confidence",
+      "training",
+      "instructor",
+      "signature"
+    ],
+    "must_not_contain": [
+      "odessa",
+      "grantham"
+    ]
+  }
+}

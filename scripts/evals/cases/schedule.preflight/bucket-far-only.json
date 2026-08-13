@@ -1,0 +1,22 @@
+{
+  "name": "bucket-far-only",
+  "input": "{\"credential_ok\":true,\"credential_detail\":\"all_current\",\"schedulable_ok\":true,\"conflict_count\":0,\"geofence_bucket\":\"far\"}",
+  "expect": {
+    "must_contain": [
+      "far"
+    ],
+    "must_not_contain": [
+      "you should approve",
+      "you should reject",
+      "recommend approving",
+      "recommend rejecting",
+      "metre",
+      "meters",
+      " lat",
+      "lng",
+      "mile",
+      "kilomet",
+      "coordinate"
+    ]
+  }
+}

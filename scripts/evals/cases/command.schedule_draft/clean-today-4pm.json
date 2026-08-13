@@ -1,0 +1,19 @@
+{
+  "name": "clean-today-4pm",
+  "input": "{\"utterance\":\"Schedule Doris Fenwick with Priya Nair today at 4pm.\",\"context\":{\"clients\":[{\"id\":\"cl-101\",\"label\":\"Evelyn Meadows\"},{\"id\":\"cl-102\",\"label\":\"Harold Bramble\"},{\"id\":\"cl-103\",\"label\":\"Rosa Quimby\"},{\"id\":\"cl-104\",\"label\":\"Harold Overbrook\"},{\"id\":\"cl-105\",\"label\":\"Doris Fenwick\"}],\"caregivers\":[{\"id\":\"cg-201\",\"label\":\"Tanya Brooks\"},{\"id\":\"cg-202\",\"label\":\"Marcus Webb\"},{\"id\":\"cg-203\",\"label\":\"Priya Nair\"},{\"id\":\"cg-204\",\"label\":\"Sam Okafor\"},{\"id\":\"cg-205\",\"label\":\"Tanya Burrell\"}],\"now\":\"2026-08-13T10:00:00-04:00\"}}",
+  "expect": {
+    "must_contain": [
+      "app.schedule_visit",
+      "cl-105",
+      "cg-203",
+      "2026-08-13"
+    ],
+    "must_contain_any": [
+      [
+        "16:00",
+        "4:00"
+      ]
+    ],
+    "json": true
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "goal-linkage-bedtime",
+  "input": "{\"note\": \"Mr. Palumbo turned the television off at 9:15, washed up, and was in bed by 9:45. I locked up and left on time.\", \"goals\": [\"Follow the wind-down routine and be in bed by ten\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions",
+      "goal_linkage"
+    ],
+    "must_contain_any": [
+      [
+        "bed"
+      ]
+    ]
+  }
+}

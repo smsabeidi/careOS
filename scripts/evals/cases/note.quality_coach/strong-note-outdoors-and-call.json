@@ -1,0 +1,13 @@
+{
+  "name": "strong-note-outdoors-and-call",
+  "input": "{\"note\": \"Per her fresh-air goal we sat on the porch from 10:00 to 10:25 and Mrs. Tran wore her hat and drank a full glass of lemonade. She called her sister at 7 and talked for 15 minutes, the second call for this week's goal. Dinner at 6 was rice and beans, fully eaten. Doors locked and lights checked before I left at 8.\", \"goals\": [\"Spend twenty minutes outdoors on nice days\", \"Call her sister twice a week\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_match": [
+      "\"suggestions\"\\s*:\\s*\\[\\s*\\]"
+    ]
+  }
+}

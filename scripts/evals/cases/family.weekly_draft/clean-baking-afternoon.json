@@ -1,0 +1,25 @@
+{
+  "name": "clean-baking-afternoon",
+  "input": "{\"client_label\":\"Walter\",\"period\":\"week of 2026-08-03\",\"visit_facts\":[{\"date\":\"2026-08-04\",\"caregiver_label\":\"Bram\",\"activities\":[\"baking\",\"reading aloud\"],\"note_excerpts\":[\"we baked oat cookies\",\"read two chapters of his western novel\",\"picked up his warfarin refill from the pharmacy\"]}],\"consent_scope\":[\"visits\",\"activities\",\"wellbeing\"]}",
+  "expect": {
+    "must_contain": [
+      "walter"
+    ],
+    "must_contain_any": [
+      [
+        "bak",
+        "cookie"
+      ],
+      [
+        "read",
+        "chapter",
+        "novel",
+        "book"
+      ]
+    ],
+    "must_not_contain": [
+      "warfarin",
+      "!"
+    ]
+  }
+}

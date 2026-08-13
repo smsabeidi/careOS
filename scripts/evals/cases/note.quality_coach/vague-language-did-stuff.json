@@ -1,0 +1,16 @@
+{
+  "name": "vague-language-did-stuff",
+  "input": "{\"note\": \"We did stuff around the house in the morning. Lunch at noon was chicken salad, fully eaten. Mrs. Delgado napped from 1 to 2:30.\", \"goals\": [\"Eat at least half of each prepared meal\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions",
+      "vague_language"
+    ],
+    "must_contain_any": [
+      [
+        "did stuff"
+      ]
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "vague-language-the-usual",
+  "input": "{\"note\": \"Morning went the usual way. Mr. Okonkwo took his 9 am pills with water while I watched, and we played two rounds of dominoes.\", \"goals\": [\"Use the gait belt for every transfer\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions",
+      "vague_language"
+    ],
+    "must_contain_any": [
+      [
+        "usual"
+      ]
+    ]
+  }
+}

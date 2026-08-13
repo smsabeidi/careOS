@@ -1,0 +1,13 @@
+{
+  "name": "strong-note-walking-and-meds",
+  "input": "{\"note\": \"Arrived 8:00, left 12:00. Mr. Whitfield took his 9 am medications from the marked organizer while I watched. Breakfast at 8:30 was oatmeal with banana, fully eaten, with 8 oz of water. Toward his walking goal we walked 12 minutes to the corner and back with the rolling walker, no rests needed. No pain reported. He was reading the paper when I left.\", \"goals\": [\"Walk ten minutes each day with the rolling walker\", \"Take morning medications as scheduled\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_match": [
+      "\"suggestions\"\\s*:\\s*\\[\\s*\\]"
+    ]
+  }
+}

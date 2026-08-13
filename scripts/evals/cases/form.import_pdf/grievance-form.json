@@ -1,0 +1,18 @@
+{
+  "name": "grievance-form",
+  "input": "MEADOWBROOK HOME CARE SERVICES, LLC\nCLIENT GRIEVANCE FORM\nClients may file a grievance without fear of retaliation.\n\nName of person filing grievance: ____________________\nRelationship to client:  [ ] Self  [ ] Family member  [ ] Representative  [ ] Other\nDate of grievance: ____/____/______\nDescription of grievance:\n_______________________________________________\naide arrived 2 hrs late on Tuesd\nDesired resolution: _______________________________________________\nSignature: ____________________  Date: ________\n\nOffice use only\nReceived by: ____________________  Date received: ________\nResolution notes: _______________________________________________\nDate resolved: ________",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "sections",
+      "confidence",
+      "grievance",
+      "resolution",
+      "signature"
+    ],
+    "must_not_contain": [
+      "2 hrs late",
+      "tuesd"
+    ]
+  }
+}

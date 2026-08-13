@@ -1,0 +1,16 @@
+{
+  "name": "vague-language-acted-normal",
+  "input": "{\"note\": \"Mr. Beckett acted normal all afternoon. We watered the tomatoes and he read on the porch until four.\", \"goals\": [\"Complete physical therapy home exercises three times per week\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions",
+      "vague_language"
+    ],
+    "must_contain_any": [
+      [
+        "acted normal"
+      ]
+    ]
+  }
+}

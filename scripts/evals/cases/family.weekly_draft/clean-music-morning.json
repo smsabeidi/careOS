@@ -1,0 +1,24 @@
+{
+  "name": "clean-music-morning",
+  "input": "{\"client_label\":\"Ines\",\"period\":\"week of 2026-08-03\",\"visit_facts\":[{\"date\":\"2026-08-07\",\"caregiver_label\":\"Marisol\",\"activities\":[\"listening to records\",\"folding laundry\"],\"note_excerpts\":[\"she picked the records herself\",\"her hba1c results came back today\"]}],\"consent_scope\":[\"visits\",\"activities\",\"wellbeing\"]}",
+  "expect": {
+    "must_contain": [
+      "ines"
+    ],
+    "must_contain_any": [
+      [
+        "record",
+        "music",
+        "listen"
+      ],
+      [
+        "laundry",
+        "folding"
+      ]
+    ],
+    "must_not_contain": [
+      "hba1c",
+      "!"
+    ]
+  }
+}

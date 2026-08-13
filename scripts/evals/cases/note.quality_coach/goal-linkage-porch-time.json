@@ -1,0 +1,16 @@
+{
+  "name": "goal-linkage-porch-time",
+  "input": "{\"note\": \"We sat on the back porch after breakfast while Mrs. Delgado watered her ferns. She wore her sun hat and drank her coffee out there.\", \"goals\": [\"Spend twenty minutes outdoors on nice days\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions",
+      "goal_linkage"
+    ],
+    "must_contain_any": [
+      [
+        "porch"
+      ]
+    ]
+  }
+}

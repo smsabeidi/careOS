@@ -1,0 +1,16 @@
+{
+  "name": "goal-linkage-sister-call",
+  "input": "{\"note\": \"Mrs. Keating spoke with her sister on the phone for twenty minutes tonight. She laughed a lot and showed me photos afterward.\", \"goals\": [\"Call her sister in the evenings twice a week\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions",
+      "goal_linkage"
+    ],
+    "must_contain_any": [
+      [
+        "sister"
+      ]
+    ]
+  }
+}

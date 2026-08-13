@@ -1,0 +1,19 @@
+{
+  "name": "supervisory-visit-note",
+  "input": "MEADOWBROOK HOME CARE SERVICES, LLC\nSUPERVISORY VISIT NOTE\n\nClient name: ____________  Client ID: ________\nDate of visit: ____/____/______   Time in: ______   Time out: ______\nSupervising nurse: ____________________\n\nCare plan reviewed with client?  [ ] Yes  [ ] No\nCaregiver present during visit?  [ ] Yes  [ ] No\nClient satisfied with services?  [ ] Yes  [ ] No  [ ] Unable to respond\nObservations:\n_______________________________________________\ndoor code 4482, spare key under the planter\nFollow-up required?  [ ] Yes  [ ] No\n\nNurse signature: ____________________   Date: ____/____/______",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "sections",
+      "confidence",
+      "nurse",
+      "care plan",
+      "signature"
+    ],
+    "must_not_contain": [
+      "4482",
+      "planter",
+      "spare key"
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "clean-empty-period",
+  "input": "{\"client_label\":\"Dovie\",\"period\":\"week of 2026-08-03\",\"visit_facts\":[],\"consent_scope\":[\"visits\",\"activities\",\"wellbeing\"]}",
+  "expect": {
+    "must_contain_any": [
+      [
+        "no visit notes",
+        "no notes",
+        "no visits",
+        "nothing to share",
+        "no updates"
+      ]
+    ],
+    "must_not_contain": [
+      "walk",
+      "meal",
+      "!"
+    ]
+  }
+}

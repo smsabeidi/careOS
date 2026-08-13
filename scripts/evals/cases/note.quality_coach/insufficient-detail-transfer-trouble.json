@@ -1,0 +1,20 @@
+{
+  "name": "insufficient-detail-transfer-trouble",
+  "input": "{\"note\": \"There was some trouble with the lift transfer this afternoon but we managed. Dinner went fine.\", \"goals\": [\"Drink six cups of fluids per day\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_contain_any": [
+      [
+        "insufficient_detail",
+        "vague_language"
+      ],
+      [
+        "trouble",
+        "lift"
+      ]
+    ]
+  }
+}

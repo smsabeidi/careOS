@@ -140,6 +140,42 @@ update public.visit
  where caregiver_id = '22222222-0000-0000-0000-000000000009'
    and scheduled_start::date = current_date;
 
+-- ── 5 · The self-approval refusal's precondition (D-027) ────────────────────────────
+-- The one spec that proves CAREOS_SELF_APPROVAL end to end needs a principal who WORKED
+-- a shift and also holds visit.approve. No seeded persona qualifies (approvers approve,
+-- caregivers work), so this block arranges exactly one: yesterday's completed,
+-- still-unapproved visit worked by the OWNER persona (Dr. Fatima), against the same
+-- client Dee sees. Same lawful-here reasoning as §1: fixture arrangement in the
+-- synthetic tenant, as the table owner, through no RPC and no policy. Idempotent by
+-- fixed uuid: delete-then-insert, ledger first.
+delete from public.approved_work_segment
+ where visit_id = '11111111-1111-1111-1111-00000000e25a';
+delete from public.visit_event
+ where visit_id = '11111111-1111-1111-1111-00000000e25a';
+delete from public.visit where id = '11111111-1111-1111-1111-00000000e25a';
+
+insert into public.visit (id, tenant_id, client_id, caregiver_id, status,
+                          scheduled_start, scheduled_end, approval_status, payroll_status)
+select '11111111-1111-1111-1111-00000000e25a', v.tenant_id, v.client_id,
+       '11111111-1111-1111-1111-0000000ce001',            -- Dr. Fatima (owner persona)
+       'completed',
+       current_date - interval '1 day' + interval '9 hours',
+       current_date - interval '1 day' + interval '11 hours',
+       'pending', 'not_ready'
+  from public.visit v
+ where v.caregiver_id = '22222222-0000-0000-0000-000000000009'
+ order by v.scheduled_start limit 1;
+
+insert into public.visit_event (tenant_id, visit_id, caregiver_id, event_type,
+                                occurred_at, method, capture_source, location_status)
+select tenant_id, id, caregiver_id, e.t, e.at_, 'web', 'web', 'not_required'
+  from public.visit,
+       lateral (values
+         ('clock_in',  current_date - interval '1 day' + interval '9 hours'),
+         ('clock_out', current_date - interval '1 day' + interval '11 hours')
+       ) as e(t, at_)
+ where id = '11111111-1111-1111-1111-00000000e25a';
+
 commit;
 
 -- A one-line verdict, so a run that arranged nothing says so rather than failing later

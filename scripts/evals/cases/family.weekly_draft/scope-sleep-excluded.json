@@ -1,0 +1,26 @@
+{
+  "name": "scope-sleep-excluded",
+  "input": "{\"client_label\":\"Pearl\",\"period\":\"week of 2026-07-27\",\"visit_facts\":[{\"date\":\"2026-07-29\",\"caregiver_label\":\"Junia\",\"activities\":[\"laundry\",\"a drive to the library\"],\"note_excerpts\":[\"returned two books and picked out a mystery\",\"slept most of the afternoon and was hard to wake\"]}],\"consent_scope\":[\"visits\",\"activities\"]}",
+  "expect": {
+    "must_contain": [
+      "pearl"
+    ],
+    "must_contain_any": [
+      [
+        "laundry"
+      ],
+      [
+        "library",
+        "drive",
+        "book"
+      ]
+    ],
+    "must_not_contain": [
+      "slept",
+      "hard to wake",
+      "drowsy",
+      "tired",
+      "!"
+    ]
+  }
+}

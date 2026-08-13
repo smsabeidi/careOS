@@ -1,0 +1,20 @@
+{
+  "name": "insufficient-detail-first-visit",
+  "input": "{\"note\": \"First visit with Mr. Whitfield. Everything went according to the care plan.\", \"goals\": [\"Take morning medications as scheduled\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_contain_any": [
+      [
+        "insufficient_detail",
+        "vague_language"
+      ],
+      [
+        "everything went",
+        "care plan"
+      ]
+    ]
+  }
+}

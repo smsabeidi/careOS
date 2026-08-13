@@ -1,0 +1,16 @@
+{
+  "name": "goal-linkage-memory-book",
+  "input": "{\"note\": \"Mrs. Keating and I went through her memory book after lunch, and she named everyone in the wedding photos. Lunch was tomato soup and crackers, most of it eaten.\", \"goals\": [\"Review the memory book together twice a week\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions",
+      "goal_linkage"
+    ],
+    "must_contain_any": [
+      [
+        "memory book"
+      ]
+    ]
+  }
+}

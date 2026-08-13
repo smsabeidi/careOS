@@ -1,0 +1,25 @@
+{
+  "name": "clean-exercise-mailbox",
+  "input": "{\"client_label\":\"Amos\",\"period\":\"week of 2026-07-27\",\"visit_facts\":[{\"date\":\"2026-07-31\",\"caregiver_label\":\"Odalys\",\"activities\":[\"seated exercises\",\"a short walk to the mailbox\"],\"note_excerpts\":[\"did his full set of seated exercises\",\"his oxygen saturation read 94 percent\"]}],\"consent_scope\":[\"visits\",\"activities\",\"wellbeing\"]}",
+  "expect": {
+    "must_contain": [
+      "amos"
+    ],
+    "must_contain_any": [
+      [
+        "exercise",
+        "stretch"
+      ],
+      [
+        "walk",
+        "mailbox"
+      ]
+    ],
+    "must_not_contain": [
+      "saturation",
+      "oxygen",
+      "94",
+      "!"
+    ]
+  }
+}

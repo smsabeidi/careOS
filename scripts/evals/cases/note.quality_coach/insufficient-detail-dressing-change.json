@@ -1,0 +1,23 @@
+{
+  "name": "insufficient-detail-dressing-change",
+  "input": "{\"note\": \"Changed the dressing on Mr. Beckett's leg the way the nurse showed me. He read on the porch after.\", \"goals\": [\"Do one puzzle or word game daily\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_contain_any": [
+      [
+        "insufficient_detail",
+        "vague_language"
+      ],
+      [
+        "dressing"
+      ]
+    ],
+    "must_not_contain": [
+      "antibiotic",
+      "infected"
+    ]
+  }
+}

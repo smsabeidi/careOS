@@ -1,0 +1,13 @@
+{
+  "name": "strong-note-memory-book-session",
+  "input": "{\"note\": \"We reviewed the memory book from 2:00 to 2:30, meeting the twice-weekly goal. Mrs. Delgado named all four grandchildren and told the story behind the beach photo. Snack at 3 was apple slices and cheese, all eaten. She tracked our card game and kept score herself the whole hour.\", \"goals\": [\"Review the memory book together twice a week\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_match": [
+      "\"suggestions\"\\s*:\\s*\\[\\s*\\]"
+    ]
+  }
+}

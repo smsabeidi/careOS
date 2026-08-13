@@ -1,0 +1,23 @@
+{
+  "name": "clean-quiet-week",
+  "input": "{\"client_label\":\"Mabel\",\"period\":\"week of 2026-08-03\",\"visit_facts\":[{\"date\":\"2026-08-05\",\"caregiver_label\":\"Odalys\",\"activities\":[\"meal preparation\",\"light tidying\"],\"note_excerpts\":[\"a quiet visit, meals went as planned\",\"her blood pressure was 150 over 90\"]}],\"consent_scope\":[\"visits\",\"activities\",\"wellbeing\"]}",
+  "expect": {
+    "must_contain": [
+      "mabel"
+    ],
+    "must_contain_any": [
+      [
+        "meal",
+        "cook",
+        "kitchen"
+      ]
+    ],
+    "must_not_contain": [
+      "150",
+      "blood pressure",
+      "thriving",
+      "doing great",
+      "!"
+    ]
+  }
+}

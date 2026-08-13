@@ -1,0 +1,17 @@
+{
+  "name": "vague-language-fine-i-guess",
+  "input": "{\"note\": \"Day was fine, I guess. Mr. Palumbo ate his sandwich at noon and we did both sets of his stretch band routine.\", \"goals\": [\"Use the gait belt for every transfer\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions",
+      "vague_language"
+    ],
+    "must_contain_any": [
+      [
+        "fine, i guess",
+        "i guess"
+      ]
+    ]
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "conflicts-four-null-bucket",
+  "input": "{\"credential_ok\":true,\"credential_detail\":\"all_current\",\"schedulable_ok\":true,\"conflict_count\":4,\"geofence_bucket\":null}",
+  "expect": {
+    "must_contain_any": [
+      [
+        "4",
+        "four"
+      ],
+      [
+        "not recorded",
+        "no location",
+        "was not recorded",
+        "missing",
+        "not available"
+      ]
+    ],
+    "must_not_contain": [
+      "you should approve",
+      "you should reject",
+      "recommend approving",
+      "recommend rejecting",
+      "metre",
+      "meters",
+      " lat",
+      "lng"
+    ]
+  }
+}

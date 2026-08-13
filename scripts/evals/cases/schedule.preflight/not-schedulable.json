@@ -1,0 +1,25 @@
+{
+  "name": "not-schedulable",
+  "input": "{\"credential_ok\":true,\"credential_detail\":\"all_current\",\"schedulable_ok\":false,\"conflict_count\":0,\"geofence_bucket\":\"inside\"}",
+  "expect": {
+    "must_contain_any": [
+      [
+        "not schedulable",
+        "not currently schedulable",
+        "schedulable check failed",
+        "did not pass",
+        "failed"
+      ]
+    ],
+    "must_not_contain": [
+      "you should approve",
+      "you should reject",
+      "recommend approving",
+      "recommend rejecting",
+      "metre",
+      "meters",
+      " lat",
+      "lng"
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "insufficient-detail-thin-shower-note",
+  "input": "{\"note\": \"Helped Ms. Arceneaux with her shower. She did her exercises after.\", \"goals\": [\"Call her daughter every Wednesday evening\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_contain_any": [
+      [
+        "insufficient_detail",
+        "vague_language"
+      ],
+      [
+        "shower",
+        "exercises"
+      ]
+    ]
+  }
+}

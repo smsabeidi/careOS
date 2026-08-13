@@ -1,0 +1,19 @@
+{
+  "name": "insufficient-detail-fall-no-followup",
+  "input": "{\"note\": \"Mrs. Delgado had a fall earlier but she is okay now. We watched her shows in the afternoon.\", \"goals\": [\"Eat at least half of each prepared meal\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_contain_any": [
+      [
+        "insufficient_detail",
+        "vague_language"
+      ],
+      [
+        "fall"
+      ]
+    ]
+  }
+}

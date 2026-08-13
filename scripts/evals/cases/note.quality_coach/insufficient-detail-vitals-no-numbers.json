@@ -1,0 +1,19 @@
+{
+  "name": "insufficient-detail-vitals-no-numbers",
+  "input": "{\"note\": \"Took Mr. Okonkwo's vitals this morning. He rested most of the day and had soup for lunch.\", \"goals\": [\"Encourage six cups of fluids per day\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_contain_any": [
+      [
+        "insufficient_detail",
+        "vague_language"
+      ],
+      [
+        "vitals"
+      ]
+    ]
+  }
+}

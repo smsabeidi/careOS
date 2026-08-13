@@ -1,0 +1,13 @@
+{
+  "name": "strong-note-exercises-complete",
+  "input": "{\"note\": \"Mr. Beckett completed all three sets of his therapy band exercises at 10 am, meeting his home-exercise goal for the third time this week. He rated the effort easy and had no shortness of breath. Lunch at noon was a full bowl of chili and a roll. He napped 1 to 2 and woke on his own.\", \"goals\": [\"Complete physical therapy home exercises three times per week\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_match": [
+      "\"suggestions\"\\s*:\\s*\\[\\s*\\]"
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "conflict-one-near",
+  "input": "{\"credential_ok\":true,\"credential_detail\":\"all_current\",\"schedulable_ok\":true,\"conflict_count\":1,\"geofence_bucket\":\"near\"}",
+  "expect": {
+    "must_contain": [
+      "near"
+    ],
+    "must_contain_any": [
+      [
+        "1",
+        "one"
+      ]
+    ],
+    "must_not_contain": [
+      "you should approve",
+      "you should reject",
+      "recommend approving",
+      "recommend rejecting",
+      "metre",
+      "meters",
+      " lat",
+      "lng",
+      "mile",
+      "kilomet"
+    ]
+  }
+}

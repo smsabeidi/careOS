@@ -1,0 +1,19 @@
+{
+  "name": "mar-header",
+  "input": "MEADOWBROOK HOME CARE SERVICES, LLC\nMEDICATION ADMINISTRATION RECORD\n\nMonth/Year: ____________   Client name: ____________   Client ID: ________\nAllergies: ____________________\nPhysician name: ____________________   Physician phone: ______________\nPharmacy name: ____________________   Pharmacy phone: ______________\n\nMedication name / dose / route: ____________________________\nScheduled times: ______  ______  ______  ______\ndonepezil 5 mg once daily\nInitials legend - each staff member must record full name, title and initials below.\nStaff full name: ____________________  Title: ________  Initials: ______",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "sections",
+      "confidence",
+      "medication",
+      "allergies",
+      "pharmacy"
+    ],
+    "must_not_contain": [
+      "donepezil",
+      "5 mg",
+      "once daily"
+    ]
+  }
+}

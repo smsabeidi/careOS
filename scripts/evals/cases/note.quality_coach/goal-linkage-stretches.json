@@ -1,0 +1,16 @@
+{
+  "name": "goal-linkage-stretches",
+  "input": "{\"note\": \"Mr. Beckett did his stretches in the recliner before lunch. Lunch was soup and half a roll, eaten without help.\", \"goals\": [\"Do seated arm and leg stretches twice a day\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions",
+      "goal_linkage"
+    ],
+    "must_contain_any": [
+      [
+        "stretches"
+      ]
+    ]
+  }
+}

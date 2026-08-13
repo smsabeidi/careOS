@@ -1,0 +1,28 @@
+{
+  "name": "clean-two-visits",
+  "input": "{\"client_label\":\"Pearl\",\"period\":\"week of 2026-08-03\",\"visit_facts\":[{\"date\":\"2026-08-04\",\"caregiver_label\":\"Tessa\",\"activities\":[\"laundry and ironing\"],\"note_excerpts\":[\"the linens are washed and put away\"]},{\"date\":\"2026-08-06\",\"caregiver_label\":\"Junia\",\"activities\":[\"a grocery errand together\"],\"note_excerpts\":[\"she chose the peaches herself\",\"dropped the receipts at 88 juniper hollow lane\"]}],\"consent_scope\":[\"visits\",\"activities\",\"wellbeing\"]}",
+  "expect": {
+    "must_contain": [
+      "pearl"
+    ],
+    "must_contain_any": [
+      [
+        "laundry",
+        "iron",
+        "linen",
+        "wash"
+      ],
+      [
+        "grocer",
+        "shopping",
+        "errand",
+        "store",
+        "peach"
+      ]
+    ],
+    "must_not_contain": [
+      "juniper",
+      "!"
+    ]
+  }
+}

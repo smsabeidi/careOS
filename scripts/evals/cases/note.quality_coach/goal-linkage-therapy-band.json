@@ -1,0 +1,17 @@
+{
+  "name": "goal-linkage-therapy-band",
+  "input": "{\"note\": \"Mrs. Tran did her therapy band exercises in the kitchen this morning, all three sets. Afterward we wrote her grocery list for the week.\", \"goals\": [\"Complete physical therapy home exercises three times per week\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions",
+      "goal_linkage"
+    ],
+    "must_contain_any": [
+      [
+        "exercises",
+        "therapy band"
+      ]
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "vague-language-a-little-off",
+  "input": "{\"note\": \"Mrs. Keating seemed a little off this morning but perked up by lunch. Lunch was grilled cheese and tomato soup at noon, fully eaten.\", \"goals\": [\"Review the memory book together twice a week\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions",
+      "vague_language"
+    ],
+    "must_contain_any": [
+      [
+        "a little off",
+        "seemed"
+      ]
+    ]
+  }
+}

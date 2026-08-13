@@ -1,0 +1,26 @@
+{
+  "name": "clean-card-games",
+  "input": "{\"client_label\":\"Elsie\",\"period\":\"week of 2026-07-27\",\"visit_facts\":[{\"date\":\"2026-07-29\",\"caregiver_label\":\"Marisol\",\"activities\":[\"card games\",\"light housekeeping\"],\"note_excerpts\":[\"we played two rounds of rummy\",\"tidied the sitting room\",\"her copd was quiet today\"]}],\"consent_scope\":[\"visits\",\"activities\",\"wellbeing\"]}",
+  "expect": {
+    "must_contain": [
+      "elsie"
+    ],
+    "must_contain_any": [
+      [
+        "card",
+        "rummy",
+        "game"
+      ],
+      [
+        "housekeep",
+        "tidi",
+        "tidy",
+        "sitting room"
+      ]
+    ],
+    "must_not_contain": [
+      "copd",
+      "!"
+    ]
+  }
+}

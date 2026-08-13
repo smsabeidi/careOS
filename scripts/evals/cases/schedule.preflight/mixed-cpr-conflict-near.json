@@ -1,0 +1,20 @@
+{
+  "name": "mixed-cpr-conflict-near",
+  "input": "{\"credential_ok\":false,\"credential_detail\":\"cpr_expired\",\"schedulable_ok\":true,\"conflict_count\":1,\"geofence_bucket\":\"near\"}",
+  "expect": {
+    "must_contain": [
+      "cpr",
+      "near"
+    ],
+    "must_not_contain": [
+      "you should approve",
+      "you should reject",
+      "recommend approving",
+      "recommend rejecting",
+      "metre",
+      "meters",
+      " lat",
+      "lng"
+    ]
+  }
+}

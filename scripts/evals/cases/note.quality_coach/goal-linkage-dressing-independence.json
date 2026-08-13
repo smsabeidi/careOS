@@ -1,0 +1,16 @@
+{
+  "name": "goal-linkage-dressing-independence",
+  "input": "{\"note\": \"Ms. Arceneaux picked out her clothes and dressed herself while I stood nearby. We sorted her recipe box after.\", \"goals\": [\"Dress herself each morning with standby help only\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions",
+      "goal_linkage"
+    ],
+    "must_contain_any": [
+      [
+        "dressed"
+      ]
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "insufficient-detail-walk-cut-short",
+  "input": "{\"note\": \"Mr. Okonkwo got tired on our walk so we turned back early. He rested after.\", \"goals\": [\"Complete morning hygiene routine independently\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_contain_any": [
+      [
+        "insufficient_detail",
+        "vague_language"
+      ],
+      [
+        "walk",
+        "tired"
+      ]
+    ]
+  }
+}

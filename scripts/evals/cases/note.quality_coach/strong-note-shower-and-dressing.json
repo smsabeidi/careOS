@@ -1,0 +1,13 @@
+{
+  "name": "strong-note-shower-and-dressing",
+  "input": "{\"note\": \"Shower at 9:30 using the shower chair and grab bar, per her bathing-safety goal, with standby help only. Skin checked while applying lotion: no redness on heels or back. Ms. Arceneaux chose her clothes and dressed herself with no help, meeting her dressing goal. Breakfast at 10 was toast and yogurt, fully eaten.\", \"goals\": [\"Use the shower chair and grab bar for every shower\", \"Dress herself each morning with standby help only\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_match": [
+      "\"suggestions\"\\s*:\\s*\\[\\s*\\]"
+    ]
+  }
+}

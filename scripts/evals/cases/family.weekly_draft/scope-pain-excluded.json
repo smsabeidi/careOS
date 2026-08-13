@@ -1,0 +1,24 @@
+{
+  "name": "scope-pain-excluded",
+  "input": "{\"client_label\":\"Otis\",\"period\":\"week of 2026-08-03\",\"visit_facts\":[{\"date\":\"2026-08-05\",\"caregiver_label\":\"Bram\",\"activities\":[\"working on a jigsaw puzzle\",\"time on the porch\"],\"note_excerpts\":[\"the puzzle is nearly done\",\"rated his knee pain seven out of ten this morning\"]}],\"consent_scope\":[\"visits\",\"activities\"]}",
+  "expect": {
+    "must_contain": [
+      "otis"
+    ],
+    "must_contain_any": [
+      [
+        "puzzle",
+        "jigsaw"
+      ],
+      [
+        "porch"
+      ]
+    ],
+    "must_not_contain": [
+      "pain",
+      "knee",
+      "seven out of ten",
+      "!"
+    ]
+  }
+}

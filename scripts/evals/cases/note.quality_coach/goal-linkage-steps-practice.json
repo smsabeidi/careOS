@@ -1,0 +1,20 @@
+{
+  "name": "goal-linkage-steps-practice",
+  "input": "{\"note\": \"We practiced on the front steps with the walker today. Mr. Beckett had juice and a sandwich at noon, all of it eaten.\", \"goals\": [\"Practice using the walker on the front steps with supervision\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions"
+    ],
+    "must_contain_any": [
+      [
+        "goal_linkage",
+        "insufficient_detail"
+      ],
+      [
+        "steps",
+        "walker"
+      ]
+    ]
+  }
+}

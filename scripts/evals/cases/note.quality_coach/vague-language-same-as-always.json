@@ -1,0 +1,16 @@
+{
+  "name": "vague-language-same-as-always",
+  "input": "{\"note\": \"Same as always with Mr. Okonkwo. Pills at nine, a short walk to the mailbox, nap after lunch.\", \"goals\": [\"Drink six cups of fluids per day\"]}",
+  "expect": {
+    "json": true,
+    "must_contain": [
+      "suggestions",
+      "vague_language"
+    ],
+    "must_contain_any": [
+      [
+        "same as always"
+      ]
+    ]
+  }
+}
