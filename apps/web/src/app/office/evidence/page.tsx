@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Script from "next/script";
+import { Suspense } from "react";
 import { AppShell } from "@/components/shell";
 import {
   Avatar,
@@ -10,6 +11,7 @@ import {
   MetricTile,
   PageHeader,
   SectionTitle,
+  SkeletonRows,
   StatusChip,
 } from "@/components/ui";
 import {
@@ -26,6 +28,7 @@ import {
 import { supabaseServer } from "@/lib/supabase/server";
 import { requirePerm } from "@/lib/profile";
 import { buildEvidencePacket, type EvidenceManifest } from "./actions";
+import { EnforcementPanel } from "./enforcement";
 
 /**
  * /office/evidence — the surveyor "show me" surface (docs/16 §2.2 O2, Wave 5).
@@ -722,6 +725,30 @@ export default async function EvidencePage({
               </>
             )}
           </div>
+        </div>
+
+        {/* ── "Show me" — the live enforcement panel (ST-242, W8) ───────────────
+         * Tenant-wide, not per-chart, so it sits beneath the picker/packet pair.
+         * Suspense keeps the packet tools interactive while the database re-verifies
+         * the chain; the fallback says plainly what is being read. `no-print` keeps
+         * ⌘P producing the packet alone, exactly as before. */}
+        <div className="no-print mt-10">
+          <Suspense
+            fallback={
+              <div role="status" aria-live="polite">
+                <SectionTitle icon={<IconShield />}>
+                  Enforcement — live from the database
+                </SectionTitle>
+                <p className="mb-3 text-[13px]" style={{ color: "var(--text-secondary)" }}>
+                  Reading the live policy catalog, re-verifying the audit chain, and loading the
+                  AI registry. Nothing in this section is cached.
+                </p>
+                <SkeletonRows rows={4} />
+              </div>
+            }
+          >
+            <EnforcementPanel />
+          </Suspense>
         </div>
       </div>
     </AppShell>
