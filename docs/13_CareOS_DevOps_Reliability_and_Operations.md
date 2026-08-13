@@ -147,3 +147,29 @@ Then catch up with `select app.sweep_visit_exceptions();` from a maintenance ses
 ## 10. Cost guardrails & the exit runbook
 
 Monthly cost review vs. budget envelopes (platform, AI per Doc 11 §8, comms); anomaly alerts at 130% run-rate; per-capability AI hard ceilings. **Exit runbook (R1 mitigation, Doc 06):** quarterly-verified procedure — `pg_dump` full + Storage sync to neutral object store + audit-anchor archive → restore rehearsal onto vanilla Postgres 16 + containerized Next.js behind any host → gap list (Auth swap = the largest item) maintained honestly. Leverage is the point: we stay on this stack because it's *good*, not because we're stuck.
+
+### §9.x · Runbook — the eval gate is red (or UNARMED)
+
+**What it means.** A registry prompt regressed against its case set (`scripts/evals/`), or
+the gate could not run. UNARMED (missing `OPENAI_API_KEY` or unreachable local registry)
+is printed explicitly and is never a pass in CI — a gate that proved nothing must not
+read as green (the deadman §9.1 posture).
+
+**Triage.** 1) Read the per-case failures — each names the capability, the case, and the
+exact assertion (`missing required substring` / `forbidden substring present`). A
+`forbidden substring` failure on an adversarial case means an INJECTION LANDED: treat as
+a release blocker, never loosen the case. 2) A prompt change caused it → fix the prompt
+(a new `ai_prompt_template` VERSION — never edit v1) or, if the case is genuinely wrong,
+change the case in the same PR with the reasoning in the commit. 3) UNARMED in CI →
+the `OPENAI_API_KEY` repo secret is missing/rotated; restore it (docs/09 §5 custody).
+
+### §9.y · Runbook — the attention queue is empty but shouldn't be
+
+The `/inbox` unified queue is a read model over six sources plus the caller's own
+`alert_ack` rows. An empty queue with known-open work means either (a) the caller acked
+everything — check `audit.audit_event action='alert.acknowledged'` for who and when
+(dismissal is deliberately audit-visible), or (b) a SOURCE query is failing closed —
+each source section renders its own honest degradation line rather than vanishing, so a
+missing section names the broken source. Acks are append-only and per-user: nothing can
+"un-see" an alert for somebody else, and a re-fired condition arrives as a new source
+row that no existing ack matches.

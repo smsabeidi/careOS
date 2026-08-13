@@ -125,6 +125,22 @@ These four rows are the purest expression of §1's second claim. The verified vi
 | V3 | **Payroll readiness brief** (`payroll.readiness_brief`) — what blocks a period from closing, how many items each blocker holds, what a human does next | Payroll close is a manual reconciliation across unapproved visits, open exceptions and missing notes, done under deadline | Det+narrate (**T1**) — the model never computes, converts or estimates minutes, hours or money | terra + structured outputs | `payroll_period`, `verified_visit`, `approved_work_segment`, critical open exceptions by kind | 3 | shipped |
 | V4 | **Caregiver operational profile** (`visit.operational_profile`) — one caregiver's operational pattern, drafted for an Owner or HR reviewer to read, edit and decide upon | A manager forms an impression from memory and scattered complaints, with no arithmetic behind it and no record of what it was based on | **Draft+approve (T2), human disposer REQUIRED (Owner/HR)** — a draft only, never an action; **ships with its capability row disabled** | terra + structured outputs | `app.workforce_features` for one caregiver over a stated window | — (episodic; the value is evidentiary, not hours) | shipped |
 
+### §2.9 · The Front Door five (ST-232..ST-241, delivered 2026-08-13 — registered by migration 0057, every kill switch OFF at ship)
+
+| Key | What it does | Tier / disposer | Model | Declared input allowlist | Status |
+|---|---|---|---|---|---|
+| `note.quality_coach` | Coaches a shift note at capture: insufficient detail, goal linkage against active `care_plan_item` goals, vague language. Advisory cards only — never applied to the note | **T1**, no disposer (nothing commits) | luna | `{note, goals[]}` — the draft text + goal descriptions, nothing else | shipped, dark |
+| `command.schedule_draft` | Parses a coordinator's NL request into a DRAFT proposal targeting the 0055 config allowlist — exactly `app.schedule_visit` and `app.assign_visit` | **T2, human disposer** (the 0035 trigger; the bar never executes) | luna | Utterance + pinned `{type,id,label}` context rows; ids validated server-side against RLS-scoped lookups | shipped, dark |
+| `schedule.preflight` | Narrates the deterministic pre-flight evidence attached to a draft (credential wall, conflicts, geofence bucket) | **T1** (narration of Engine-1 output; D-030 buckets only) | luna | The assembled booleans/enums — never a coordinate, never a metre | shipped, dark |
+| `form.import_pdf` | Detects section/field structure of a digital-text form for a DRAFT `form_version`; a human reviews and publishes | **T2, human disposer** (publishing is the human act) | terra | The extracted form text; output is structure + per-field confidence, never values | shipped, dark |
+| `family.weekly_draft` | Drafts a consent-scoped plain-language family update into `ai_proposal`; the coordinator's approval inserts `family_update` | **T2, human disposer** (approval IS publication — 0012's share audit fires then) | terra | `{client_label, period, visit_facts[], consent_scope[]}` after a deterministic consent pre-check | shipped, dark |
+
+Every prompt is registry-versioned (invariant 10) and is the SAME text the eval gate
+exercises (`scripts/evals/` — 120 deterministic cases including per-capability
+prompt-injection probes; thresholds 0.9; the gate runs UNARMED-honest without the
+provider key and hard-gates in CI with it). V4 (OpenAI BAA) gates real-PHI input for
+all five, as for everything in this document.
+
 **`app.workforce_features` is the only sanctioned input for workforce analysis.** Every capability that reasons about staff reads that one function and nothing else, and the reason is that the function is a *designed boundary* rather than a convenient view. It returns per caregiver, over an explicit window: `visits_scheduled, visits_completed, visits_missed, late_count, avg_late_minutes, early_count, overrun_minutes, undertime_minutes, verified_rate, location_exception_count, manual_override_count, missing_clock_out_count, overlap_count, impossible_travel_count, documentation_missing_count, schedule_adherence_pct, overtime_minutes, client_continuity_pct, trust_band_histogram, day_of_week_lateness[7]`. What it deliberately does **not** return is the whole point:
 
 - **IDs, not names.** A model asked to characterise "cg-7" cannot smuggle in a prior about a person, and a prompt that leaks cannot leak an identity. The web layer narrows this further, handing the model per-request opaque handles rather than even a UUID.

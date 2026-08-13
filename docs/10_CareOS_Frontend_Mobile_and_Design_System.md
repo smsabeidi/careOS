@@ -122,3 +122,46 @@ Every screen ships all four states by definition of done: **empty** = friendly e
 ## 9. Design QA & handoff
 
 Figma library mirrors tokens/components 1:1 (names match code); every PRD flow has a linked prototype; design review = accessibility annotations (roles, labels, focus order) + state coverage checklist; weekly design-eng sync walks the live app against Figma — drift is a bug. Founder-facing demo builds every sprint (Doc 15 §7) double as usability tests with 2–3 real caregivers/nurses from the pilot cohort; findings feed the backlog with a standing 15% UX-polish capacity.
+
+## 10. The Front Door surfaces (ST-232..ST-241, delivered 2026-08-13)
+
+All six ship behind per-tenant `front_door.*` flags (default OFF; the 48h post-merge
+soak gates the first flip; enabling is `app.set_feature_flag`, audited). Gating is
+SERVER-SIDE: a dark surface renders nothing — not a teaser, not a disabled button.
+
+**Command bar (W1/W2).** One composer on every authenticated surface — ⌘K/"/" on
+desktop, a persistent button on touch. Questions ride the Brain's RLS-scoped retrieval;
+context pinning sends IDs only and refetches content under RLS (invariant 5); recent
+entities cache IDs, never names. The action lane produces DRAFTS: an `ai_proposal`
+carrying the parsed intent, the deterministic pre-flight evidence (credential wall,
+conflicts, geofence as `inside`/`near`/`far` words — D-030), and its narration. The bar
+never executes anything; disposition lives in Approvals under the 0035 human-disposer
+trigger. Voice of the draft card: what will happen, in words; each check named with its
+finding; one link to review.
+
+**Note coach (W3).** Advisory cards beside the note editor — a kind label in words, the
+exact quoted fragment, one plain question. Never auto-applied, never automatic on
+keystroke (an explicit "Get coaching" act), and coach failure never blocks a note.
+Voice recording is online-only v1: offline shows "No connection — type your note, or
+record when you're back online" and the typed path still queues.
+
+**Attention queue (W5).** `/inbox` gains one severity-ranked list over six sources;
+severity chips always carry words (D-012); each row deep-links to its owning surface;
+proposals expand in place to the existing disposition board (Approvals remains the only
+disposition surface). Acknowledge is per-person and append-only — audit-visible, never
+shared, never undoable. Credential rows state plainly that expiry blocks scheduling,
+because it does. Timesheets render SCHED/ACTUAL/VAR/STATUS with the trust components as
+"evidence for a human decision — never an automated action" (D-028).
+
+**Form import (W4).** Digital-text PDFs only in v1; extraction happens client-side and
+only TEXT travels; scans get honest copy and the original is kept. The draft structure
+is reviewable field by field, low-confidence fields say "check this" in words, and
+publishing stays the existing human act on the append-only template chain.
+
+**Family drafts (W7).** Coordinator-triggered only (no cron holds a JWT — invariant 9);
+a deterministic consent check refuses before any model call, in plain language; the
+approval in Approvals is what publishes — the family surface never sees a draft.
+
+**Install page (W6a).** Public, static, PHI-free: per-platform install steps, a desktop
+QR, per-iOS-version notification recovery. Push delivery (W6b) is deliberately absent
+pending PD-3.

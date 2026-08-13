@@ -107,6 +107,10 @@ on conflict do nothing;
 select app.seed_evv_adapters(t.id)          from public.tenant t;
 select app.seed_visit_ai_capabilities(t.id) from public.tenant t;
 select app.seed_visit_feature_flags(t.id)   from public.tenant t;
+-- 0057's pair, same two-entry-point reasoning: local tenants are created after
+-- migrations run, so the Front Door registry + dark flags need the seed lane too.
+select app.seed_front_door_capabilities(t.id) from public.tenant t;
+select app.seed_front_door_flags(t.id)        from public.tenant t;
 
 do $vv$
 declare

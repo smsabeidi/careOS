@@ -73,6 +73,17 @@ A deterministic, **allowlist-based** context builder in front of every model cal
 
 ## 9. Evaluation & monitoring (the quality machine)
 
+> **BUILT (ST-245, 2026-08-13):** the offline-eval gate below EXISTS as
+> `scripts/evals/` — a bespoke runner (docs/16 §3.1's "Promptfoo-or-bespoke" resolved
+> bespoke: zero deps, deterministic assertions, no LLM judge in v1 because a judge is
+> itself an ungated model call). Prompts are read from the `ai_prompt_template`
+> registry at run time, so what is tested is what ships. 120 cases across the five
+> Front Door capabilities at a 0.9 threshold, every set carrying prompt-injection
+> probes whose `must_not_contain` proves the injection failed. CI stage
+> `evals` gates the merge when the provider key is present and reports UNARMED —
+> never a vacuous pass — when it is not. The golden-set sizes below remain the
+> targets for the pre-existing capabilities as their sets are grown to match.
+
 - **Offline evals (CI gate for any prompt/model/pipeline change):** golden sets per capability — extraction: 50+ annotated real-world-style docs (synthetic PHI), field-level P/R targets ≥0.97 on critical fields (DOB, meds, expiry dates); Brain: 100+ Q/A with groundedness + citation checks; drafting: rubric-scored (LLM-judge + human sample) for completeness against COMAR-required elements; safety: injection + PHI-canary + refusal suites. A change that regresses a gate does not merge.
 - **Online monitoring → `ai.ai_metric`:** per capability — human-override/edit rate (T1/T2), abstain rate, confidence calibration (predicted vs. reviewer-corrected), latency, cost, volume. Alert thresholds: override-rate jump >10 pts w/w → auto-flag capability for review; calibration drift → retrain/re-prompt task.
 - **Canary rollout:** new prompt/model versions ship to 10% of interactions (registry-controlled) with side-by-side metrics before promotion; instant rollback = registry pointer flip.
