@@ -129,6 +129,27 @@ Doc 17 is the design contract for this band and pins every table, column, functi
 
 **Known gaps carried out of the band, stated plainly:** no live EVV submission endpoint until V17/D-Q16 resolve (the adapter ships disabled and feature-flagged, D-026); the web device-posture section for Doc 09 §2 is outstanding (V19); the Doc 12 §4.1 journeys and the egress half of the coordinate canary are unbuilt; and no client geocoding vendor exists by design (D-025) — pins are human-attested at intake.
 
+### §4.2 · The Front Door wave (ST-230..ST-245) — delivered 2026-08-13
+
+Program plan: `docs/designs/intelligent-front-door.md` (rev 3, review report appended).
+Execution order W0 → W8 → WE → W1 → W3 → W5 → W2 → W6a → W4 → W7; W6b (web push) is
+**not built** — its third-party data flow awaits PD-3 ratification (docs/00 §3 proposals).
+
+| Story | What shipped | The load-bearing details |
+|---|---|---|
+| **ST-230** W0 gate | Verified Visit layer merged to main (`fbe372d`) and deployed hosted (52 migrations); deadman UNARMED state; pg_net relocated (0053) | Clean-room rebuild + 40/40 pgTAP + typecheck + 211 unit tests at merge; hosted advisors 0 ERROR; health ok; 48h soak before any `front_door.*` flag flips |
+| **ST-231** W0 decisions | PD-1..PD-4 drafted in docs/00 §3; V4 corrected to OpenAI and named the AI production-enablement gate | Proposals, not decisions — nothing below a founder ratification is citable |
+| **ST-242** W8 evidence screen | `app.evidence_summary()` (0056) + `/office/evidence` live-vs-committed rendering | Counts, object names and enums only; audit chain verified by recomputation; live-vs-artifact mismatch renders as a visible warning (CL3) |
+| **ST-245** WE eval harness | `scripts/evals/` runner + thresholds + CI stage | Prompts read from the registry (rows, never literals); deterministic assertions; UNARMED honest-skip; unlisted capability fails by design |
+| **ST-232** W1 command bar | Global composer (⌘K / mobile button), `brain.answer` + tools backing | IDs-only context pinning; own component tree off `shell.tsx`; flag `front_door.command_bar` |
+| **ST-235/236** W3 note coach | `note.quality_coach` (T1) + coach pass on the voice-draft path; STT registry-pinned + `transcribeAudio()` closes the route's invariant-10 gap | Suggestions never auto-applied; 50-case eval set; voice online-only v1; audio destruction awaits PD-4 — stored, nothing destroyed; flag `front_door.note_coach` |
+| **ST-238/239** W5 attention queue | `alert_ack` (0054) + unified `/inbox` + `/operations/timesheets` review queue | Acks append-only, self-only, audit-visible; per-source severity map; 60/30/0 ladder copy; trust-score components as row evidence (D-028); flag `front_door.inbox` |
+| **ST-233/234** W2 NL scheduling | `ai_capability.config` (0055) allowlist + `command.schedule_draft` (T2) + `schedule.preflight` narration | Two-RPC allowlist, structurally no adverse-class action; drafts are inert `ai_proposal` rows; disposition human (0035 trigger); geofence evidence as buckets only (D-030) |
+| **ST-240a** W6a install page | `/install` — iOS/Android paths, desktop QR, per-iOS notification recovery | Static; push (W6b) deliberately absent pending PD-3 |
+| **ST-237** W4 form import | Digital-text PDF → structure detection → DRAFT `form_version` → human publish | Per-field confidence with "check this" markers; scans get honest copy + stored for later (OCR deferred); flag `front_door.form_import` |
+| **ST-241** W7 family drafts | `family.weekly_draft` (T2), coordinator-triggered, drafts into `ai_proposal` | Consent pre-check deterministic; approval is what inserts `family_update` (0012's insert-audit fires at the right moment); flag `front_door.family_weekly` |
+| **ST-243/244** docs + journeys | Docs deltas (10/11/13/15/16, DEPLOY.md) + Playwright journeys incl. the prompt-injection suite | Every new surface: four-state doctrine + a11y sweep coverage |
+
 ## 5. Definition of Done (every story)
 
 Code reviewed · tests at the right layer added (pgTAP for any schema/policy touch — non-negotiable) · a11y pass on new UI · audit events for consequential actions · docs/runbook deltas written · feature-flagged if risk >low · demo-able on preview URL.

@@ -1,0 +1,11 @@
+{
+  "note.quality_coach": { "pass_rate": 0.9 },
+  "command.schedule_draft": { "pass_rate": 0.9 },
+  "schedule.preflight": { "pass_rate": 0.9 },
+  "family.weekly_draft": { "pass_rate": 0.9 },
+  "form.import_pdf": { "pass_rate": 0.9 },
+  "visit.exception_triage": { "pass_rate": 0.9 },
+  "workforce.weekly_report": { "pass_rate": 0.9 },
+  "payroll.readiness_brief": { "pass_rate": 0.9 },
+  "visit.operational_profile": { "pass_rate": 0.9 }
+}

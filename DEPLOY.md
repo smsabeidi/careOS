@@ -114,3 +114,20 @@ Do these in order:
   platform.openai.com for live Brain answers; until then it gracefully falls back to the mock.
 - Supabase's local `.env.local` values are for your Mac only. Vercel uses the hosted values
   above. Never commit any of them (they're gitignored).
+
+## 4 — Front Door wave checklist (ST-230+, docs/designs/intelligent-front-door.md)
+
+Per wave, in order — a wave is not "deployed" until every line is checked:
+
+1. Migrations applied (expand-only) — `supabase migration list` on hosted matches the repo chain.
+2. pgTAP green locally from a clean rebuild; CHECK-MATRIX + DRIFT-GATE pass.
+3. Eval gate green for any capability the wave registers (`node scripts/evals/run.mjs <key>`).
+4. Vercel prod deployed; smoke: `/login` 200, gated routes 307 to login unauthenticated.
+5. Hosted advisors: 0 ERROR; `select app.health_check()` → ok:true, stalled:[].
+6. **48h soak after the W0 merge before the FIRST `front_door.*` flag flips**; thereafter
+   flags flip per-tenant via `app.set_feature_flag` (audited) — never by editing rows.
+7. Rollback = flag OFF (instant, audited). Written data stays valid; no migration reversal.
+
+Still manual (founder): OpenAI BAA (V4) before any real-PHI AI; PD-1..PD-4 ratifications
+(docs/00 §3); GH repo secrets `SUPABASE_URL` + `CAREOS_DEADMAN_KEY` (arms the deadman);
+Auth dashboard leaked-password toggle.

@@ -116,6 +116,7 @@ tables:
   public.approved_work_segment: { scope: tenant, authenticated: select-own-or-payroll.read-aal2, writes: rpc, delete: none, append_only: true }
   public.payroll_period:    { scope: tenant, authenticated: select-payroll.read, writes: rpc, no_delete: true }
   public.payroll_export:    { scope: tenant, authenticated: select-payroll.read, writes: rpc, delete: none, append_only: true }
+  public.alert_ack:         { scope: tenant, authenticated: select-own, writes: rpc, delete: none, append_only: true }
 tests:
   - 001_schema_invariants.sql
   - 002_rls_matrix.sql
@@ -159,3 +160,4 @@ tests:
   - 0050_payroll_boundary.sql
   - 0051_workforce_analytics.sql
   - 0052_visit_ai_capabilities.sql
+  - 0054_alert_ack.sql

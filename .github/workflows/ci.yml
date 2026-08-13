@@ -47,3 +47,25 @@ jobs:
       - uses: actions/checkout@v4
       - name: Matrix manifest completeness
         run: bash scripts/check-matrix.sh
+
+  evals:
+    name: prompt eval gate (WE / ST-245, docs/16 §3.1)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with: { version: latest }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Start local database (registry prompts are rows, not literals)
+        run: supabase db start
+      - name: Run the eval gate
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CAREOS_EVALS_DB_CONTAINER: supabase_db_careOS
+        # REQUIRED=1 iff the secret exists: with it, regressions fail the merge; without
+        # it the runner prints UNARMED and exits 0 — a fork or a repo without the secret
+        # must not hard-fail every PR, but it must also never print "passed".
+        run: |
+          if [ -n "$OPENAI_API_KEY" ]; then export CAREOS_EVALS_REQUIRED=1; fi
+          node scripts/evals/run.mjs
