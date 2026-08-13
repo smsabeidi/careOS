@@ -29,6 +29,19 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           CAREOS_DEADMAN_KEY: ${{ secrets.CAREOS_DEADMAN_KEY }}
         run: |
+          # UNARMED is a distinct, honest state — not green-and-silent, not red-spam.
+          # Without the two repo secrets this probe can prove nothing, and a workflow
+          # that fails red every 30 minutes from day one trains people to ignore red
+          # (the exact failure mode 0047's exception queue exists to avoid). So the
+          # missing-secret case exits 0 with a LOUD warning annotation on every run,
+          # and the run history reads "unarmed", never "healthy". Arming it is two
+          # repo secrets: SUPABASE_URL and CAREOS_DEADMAN_KEY (docs/09 §5 custody —
+          # set via the GitHub UI or an authenticated `gh secret set`, never committed).
+          if [ -z "$SUPABASE_URL" ] || [ -z "$CAREOS_DEADMAN_KEY" ]; then
+            echo "::warning::CareOS deadman is UNARMED — repo secrets SUPABASE_URL / CAREOS_DEADMAN_KEY are not set. This run proved nothing about production health."
+            echo "unarmed: secrets missing; skipping probe (this is not a health signal)"
+            exit 0
+          fi
           # -f fails the step on any HTTP error (401/500/timeout), which is the point:
           # an unreachable health endpoint is itself a dead man's signal.
           resp="$(curl -sf -X POST "$SUPABASE_URL/rest/v1/rpc/health_check" \
