@@ -96,7 +96,12 @@ openai_api_key = "env(OPENAI_API_KEY)"
 
 # Email testing server. Emails sent with the local dev setup are not actually sent - rather, they
 # are monitored, and you can view the emails that would have been sent from the web interface.
-[inbucket]
+# Renamed from [inbucket] (ST-244): the CLI deprecated that key and printed a WARN on every
+# invocation, which annotated all four CI jobs on every run. A warning nobody can act on is a
+# warning everybody learns to scroll past, and this repo's whole posture on red is that it must
+# mean something (see the deadman's UNARMED state). Same ports, same behaviour, no local flow
+# changes — only the section name.
+[local_smtp]
 enabled = true
 # Port to use for the email testing server web interface.
 port = 54424

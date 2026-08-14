@@ -4,7 +4,7 @@
 Introspected from `pg_policies` on a database with the full migration chain applied,
 so this is the policy set Postgres *enforces*, not the one the migration text implies.
 
-`104` policies across `69` tables. `5` further RLS-enabled tables
+`106` policies across `71` tables. `5` further RLS-enabled tables
 carry no policy at all and are therefore deny-by-default (listed at the end).
 
 RLS is the perimeter (invariant 2): app code is convenience, Postgres authorizes.
@@ -195,6 +195,19 @@ Every PHI policy must carry `app.is_aal2()` (invariant 3) and pin
 | roles | `authenticated` |
 | kind | permissive |
 | USING | `((tenant_id = app.current_tenant_id()) AND app.is_aal2() AND (EXISTS ( SELECT 1  FROM ai_proposal p  WHERE ((p.id = ai_proposal_event.proposal_id) AND (p.tenant_id = app.current_tenant_id()) AND (app.has_perm('ai.read'::text) OR (p.created_by = auth.uid()) OR app.has_perm('schedule.write'::text) OR app.has_perm('compliance.read'::text))))))` |
+| WITH CHECK | `-` |
+
+
+## public.alert_ack
+
+### `alert_ack_select_own`
+
+| | |
+|---|---|
+| operation | `SELECT` |
+| roles | `authenticated` |
+| kind | permissive |
+| USING | `((tenant_id = app.current_tenant_id()) AND (user_id = auth.uid()))` |
 | WITH CHECK | `-` |
 
 
@@ -896,6 +909,19 @@ Every PHI policy must carry `app.is_aal2()` (invariant 3) and pin
 | roles | `authenticated` |
 | kind | permissive |
 | USING | `((tenant_id = app.current_tenant_id()) AND app.is_aal2() AND ((employee_id = auth.uid()) OR app.has_perm('staff.manage'::text) OR app.has_perm('credential.read.all'::text)))` |
+| WITH CHECK | `-` |
+
+
+## public.onboarding_milestone
+
+### `onboarding_milestone_select_own`
+
+| | |
+|---|---|
+| operation | `SELECT` |
+| roles | `authenticated` |
+| kind | permissive |
+| USING | `((tenant_id = app.current_tenant_id()) AND (user_id = auth.uid()))` |
 | WITH CHECK | `-` |
 
 
