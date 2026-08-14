@@ -200,9 +200,14 @@ for (const cap of targets) {
 const regressed = results.filter((r) => r.status === CAP_STATUS.REGRESSED);
 const unevaluated = results.filter((r) => r.status === CAP_STATUS.UNEVALUATED);
 
+// The per-capability notes take the level of the VERDICT, not of their own severity: a
+// red annotation on a green job is its own small lie, and this gate's whole argument is
+// that a signal must mean what it looks like. Provider-refused ⇒ these are context for a
+// warning; anything else ⇒ they are the failure.
+const providerOnly = unevaluated.length > 0 && unevaluated.every((r) => r.access);
 for (const r of unevaluated) {
   console.error(`! ${r.cap}: NOT EVALUATED — ${r.why}`);
-  annotate("error", `Not evaluated: ${r.cap}`, r.why);
+  annotate(providerOnly ? "notice" : "error", `Not evaluated: ${r.cap}`, r.why);
 }
 
 if (regressed.length) {
@@ -212,7 +217,7 @@ if (regressed.length) {
   process.exit(1);
 }
 // Every capability blocked purely by provider ACCESS ⇒ the same standing as no key at all.
-if (unevaluated.length && unevaluated.every((r) => r.access)) {
+if (providerOnly) {
   const line =
     "PROVIDER UNAVAILABLE — every capability was refused by the provider before a single " +
     "assertion ran, so nothing was evaluated and nothing regressed. This is an account " +
