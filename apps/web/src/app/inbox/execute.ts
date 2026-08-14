@@ -22,6 +22,7 @@
  *     says exactly that rather than implying a send occurred.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { CAPABILITY_FAMILY_WEEKLY, checkFamilyUpdateConsent } from "@/lib/ai/family-update";
 
 export type ExecutionOutcome = {
   /** true when a durable side effect was written. */
@@ -94,6 +95,101 @@ async function executeFamilyUpdate(
     executed: true,
     message: "Approved and published. The family can see this update in their portal now.",
     revalidate: ["/family", "/office/clients"],
+  };
+}
+
+/**
+ * Publish an approved family update draft (ST-241, Front Door W7 — capability
+ * `family.weekly_draft`).
+ *
+ * THIS INSERT IS THE PUBLICATION ACT. The draft written by the capability is an inert
+ * `ai_proposal` row that no family can read; the row below is the first thing a family
+ * member can open, it is written under the APPROVER's own session, and `author_id` is
+ * their user id — so the record says who published, not who drafted. Migration 0012's
+ * `trg_family_update_audit` fires on this insert, which is when the share is audited:
+ * before approval there is nothing to audit because nothing was shared.
+ *
+ * Consent is re-checked here, not assumed. Rule 1 of this module applies with force: a
+ * consent granted when the draft was written may have been revoked before it was approved,
+ * and 0012's insert policy on `family_update` checks care-team membership rather than
+ * consent, so the database would let this through. The deterministic check is the gate.
+ *
+ * The family-facing title comes from the payload, never from the proposal's own title: the
+ * inbox title names a client and a period for a coordinator's queue, and that is not what
+ * a family should see at the top of their update.
+ */
+async function executeFamilyWeeklyDraft(
+  supabase: SupabaseClient,
+  proposal: ProposalForExecution,
+  approvedBody: string,
+  actorId: string
+): Promise<ExecutionOutcome> {
+  const payload = payloadObject(proposal.payload);
+  const clientId =
+    proposal.subject_type === "client" && proposal.subject_id
+      ? proposal.subject_id
+      : (payload.client_id as string | undefined) ?? null;
+
+  if (!clientId) {
+    return {
+      executed: false,
+      message:
+        "Approved and recorded. It was not published because this draft is not linked to a client.",
+      revalidate: [],
+    };
+  }
+
+  const body = approvedBody.trim();
+  if (!body) {
+    return {
+      executed: false,
+      message: "Approved and recorded. Nothing was published because the update has no text.",
+      revalidate: [],
+    };
+  }
+
+  const consent = await checkFamilyUpdateConsent(supabase, clientId);
+  if (consent.error) {
+    return {
+      executed: false,
+      message:
+        "Approved and recorded, but the consent record couldn't be read, so nothing was published. Your decision stands — try publishing again once consent can be confirmed.",
+      revalidate: [],
+    };
+  }
+  if (!consent.granted) {
+    return {
+      executed: false,
+      message:
+        "Approved and recorded, but nothing was published: there is no active consent on file for family updates for this client. Your decision stands on the record, and the family portal is unchanged.",
+      revalidate: [],
+    };
+  }
+
+  const { error } = await supabase.from("family_update").insert({
+    tenant_id: proposal.tenant_id,
+    client_id: clientId,
+    author_id: actorId,
+    title: ((payload.family_title as string | undefined) ?? "Update from the care team").slice(0, 200),
+    body,
+  });
+
+  if (error) {
+    return {
+      executed: false,
+      message:
+        "Approved and recorded, but it was not published to the family portal. Publishing needs a verified (MFA) session and care-team access to this client — nothing was shared.",
+      revalidate: [],
+    };
+  }
+
+  return {
+    executed: true,
+    message:
+      consent.linkedFamily === 0
+        ? "Approved and published. It is waiting in the family portal — no family member is linked to this client yet, so nobody can open it until someone is."
+        : "Approved and published. The family can see this update in their portal now.",
+    revalidate: ["/family", `/office/clients/${clientId}`],
   };
 }
 
@@ -203,6 +299,9 @@ export async function executeApprovedProposal(
   try {
     if (proposal.capability_key === "family.update") {
       return await executeFamilyUpdate(supabase, proposal, approvedBody, actorId);
+    }
+    if (proposal.capability_key === CAPABILITY_FAMILY_WEEKLY) {
+      return await executeFamilyWeeklyDraft(supabase, proposal, approvedBody, actorId);
     }
     if (proposal.kind === "assignment" || proposal.capability_key === "shift.fill") {
       return await executeAssignment(supabase, proposal);

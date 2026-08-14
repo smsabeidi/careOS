@@ -56,6 +56,9 @@ const REJECTED_STATES = new Set(["rejected", "expired"]);
 const CAPABILITY_TITLE: Record<string, string> = {
   "chase.draft": "Chase drafting",
   "family.update": "Family update",
+  // ST-241: the on-demand family draft. Named here so the row a coordinator was promised
+  // ("Draft sent for approval — Approvals inbox") is recognisable when they arrive.
+  "family.weekly_draft": "Family update",
   "shift.fill": "Shift outreach",
   "careplan.review": "Care-plan review",
   "clinical.flag": "Clinical flag",
