@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/shell";
 import {
@@ -21,10 +22,15 @@ import {
 } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
 import { requirePerm } from "@/lib/profile";
+import { featureEnabled } from "@/lib/flags";
 import { HoursDecision, OpenPeriodForm, PeriodActions } from "./timesheet-client";
+import { TrustEvidence, type TrustAssessment } from "./trust-evidence";
 
 export const metadata = { title: "Timesheets" };
 export const dynamic = "force-dynamic";
+
+/** The Front Door W5 flag. Off ⇒ this page is exactly what it was before ST-239. */
+const REVIEW_QUEUE_FLAG = "front_door.inbox";
 
 /**
  * Timesheets — the approval surface and the payroll boundary (docs/17 §7.2, §4.7).
@@ -53,7 +59,17 @@ export const dynamic = "force-dynamic";
  * four columns — caregiver, date, minutes, pay code — for the same reason. Caregiver names
  * travel as ids and are refetched under RLS, reading "(restricted)" when RLS hides them.
  *
- * @trace ST-208, docs/17 §4.7 §7.2 §8, D-020, D-024, D-027, D-030
+ * ST-239 (Front Door W5) adds REVIEW-QUEUE FRAMING behind `front_door.inbox`: each row
+ * carries the four figures a reviewer actually compares — booked (SCHED), measured
+ * (ACTUAL), the difference between them (VAR) and the verification verdict (STATUS) — and
+ * expands to the visit's latest `visit_trust_assessment` as evidence. The trust panel is
+ * evidence and nothing else (D-028): no threshold, no recommendation, no action. VAR is
+ * the only subtraction this screen performs and it is a subtraction of the two figures
+ * printed either side of it, reproducible on paper; it is never what anybody is paid, and
+ * the approve control still sends the database's own number. Flag off and none of it
+ * renders — approve, adjust, send back, close and export are untouched in both states.
+ *
+ * @trace ST-208, ST-239, docs/17 §4.7 §7.2 §8, D-020, D-024, D-027, D-028, D-030
  */
 
 const AGENCY_TZ = "America/New_York";
@@ -83,6 +99,8 @@ type VisitRow = {
   caregiver_id: string | null;
   scheduled_start: string;
   scheduled_end: string;
+  /** Booked minutes, computed by the view from the schedule window (0045 §3). */
+  scheduled_minutes: number | null;
   actual_start: string | null;
   actual_end: string | null;
   verified_minutes: number | null;
@@ -157,6 +175,38 @@ function minutesLabel(total: number | null | undefined): string {
   const sign = total < 0 ? "−" : "";
   if (h === 0) return `${sign}${m} min`;
   return m === 0 ? `${sign}${h} h` : `${sign}${h} h ${m} m`;
+}
+
+/**
+ * The review queue's VAR cell (ST-239): measured minus booked, signed.
+ *
+ * The ONE subtraction this screen performs, and a deliberately narrow one: both operands
+ * are printed either side of it, so a caregiver can reproduce it on paper — which is the
+ * whole test invariant 13 sets. It is a reading aid and never a payroll figure: nothing
+ * downstream consumes it, the approve control still sends the database's own number, and
+ * a null on either side yields an em dash rather than a guess.
+ */
+function varianceLabel(
+  scheduled: number | null | undefined,
+  actual: number | null | undefined
+): string {
+  if (scheduled === null || scheduled === undefined) return "—";
+  if (actual === null || actual === undefined) return "—";
+  const delta = actual - scheduled;
+  if (delta === 0) return "0 min";
+  return `${delta > 0 ? "+" : "−"}${minutesLabel(Math.abs(delta))}`;
+}
+
+/** A review-queue column heading. Same type treatment as the DataTable headers. */
+function ColHead({ children }: { children: ReactNode }) {
+  return (
+    <p
+      className="text-[11px] font-semibold uppercase"
+      style={{ color: "var(--text-muted)", letterSpacing: "0.04em" }}
+    >
+      {children}
+    </p>
+  );
 }
 
 function timeOf(iso: string | null): string {
@@ -243,8 +293,21 @@ export default async function TimesheetsPage({
       .eq("status", "completed")
       .eq("approval_status", status);
 
-  const [pendingCount, approvedCount, rejectedCount, listRes, periodRes, exportRes, approvePerm, managePerm] =
+  const [
+    reviewQueueOn,
+    pendingCount,
+    approvedCount,
+    rejectedCount,
+    listRes,
+    periodRes,
+    exportRes,
+    approvePerm,
+    managePerm,
+  ] =
     await Promise.all([
+      // Postgres owns the answer (0026 `app.feature_enabled`), asked as the signed-in
+      // user and failing closed — an unreachable flag table renders today's page.
+      featureEnabled(REVIEW_QUEUE_FLAG, false),
       countFor("pending"),
       countFor("approved"),
       countFor("rejected"),
@@ -253,7 +316,7 @@ export default async function TimesheetsPage({
         // One string literal, not a concatenation: supabase-js infers the row shape from
         // the literal, and a built string degrades the result to an untyped error union.
         .select(
-          "visit_id, caregiver_id, scheduled_start, scheduled_end, actual_start, actual_end, verified_minutes, late_minutes, overrun_minutes, verification_status, approval_status, payroll_status, had_offline_capture"
+          "visit_id, caregiver_id, scheduled_start, scheduled_end, scheduled_minutes, actual_start, actual_end, verified_minutes, late_minutes, overrun_minutes, verification_status, approval_status, payroll_status, had_offline_capture"
         )
         .eq("status", "completed")
         .eq("approval_status", tab)
@@ -357,7 +420,7 @@ export default async function TimesheetsPage({
 
   /* ── Per-row detail, in parallel ─────────────────────────────────────────── */
 
-  const [exceptionRes, computedList, segmentRes] = await Promise.all([
+  const [exceptionRes, computedList, segmentRes, trustRes] = await Promise.all([
     // Unresolved CRITICAL findings block approval in the database (0050 §7). Counting them
     // before render turns a refusal into a first-class state with a way out of it.
     tab === "pending" && visitIds.length
@@ -391,6 +454,16 @@ export default async function TimesheetsPage({
           .in("visit_id", visitIds)
           .order("created_at", { ascending: false })
       : Promise.resolve({ data: [] as SegmentRow[], error: null }),
+    // ST-239 · the trust snapshots behind the review queue. Append-only, so a visit can
+    // carry several — ordered newest first and the newest one is what the row expands to;
+    // the older readings stay on the record whether or not this screen shows them.
+    reviewQueueOn && visitIds.length
+      ? supabase
+          .from("visit_trust_assessment")
+          .select("id, visit_id, score, band, components, reasons, model_version, computed_at")
+          .in("visit_id", visitIds)
+          .order("computed_at", { ascending: false })
+      : Promise.resolve({ data: [] as TrustAssessment[], error: null }),
   ]);
 
   const blockingByVisit = new Map<string, number>();
@@ -399,6 +472,12 @@ export default async function TimesheetsPage({
   }
 
   const computedByVisit = new Map(computedList.map((c) => [c.visitId, c.minutes]));
+
+  // Newest snapshot per visit — the rows arrive computed_at desc, so the first one wins.
+  const trustByVisit = new Map<string, TrustAssessment>();
+  for (const t of (trustRes.data ?? []) as TrustAssessment[]) {
+    if (!trustByVisit.has(t.visit_id)) trustByVisit.set(t.visit_id, t);
+  }
 
   // Head of chain: the segment nothing supersedes (0050 §3). Set arithmetic over ids —
   // never a re-derivation of the minutes on them.
@@ -532,7 +611,9 @@ export default async function TimesheetsPage({
                             </span>
                           </p>
                           <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                            <Badge tone={vs.tone}>{vs.label}</Badge>
+                            {/* With the review queue on, STATUS carries the verdict; one
+                                chip saying the same thing twice is noise, not emphasis. */}
+                            {!reviewQueueOn && <Badge tone={vs.tone}>{vs.label}</Badge>}
                             {(v.late_minutes ?? 0) > 0 && (
                               <Badge tone="warning" icon={<IconClock />}>
                                 {minutesLabel(v.late_minutes)} late
@@ -550,23 +631,78 @@ export default async function TimesheetsPage({
                           </div>
                         </div>
 
-                        <div className="flex shrink-0 gap-6">
-                          <div>
-                            <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>
-                              Measured
-                            </p>
-                            <p className="tabular title-lg text-[22px]">{minutesLabel(measured)}</p>
+                        {reviewQueueOn ? (
+                          /* ST-239 · the review-queue figures. SCHED and ACTUAL are the
+                             view's own columns; VAR is their difference and nothing else;
+                             TO APPROVE is what the database will record if this row is
+                             approved as measured; STATUS is the verification verdict in
+                             words. Colour never carries the status on its own (D-012). */
+                          <div
+                            className="grid shrink-0 grid-cols-3 gap-x-5 gap-y-3 sm:flex sm:gap-6"
+                            role="group"
+                            aria-label="Booked, measured, difference, to approve and verification status"
+                          >
+                            <div>
+                              <ColHead>Sched</ColHead>
+                              <p className="tabular title-lg text-[18px]">
+                                {minutesLabel(v.scheduled_minutes)}
+                              </p>
+                            </div>
+                            <div>
+                              <ColHead>Actual</ColHead>
+                              <p className="tabular title-lg text-[18px]">{minutesLabel(measured)}</p>
+                            </div>
+                            <div>
+                              <ColHead>Var</ColHead>
+                              <p className="tabular title-lg text-[18px]">
+                                {varianceLabel(v.scheduled_minutes, measured)}
+                              </p>
+                            </div>
+                            <div>
+                              <ColHead>To approve</ColHead>
+                              <p className="tabular title-lg text-[18px]">
+                                {minutesLabel(toApprove ?? measured)}
+                              </p>
+                            </div>
+                            <div>
+                              <ColHead>Status</ColHead>
+                              <p className="mt-1">
+                                <Badge tone={vs.tone}>{vs.label}</Badge>
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>
-                              To approve
-                            </p>
-                            <p className="tabular title-lg text-[22px]">
-                              {minutesLabel(toApprove ?? measured)}
-                            </p>
+                        ) : (
+                          <div className="flex shrink-0 gap-6">
+                            <div>
+                              <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>
+                                Measured
+                              </p>
+                              <p className="tabular title-lg text-[22px]">{minutesLabel(measured)}</p>
+                            </div>
+                            <div>
+                              <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>
+                                To approve
+                              </p>
+                              <p className="tabular title-lg text-[22px]">
+                                {minutesLabel(toApprove ?? measured)}
+                              </p>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
+
+                      {reviewQueueOn && (
+                        <>
+                          <p className="mt-3 text-[12px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                            Booked is the schedule window; actual is the measured time from the
+                            clock record. The difference between them is the two figures above
+                            subtracted — it is not what anybody is paid, and approving still
+                            records the time CareOS measured under this agency&rsquo;s rounding
+                            policy.
+                          </p>
+                          <TrustEvidence assessment={trustByVisit.get(v.visit_id) ?? null} />
+                        </>
+                      )}
 
                       <div className="mt-4 border-t pt-4 hairline">
                         <HoursDecision

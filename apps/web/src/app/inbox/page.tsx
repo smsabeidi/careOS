@@ -4,11 +4,17 @@ import { EmptyState, ErrorState, MetricTile, PageHeader, Tabs } from "@/componen
 import { IconCheck, IconInbox, IconLock, IconSparkle, IconX } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/profile";
+import { featureEnabled } from "@/lib/flags";
 import { getCapability } from "@/lib/ai/registry";
 import { GenerateDraftsButton, InboxBoard, type ProposalOrigin, type ProposalView } from "./inbox-client";
+import { loadAttentionQueue } from "./attention";
+import { AttentionQueuePanel } from "./attention-client";
 
 export const metadata = { title: "Approvals" };
 export const dynamic = "force-dynamic";
+
+/** The Front Door W5 flag. Off ⇒ this page is exactly what it was before ST-238. */
+const ATTENTION_FLAG = "front_door.inbox";
 
 /**
  * The approvals inbox — the Wave-2 centerpiece (docs/16 §4).
@@ -22,6 +28,14 @@ export const dynamic = "force-dynamic";
  * `public.ai_proposal_status` (derived from the append-only event ledger) and the words
  * of the decision come from `ai_proposal_event`. Every query runs under the viewer's RLS
  * on an AAL2 session — there is no privileged read path behind this page.
+ *
+ * ST-238 (Front Door W5) adds ONE section above the board: the unified attention queue,
+ * merging six existing sources into a single severity-ranked list. It is gated on
+ * `front_door.inbox`, resolved in Postgres by `app.feature_enabled` — flag off and this
+ * page renders exactly what it rendered before, with no teaser and no disabled control.
+ * The board below is untouched by the addition: `/inbox` remains the ONLY surface where a
+ * proposal is disposed, and the queue's proposal rows expand into that same board rather
+ * than growing a second way to approve something (invariant 8).
  */
 
 const ROLES = ["owner", "admin", "coordinator", "hr", "rn"];
@@ -310,7 +324,11 @@ export default async function InboxPage({
   const canGenerate = profile.roles.some((r) => GENERATE_ROLES.includes(r));
   const supabase = await supabaseServer();
 
-  const [proposalRes, statusRes, eventRes] = await Promise.all([
+  const [attentionOn, proposalRes, statusRes, eventRes] = await Promise.all([
+    // Postgres owns the answer (0026 `app.feature_enabled`), asked as the signed-in user
+    // and failing closed: any error resolves to `false`, so an unratified surface can
+    // never appear because a flag table was unreachable.
+    featureEnabled(ATTENTION_FLAG, false),
     supabase
       .from("ai_proposal")
       .select(
@@ -487,6 +505,10 @@ export default async function InboxPage({
     list.filter((p) => p.disposition && agencyDay(p.disposition.at) === today).length;
   const decisionsOnRecord = proposals.reduce((sum, p) => sum + p.eventCount, 0);
 
+  // The attention queue reads the same pending list the board below disposes — one read,
+  // one truth, and no second route to a decision. Only asked for when the flag is on.
+  const attention = attentionOn ? await loadAttentionQueue(supabase, pending) : null;
+
   const shown = tab === "approved" ? approved : tab === "rejected" ? rejected : pending;
   const href = (key: TabKey) => (key === "pending" ? "/inbox" : `/inbox?tab=${key}`);
 
@@ -498,6 +520,9 @@ export default async function InboxPage({
     <AppShell active="/inbox">
       <div className="rise">
         <PageHeader title="Approvals" sub={sub} actions={<GenerateDraftsButton canGenerate={canGenerate} />} />
+
+        {/* ST-238 · the unified attention queue. Absent entirely when the flag is off. */}
+        {attention && <AttentionQueuePanel queue={attention} proposals={pending} />}
 
         <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
           <MetricTile label="Waiting for you" value={pending.length} tone="accent" icon={<IconInbox />} />
