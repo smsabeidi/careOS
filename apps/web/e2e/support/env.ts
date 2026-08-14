@@ -177,6 +177,20 @@ export function missingGeoVars(): string[] {
   return IN_FENCE ? [] : ["CAREOS_E2E_INFENCE_LAT", "CAREOS_E2E_INFENCE_LNG"];
 }
 
+/* ── The model, for journeys that assert on generated text ───────────────────
+ * A deployment with no OPENAI_API_KEY still WORKS — every capability degrades to its
+ * deterministic path by design — so an AI journey cannot infer from a page whether it is
+ * looking at a real answer or an honest fallback. Rather than assert something weaker on
+ * both, the model-dependent assertions skip and name this variable. Nothing secret lives
+ * in it: it is a declaration that the deployment under test has a key, never the key.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+export const MODEL_CONFIGURED = process.env.CAREOS_E2E_MODEL_CONFIGURED === "true";
+
+export function missingModelVars(): string[] {
+  return MODEL_CONFIGURED ? [] : ["CAREOS_E2E_MODEL_CONFIGURED"];
+}
+
 /* ── The one function every spec calls ──────────────────────────────────────── */
 
 export type Requirement = {
@@ -185,6 +199,8 @@ export type Requirement = {
   geo?: boolean;
   /** Set on the self-approval refusal, which must be able to find its own row. */
   selfApproverName?: boolean;
+  /** Set on assertions about model output, which are meaningless without a model. */
+  model?: boolean;
 };
 
 /**
@@ -197,6 +213,7 @@ export function whatIsMissing(requirement: Requirement = {}): string[] {
     ...missingPersonaVars(requirement.personas ?? []),
     ...(requirement.geo ? missingGeoVars() : []),
     ...(requirement.selfApproverName ? missingSelfApproverVars() : []),
+    ...(requirement.model ? missingModelVars() : []),
   ];
 }
 

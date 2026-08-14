@@ -41,6 +41,7 @@ const REJECTED_STATES = new Set(["rejected", "expired"]);
 /** Short display names for seeded registry keys; anything else is humanized from its key. */
 const CAPABILITY_TITLE: Record<string, string> = {
   "chase.draft": "Chase drafting",
+  "command.schedule_draft": "Scheduling draft",
   "family.update": "Family update",
   "shift.fill": "Shift outreach",
   "careplan.review": "Care-plan review",

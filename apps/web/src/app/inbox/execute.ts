@@ -191,6 +191,68 @@ async function executeAssignment(
 }
 
 /**
+ * Book the visit a command-bar draft described (ST-233). The draft named a client, a
+ * caregiver and a window; `app.schedule_visit` (0023) takes the advisory lock, re-runs
+ * `app.assert_schedulable` inside the same transaction, and refuses if anything lapsed
+ * between the draft and this moment — the same rule 1 the assignment path obeys.
+ */
+async function executeScheduleVisit(
+  supabase: SupabaseClient,
+  proposal: ProposalForExecution
+): Promise<ExecutionOutcome> {
+  const payload = payloadObject(proposal.payload);
+  const clientId = (payload.client_id as string | undefined) ?? null;
+  const caregiverId = (payload.caregiver_id as string | undefined) ?? null;
+  const start = (payload.start as string | undefined) ?? null;
+  const end = (payload.end as string | undefined) ?? null;
+
+  if (!clientId || !start || !end) {
+    return {
+      executed: false,
+      message:
+        "Approved and recorded. No visit was booked because this draft does not name a client and a full time window — open the schedule to book it.",
+      revalidate: ["/schedule"],
+    };
+  }
+
+  const { error } = await supabase.schema("app").rpc("schedule_visit", {
+    p_client: clientId,
+    p_start: start,
+    p_end: end,
+    p_caregiver: caregiverId,
+  });
+
+  if (error) {
+    if (error.message.includes("CAREOS_NOT_SCHEDULABLE")) {
+      return {
+        executed: false,
+        message:
+          "Approved and recorded, but the visit was not booked: the caregiver is no longer eligible for that window. Nothing was scheduled.",
+        revalidate: ["/schedule"],
+      };
+    }
+    if (error.message.includes("CAREOS_BAD_WINDOW")) {
+      return {
+        executed: false,
+        message: "Approved and recorded. The visit was not booked because its end is not after its start.",
+        revalidate: [],
+      };
+    }
+    return {
+      executed: false,
+      message:
+        "Approved and recorded. The visit was not booked — scheduling permission is required, and nothing was changed.",
+      revalidate: ["/schedule"],
+    };
+  }
+  return {
+    executed: true,
+    message: "Approved and booked. The visit is on the schedule and the caregiver sees it on their day.",
+    revalidate: ["/schedule", "/today"],
+  };
+}
+
+/**
  * Run the side effect for an approved proposal. Never throws: a failed effect still
  * leaves the approval on the record, and the approver is told plainly what happened.
  */
@@ -203,6 +265,15 @@ export async function executeApprovedProposal(
   try {
     if (proposal.capability_key === "family.update") {
       return await executeFamilyUpdate(supabase, proposal, approvedBody, actorId);
+    }
+    // A command-bar scheduling draft carries the action it was drafted against, and the
+    // allowlist that permitted it lives in the registry (0055). An ASSIGNMENT draft falls
+    // through to executeAssignment below — the same path the shift-fill agent uses.
+    if (
+      proposal.capability_key === "command.schedule_draft" &&
+      payloadObject(proposal.payload).action === "app.schedule_visit"
+    ) {
+      return await executeScheduleVisit(supabase, proposal);
     }
     if (proposal.kind === "assignment" || proposal.capability_key === "shift.fill") {
       return await executeAssignment(supabase, proposal);
