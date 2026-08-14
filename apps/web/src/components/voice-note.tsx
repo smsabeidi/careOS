@@ -20,6 +20,17 @@
  *
  * Audio handling: captured in memory, POSTed once, then dropped. It is never stored by the
  * browser or the server, and the chunk buffer is cleared on every terminal path.
+ *
+ * ST-236 deltas (Front Door W3):
+ *   · ONLINE-ONLY RECORDING. Recording is a round trip — audio out, draft back — and there
+ *     is no offline path for it: the request would fail after the caregiver had already
+ *     spoken. So the record control is gated on the browser's own connectivity and says
+ *     what to do instead. The TYPED path is untouched and still available offline; so is
+ *     the clock queue, which is a different mechanism entirely (lib/offline/queue.ts).
+ *   · THE NOTE COACH, beside the draft. Mounted only when the server says
+ *     `front_door.note_coach` is on for this agency — off means it is never rendered.
+ *     It reads the free-text sections as they currently stand and asks questions about
+ *     them; it cannot write to them.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -28,6 +39,8 @@ import { useRouter } from "next/navigation";
 import type { SVGProps } from "react";
 import type { VoiceDraft, VoiceSection } from "@/app/api/voice-note/route";
 import { discardVoiceDraft, saveVoiceDraft } from "@/app/today/voice-actions";
+import { CoachPanel } from "@/app/today/coach-panel";
+import { useOnline } from "@/lib/offline/use-online";
 import { Badge } from "@/components/ui";
 import { IconAlert, IconCheck, IconClipboard, IconSparkle, IconX } from "@/components/icons";
 
@@ -78,12 +91,16 @@ export function VoiceNote({
   visitId,
   clientId,
   clientName,
+  coachEnabled,
 }: {
   visitId: string;
   clientId: string;
   clientName: string;
+  /** Resolved SERVER-side from app.feature_enabled('front_door.note_coach'). */
+  coachEnabled: boolean;
 }) {
   const router = useRouter();
+  const online = useOnline();
 
   const [supported, setSupported] = useState<boolean | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -260,6 +277,23 @@ export function VoiceNote({
     return draft.sections.some((s) => (values[s.key] ?? "") !== s.value);
   }, [draft, values]);
 
+  /**
+   * What the coach reads: the caregiver's own prose, as it currently stands.
+   *
+   * Free-text sections only — a select or a boolean is a choice, not writing, and there is
+   * nothing to coach about "Yes". Values are joined WITHOUT their labels so that every
+   * quote the coach comes back with is a fragment of what the caregiver actually wrote
+   * (coach-parse.ts drops any quote that is not a verbatim substring of this string).
+   */
+  const coachableNote = useMemo(() => {
+    if (!draft) return "";
+    return draft.sections
+      .filter((s) => s.source !== "record" && (s.type === "text" || s.type === "textarea"))
+      .map((s) => (values[s.key] ?? "").trim())
+      .filter(Boolean)
+      .join("\n\n");
+  }, [draft, values]);
+
   async function save() {
     if (!draft) return;
     setPhase("saving");
@@ -320,7 +354,10 @@ export function VoiceNote({
       <button
         type="button"
         onClick={start}
-        disabled={supported === false}
+        // Offline, recording cannot work: the draft comes back from the server, so the
+        // caregiver would speak for ninety seconds and then be told it failed. The control
+        // is stopped BEFORE the microphone opens, and the sentence below says what to do.
+        disabled={supported === false || !online}
         className="btn btn-secondary btn-sm min-h-11 w-full"
       >
         <IconMic width={15} height={15} />
@@ -357,6 +394,19 @@ export function VoiceNote({
             noting. Stops on its own at {mmss(MAX_SECONDS)}.
           </p>
         </div>
+      )}
+
+      {/* No signal. Recording needs the round trip; typing does not — and the clock queue
+          keeps holding taps regardless (lib/offline/queue.ts). Stated in one sentence,
+          with the alternative inside it rather than in a follow-up nobody reads. */}
+      {!online && phase !== "recording" && phase !== "working" && (
+        <p className="mt-2 text-[12px]" role="status" style={{ color: "var(--text-muted)" }}>
+          No connection —{" "}
+          <Link href={typedNoteHref} className="underline">
+            type your note
+          </Link>
+          , or record when you&apos;re back online
+        </p>
       )}
 
       {supported === false && (
@@ -407,7 +457,14 @@ export function VoiceNote({
             <span>{error}</span>
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" className="btn btn-secondary btn-sm" onClick={start}>
+            {/* Same gate as the main control: retrying into a dead connection just loses
+                the words a second time. */}
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={start}
+              disabled={!online}
+            >
               <IconMic width={14} height={14} />
               Try again
             </button>
@@ -479,6 +536,13 @@ export function VoiceNote({
                 <IconAlert width={15} height={15} className="mt-0.5 shrink-0" />
                 <span>{error}</span>
               </p>
+            )}
+
+            {/* The coach reads the draft; it cannot touch it. Rendered only when the
+                server resolved front_door.note_coach to on — when it is off, nothing
+                coach-shaped exists on this screen at all. */}
+            {coachEnabled && phase === "review" && (
+              <CoachPanel visitId={visitId} note={coachableNote} />
             )}
           </div>
 

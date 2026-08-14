@@ -87,7 +87,10 @@ export default async function TodayPage() {
   const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
 
   // ── My visits: today (window) + the next few upcoming, and the clock facts beside them ──
-  const [visitRes, verifiedRes, assignmentRes, draftRes] = await Promise.all([
+  // The note coach's flag is resolved HERE, in the server component, and travels down as a
+  // boolean: when `front_door.note_coach` is off for this agency, nothing coach-shaped is
+  // ever sent to the browser — not a teaser, not a disabled control (ST-235).
+  const [visitRes, verifiedRes, assignmentRes, draftRes, coachFlagRes] = await Promise.all([
     supabase
       .from("visit")
       .select(
@@ -115,7 +118,13 @@ export default async function TodayPage() {
       .in("status", ["draft", "in_review"])
       .order("updated_at", { ascending: false })
       .limit(5),
+    supabase
+      .schema("app")
+      .rpc("feature_enabled", { p_key: "front_door.note_coach", p_default: false }),
   ]);
+  // Anything other than an explicit `true` — an error, a missing function, a dark flag —
+  // means off. A feature that ships dark must fail dark (migration 0057).
+  const noteCoach = coachFlagRes.data === true;
 
   // ── Error state: the day's schedule is the reason this page exists. If it cannot be
   //    read, say so plainly rather than rendering an empty day somebody might believe.
@@ -293,7 +302,12 @@ export default async function TodayPage() {
                     </div>
                     {/* Speak the note instead of typing it. The draft is reviewed section by
                         section and saved by the caregiver — nothing files itself (docs/16 G1). */}
-                    <VoiceNote visitId={v.id} clientId={v.client_id} clientName={name} />
+                    <VoiceNote
+                      visitId={v.id}
+                      clientId={v.client_id}
+                      clientName={name}
+                      coachEnabled={noteCoach}
+                    />
                   </div>
                 );
               })}
