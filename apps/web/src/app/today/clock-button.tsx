@@ -98,9 +98,20 @@ export function ClockButton({
   // just wrote to a table this route renders wedges the response stream and the button
   // stays on "Saving…" for ~18 s. refresh() streams over its own request, so the card
   // updates from the returned result immediately and the server view catches up behind it.
-  function resync() {
-    router.refresh();
-  }
+  // ST-244: this MUST run from an effect on a settled result, and calling it from inside
+  // startTransition (which is what the code did until now, contradicting the paragraph
+  // above) is the bug it fixes. A router.refresh() issued inside a pending transition is
+  // folded into that transition, so the fresh server view never arrives: after an ACCEPTED
+  // clock-in the card kept rendering the control keyed on the OLD status, leaving a
+  // caregiver looking at a disabled "Clock in" with no way to finish the visit short of a
+  // manual reload. The effect fires when the phase settles on `accepted`; the refresh then
+  // streams over its own request, `key={v.status}` flips scheduled → in_progress, and the
+  // control remounts as "Complete visit". Remounting resets phase to idle, so this cannot
+  // loop. Same pattern ST-220 used for the attestation surface: an effect on a settled
+  // result, never inside the action's transition.
+  useEffect(() => {
+    if (phase.kind === "accepted") router.refresh();
+  }, [phase.kind, router]);
 
   // One idempotency key per user-initiated ATTEMPT, held across that attempt's fallback
   // into the offline queue. A fresh tap mints a fresh key; reusing one would replay an
@@ -204,7 +215,6 @@ export function ClockButton({
           deviceSessionId: deviceSessionId(),
         });
         apply(result);
-        if (result.ok) resync();
       } catch {
         // The request never reached the server (signal died mid-tap). Same attempt key,
         // so if it DID reach the server the replay comes back as `replayed: true`.
@@ -220,7 +230,6 @@ export function ClockButton({
       try {
         const result = await requestLocationException(visitId, event, reason, note || null);
         apply(result);
-        if (result.ok) resync();
       } catch {
         setPhase({ kind: "error", message: t("clock.errGeneric") });
       }

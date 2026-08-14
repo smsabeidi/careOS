@@ -24,6 +24,21 @@
 
 begin;
 
+-- ST-244. The teardown below DELETEs from append-only tables, which the file's own header
+-- argues is lawful here and only here — fixture teardown in the synthetic tenant, as the
+-- table owner, through no RPC and no policy. It was nevertheless broken: app.forbid_mutation
+-- is a BEFORE DELETE **row** trigger, so it stays silent while the delete matches nothing
+-- and raises CAREOS_APPEND_ONLY the moment it matches something. The arrangement therefore
+-- worked on a clean database and aborted — taking the whole transaction with it — as soon
+-- as a spec had raised a single visit_exception. That is precisely the "green at 10:00,
+-- red at 10:05" failure this file exists to prevent, hiding in the fix for it.
+--
+-- session_replication_role = replica suspends user triggers for THIS transaction only
+-- (set local), which is the standard fixture escape hatch and is unavailable to any
+-- application path: the app's roles are not superusers, so no product code can reach it.
+-- The append-only guarantee is untouched everywhere it means anything.
+set local session_replication_role = replica;
+
 -- ── 1 · Dee's day, back to the top ──────────────────────────────────────────────────
 -- The three caregiver journeys each need a visit that has not been clocked yet, and they
 -- run in sequence, so the first would otherwise eat the fixture for the other two.
@@ -139,6 +154,50 @@ update public.visit
    set status = 'scheduled', updated_at = now()
  where caregiver_id = '22222222-0000-0000-0000-000000000009'
    and scheduled_start::date = current_date;
+
+-- ── 4b · One clockable visit PER caregiver spec, all at the SAME address ────────────
+-- ST-244. The three caregiver journeys each consume a clockable visit, and they share one
+-- worker and one database, so with Dee's two seeded visits the third spec found nothing
+-- to clock. Worse than "nothing", in fact: `firstClockableCard()` walks to the next card,
+-- and Dee's second visit belongs to a DIFFERENT client at a DIFFERENT address — so the
+-- run silently started testing an in-fence journey against coordinates that are nowhere
+-- near that client's home, the engine correctly refused the clock, and the failure read
+-- as "the product broke" when the truth was "the harness pointed the caregiver at the
+-- wrong house". A geographic anchor is only meaningful against the address it was taken
+-- from (CAREOS_E2E_INFENCE_LAT/LNG, e2e/README.md).
+--
+-- So: every one of Dee's visits today is pointed at the ANCHOR client — the client whose
+-- attested pin those coordinates came from — and the day is topped up to three scheduled
+-- visits so each spec consumes its own. Same lawful-here reasoning as §1: arrangement in
+-- the synthetic tenant, as the table owner, through no RPC and no policy. Idempotent.
+with anchor as (
+  select v.client_id
+    from public.visit v
+   where v.caregiver_id = '22222222-0000-0000-0000-000000000009'
+     and v.scheduled_start::date = current_date
+   order by v.scheduled_start
+   limit 1
+)
+update public.visit v
+   set client_id = (select client_id from anchor), updated_at = now()
+ where v.caregiver_id = '22222222-0000-0000-0000-000000000009'
+   and v.scheduled_start::date = current_date
+   and v.client_id is distinct from (select client_id from anchor);
+
+insert into public.visit (tenant_id, client_id, caregiver_id, status,
+                          scheduled_start, scheduled_end)
+select v.tenant_id, v.client_id, v.caregiver_id, 'scheduled',
+       current_date + interval '1 hour' * (13 + g.n),
+       current_date + interval '1 hour' * (14 + g.n)
+  from (select * from public.visit
+         where caregiver_id = '22222222-0000-0000-0000-000000000009'
+           and scheduled_start::date = current_date
+         order by scheduled_start limit 1) v
+  cross join generate_series(1, 3) as g(n)
+ where (select count(*) from public.visit
+         where caregiver_id = '22222222-0000-0000-0000-000000000009'
+           and scheduled_start::date = current_date
+           and status = 'scheduled') + g.n <= 3;
 
 -- ── 5 · The self-approval refusal's precondition (D-027) ────────────────────────────
 -- The one spec that proves CAREOS_SELF_APPROVAL end to end needs a principal who WORKED
