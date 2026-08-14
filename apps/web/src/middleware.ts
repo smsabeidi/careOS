@@ -7,10 +7,20 @@ import { NextResponse, type NextRequest } from "next/server";
  *  - authenticated at AAL1 on a PHI surface → /mfa step-up
  * RLS is the real perimeter; this is UX convenience on top of it.
  */
-const PUBLIC_PATHS = ["/login", "/accept"];
+/* /install is public for the same reason it exists: it is the page a coordinator texts to
+ * somebody who cannot get in yet (ST-240a). It renders no query, receives no identifier and
+ * names nobody — a static instruction sheet — so there is nothing behind a session to
+ * protect, and gating it would make the one page you send to a locked-out caregiver the one
+ * page that checks whether they are locked out. */
+const PUBLIC_PATHS = ["/login", "/accept", "/install"];
 /* /accept is AAL1 by design: a brand-new hire has no TOTP factor yet, and invitation
- * acceptance exposes no PHI (0030 header). MFA enrollment follows immediately after. */
-const AAL1_ALLOWED = ["/login", "/mfa", "/accept"];
+ * acceptance exposes no PHI (0030 header). MFA enrollment follows immediately after.
+ * /install joins it on the same footing and for a sharper reason: the hire who has just
+ * accepted an invitation and not yet enrolled a factor is EXACTLY the reader of the install
+ * guide, and bouncing that session to /mfa would hide the instructions behind the step-up
+ * they are trying to complete on the phone. AAL2 still guards every PHI surface — this page
+ * has none. */
+const AAL1_ALLOWED = ["/login", "/mfa", "/accept", "/install"];
 
 /* ═══════════════════════════════════════════════════════════════════════════
  * DEMO-ONLY AAL2 BYPASS — READ BEFORE TOUCHING.
