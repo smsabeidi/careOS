@@ -1,9 +1,13 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/shell";
-import { Avatar, EmptyState, SectionTitle, StatusChip, TintTile } from "@/components/ui";
+import { Avatar, EmptyState, SectionTitle, SkeletonRows, StatusChip, TintTile } from "@/components/ui";
 import { IconChevronRight, IconClipboard, IconMapPin, IconPlus } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
+import { featureEnabled } from "@/lib/flags";
+import { FAMILY_WEEKLY_FLAG } from "@/lib/ai/family-update";
+import { FamilyUpdateCard } from "./family-update";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +34,10 @@ export default async function ClientChart({ params }: { params: Promise<{ id: st
     .select("id, status, updated_at, form_template(title)")
     .eq("client_id", id)
     .order("updated_at", { ascending: false });
+
+  // Server-side gate (ST-241). Postgres owns the answer, and a dark flag renders NOTHING —
+  // not a teaser, not a disabled button. `featureEnabled` fails closed on every error path.
+  const familyWeekly = await featureEnabled(FAMILY_WEEKLY_FLAG, false);
 
   const name = `${client.first_name} ${client.last_name}`;
   const address = [client.address_line1, client.city, client.state].filter(Boolean).join(", ");
@@ -83,6 +91,12 @@ export default async function ClientChart({ params }: { params: Promise<{ id: st
             </div>
           </dl>
         </div>
+
+        {familyWeekly && (
+          <Suspense fallback={<SkeletonRows rows={2} />}>
+            <FamilyUpdateCard clientId={id} />
+          </Suspense>
+        )}
 
         <SectionTitle icon={<IconClipboard width={16} height={16} />}>
           Records
