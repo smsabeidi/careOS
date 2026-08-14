@@ -1,9 +1,10 @@
 # CareOS — Frontend, Mobile & Design System Specification
 
-**Client:** American Care Team (Maryland) · **Document:** 10 of 15 · **Version:** 1.2 (Draft) · **Prepared by:** OCTSERVICES LLC
+**Client:** American Care Team (Maryland) · **Document:** 10 of 15 · **Version:** 1.3 (Draft) · **Prepared by:** OCTSERVICES LLC
 
 > **Change note (v1.1, Jul 23 2026):** §3 design tokens rebranded to the "Apple 2026" visual language per **D-012** (Instrument Serif/Sans, Apple system blue on systemGray, frosted materials, spring-feel CSS motion, **light-only**). Prior Inter / teal-700 / warm-neutral tokens and day-one dark mode are superseded; the night-shift dark-mode rationale is retained as an open item for founder sign-off.
 > **Change note (v1.2, Aug 10 2026):** §6 rewritten for **D-022** — the responsive web app is the caregiver EVV surface and offline capture is a PWA + IndexedDB queue, not Expo/PowerSync; the superseded native specification is marked in place. §2 gains the `/operations` console and `/settings/visit-policy` (Doc 17 §7.2) and the per-persona rail ceiling rises from 5 to 7. §5 gains the service-worker boundary. The caregiver clock contract — two actions, the non-blocking exception affordance, the forbidden-vocabulary list and the distance-bucket-as-words rule — is now written down in §6 rather than living only in code.
+> **Change note (v1.3, Aug 13 2026):** §2 gains `/welcome` and the **first-run doctrine**, both marked *(proposed — PD-5)*. PD-5 is a proposal in Doc 00 §3, not a ratified decision: the surface is built dark behind `onboarding.welcome` (Doc 15 §4.3) and nothing in this document may be read as ratifying a first-run experience until the founder acts on it. No token, component, state or vocabulary rule changes.
 **Implements:** Doc 01 personas & P4 ("built for non-technical hands") · Doc 06 §4 · Doc 08 (lanes) · Doc 05 experience surfaces · Doc 17 §7 (verified-visit surfaces).
 
 > **Purpose.** The experience contract. CareOS wins adoption or dies here: the primary users are nurses and caregivers, often on a phone, sometimes offline, in someone's living room. Every decision below is subordinate to one test — **if it isn't obvious to a non-technical caregiver on a mid-tier Android in a basement, it's wrong.**
@@ -28,6 +29,7 @@
 | **`/operations`** | Coordinator / Owner | Live visit board (active / completed / late / exceptions / missed + the day's visit table) · Exception inbox (deterministically ranked, AI-narrated) · Attendance (scheduled vs actual) · Timesheets (approve hours, close period, export) · EVV console (canonical records, submissions, reconciliation) · Workforce intelligence · Places of care (service locations + geocode attestation) |
 | **`/exec`** | Founder / admin | Command dashboard (census, staffing, compliance heat, alerts) · Ask-anything analytics (NL→governed query) · Ops briefing · Settings (roles, templates, rules, **visit policy** — config-audited) |
 | **`/family`** | Family | Approved updates feed · Visit calendar (scoped) · Documents (consented) · Contact/on-call |
+| **`/welcome`** *(proposed — PD-5)* | Any newly invited staff or family member, once | First-run welcome: role-aware greeting · a checklist of real actions on live surfaces · language choice · progress and completion. Outside the app shell, like `/login`; shown once, then never again |
 | Shared | All | Auth/MFA/step-up · Notifications center · Profile · Help (Brain-powered) |
 
 *(The live visit board and the exception queue moved out of `/office` into `/operations` when the verified-visit layer landed; `/office` keeps the pipelines and the people, `/operations` owns the day.)*
@@ -46,6 +48,8 @@
 | `/settings/visit-policy` | `policy.manage` | The rules the engine applies, with an inheritance preview |
 
 Navigation: bottom tabs (mobile) / left rail (desktop), **≤7 items per persona** (raised from 5 when `/operations` was seated — the ceiling is a ceiling, not a target, and something leaves the rail when something joins it); the **first four rail items are the mobile tab bar**, so rail order is the phone layout; universal search (⌘K) scoped by RLS; every entity has a stable deep link (used by notifications).
+
+**The first-run doctrine *(proposed — PD-5, docs/00 §3; not ratified, and `/welcome` is dark behind `onboarding.welcome` until it is)*.** CareOS teaches through real work, never about itself: Doc 14 §6 already ratifies that the migration doubles as training because adjudication *is* onboarding to the review UI. `/welcome` extends that to the personas migration never touches — the caregiver, the RN, the family member — and does not replace it. Every checklist item is therefore a real action on a live surface rather than a description of one, the first tap leaves the welcome screen for the product, and completion is recorded per user so the screen is shown once and never again. Two constraints follow and are not negotiable at the copy layer: the checklist may name only surfaces live for that tenant, because §10's rule is that a dark surface renders nothing — not a teaser, not a disabled button, and not a line of onboarding copy promising it; and the screen carries no PHI, only the reader's own name, role and locale. There are no coachmarks, no overlays and no tour. `/welcome` is not in the rail and never appears in navigation — it is reached once, by redirect, and is not a destination anyone returns to.
 
 ## 3. Design system
 

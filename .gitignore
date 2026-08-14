@@ -12,3 +12,4 @@ coverage/
 *.tsbuildinfo
 .vercel
 .env*
+.claude/worktrees/

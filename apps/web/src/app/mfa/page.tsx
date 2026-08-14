@@ -35,7 +35,7 @@ export default function MfaPage() {
   const bootstrapInner = useCallback(async () => {
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (aal?.currentLevel === "aal2") {
-      router.replace("/office/clients");
+      router.replace("/");
       return;
     }
     const { data: factors, error: fErr } = await supabase.auth.mfa.listFactors();
@@ -97,7 +97,7 @@ export default function MfaPage() {
       setBusy(false);
       return;
     }
-    router.replace("/office/clients");
+    router.replace("/");
     router.refresh();
   }
 

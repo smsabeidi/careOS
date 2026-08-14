@@ -125,6 +125,59 @@ not an engineering default. **Resolution must route through `careos-compliance-c
 docs/02 — no COMAR provision may be cited from memory (D-017).** Until ratified, voice
 audio is stored as a 0029 document row and nothing is destroyed.
 
+### Proposed decision awaiting ratification (W-ONB, drafted 2026-08-13 — NOT ratified)
+
+Same standing as PD-1..PD-4: a proposal, carrying no D-number until the founder ratifies
+it, citable as nothing but a proposal. It is the decision deliverable of the W-ONB wave
+(docs/15 §4.3), which is built dark behind the flag named below and blocks on this entry.
+
+**PD-5 · First-run onboarding surface** (blocks the W-ONB flag flip and nothing else).
+The corpus specifies no first-run experience, and the only ratified statement about how
+people learn CareOS is docs/14 §6: the migration doubles as hands-on training —
+adjudication *is* onboarding to the review UI. A first-run screen therefore either
+extends that doctrine or contradicts it, which makes it a decision rather than a detail.
+Options: **(a) status quo** — no first-run surface; an invited user lands on their
+persona home and learns by doing real work, exactly as docs/14 §6 describes. It costs
+nothing and changes nothing, and it leaves day one for a caregiver, RN or family member
+as an unexplained dashboard, which is the one population docs/14 §6 does not cover:
+adjudication trains the coordinator and HR staff who do the adjudicating, not the
+caregiver who never touches it — **(b) a guided-real-work welcome screen** at `/welcome`
+[RECOMMENDED]: a role-aware greeting and a short checklist whose every item is a real
+action on a live surface (open `/today`, choose your language, open the client roster),
+progress recorded per user, the screen never shown again once completed or skipped. This
+**extends** the docs/14 §6 doctrine rather than competing with it — the first work is
+still real work; the screen only names it, sequences it, and records that it happened —
+**(c) a conventional product tour** with coachmarks over the live UI [NOT RECOMMENDED]:
+it contradicts the same doctrine by teaching *about* the product instead of through it,
+and it collides with the docs/10 §10 no-teaser rule, since a tour earns its keep by
+pointing at features while every `front_door.*` surface is dark and renders nothing —
+a tour would either point at absent things or be rewritten the week a flag flips.
+
+**Consequences under (b).** One append-only table (`onboarding_milestone`: one row per
+user per milestone, RLS enabled + forced, no direct table grants, written only by an
+AAL2 RPC that emits its audit event in the same transaction) and one new route. The
+surface carries no PHI — the reader's own first name, role and locale only — so it adds
+no egress class and no vendor. The checklist may name only surfaces live for that tenant:
+a dark feature may never appear in it, which is the docs/10 §10 rule applied to
+onboarding copy. Caregiver-visible steps obey D-030's closed vocabulary. No model call is
+involved, so V4 does not gate it.
+
+**Flag and rollback.** `onboarding.welcome`, seeded **disabled** with a stated reason, per
+tenant, flipped only by `app.set_feature_flag` under AAL2 + `platform.manage` (the 0052
+idiom). Rollback is the flag off: the route stops being reachable and the root redirect
+resumes sending every user straight to their persona home. Recorded milestones stay —
+append-only history is not deleted to undo a feature (invariant 1) — and the entry check
+fails closed, so a flag read that errors sends the user home rather than into onboarding.
+No state of this surface can lock a user out of the product.
+
+**Why the boundary is cheap to cross later.** (b) and (c) differ in one function — the
+role-to-checklist mapping. A later ratification of (c) would add a presentation layer over
+the same milestone ledger, changing no table, no RPC and no flag; a later ratification of
+(a) leaves an unreachable route and an inert, flag-dark table. The expensive direction is
+the one this proposal avoids: building the tour first puts teaching copy about dark
+features into the product, and every word of it would have to come back out before the
+first `front_door.*` flag flips.
+
 ## 4. Launch-blocking verification checklist (nothing PHI until every row is green)
 
 | # | Item | Owner | Verify by |

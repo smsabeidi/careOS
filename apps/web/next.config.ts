@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/(office|clinical|exec|today|family)/:path*",
+        source: "/(office|clinical|exec|today|family|welcome)/:path*",
         headers: [{ key: "Cache-Control", value: "no-store" }],
       },
     ];

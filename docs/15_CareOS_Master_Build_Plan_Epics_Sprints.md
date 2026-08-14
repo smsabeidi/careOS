@@ -1,9 +1,11 @@
 # CareOS — Master Build Plan: Epics, Stories & Sprint Map
 
-**Client:** American Care Team (Maryland) · **Document:** 15 of 15 · **Version:** 1.1 (Draft) · **Prepared by:** OCTSERVICES LLC
+**Client:** American Care Team (Maryland) · **Document:** 15 of 15 · **Version:** 1.2 (Draft) · **Prepared by:** OCTSERVICES LLC
 **Implements:** Doc 04 phases on the Doc 06 stack; stories trace to Doc 01/05 FRs; gates per Doc 12; ops per Doc 13; the verified-visit layer per Doc 17.
 
 > **Change note (v1.1, Aug 10 2026):** E08 (EVV & ISAS) and the S4/S6 EVV theme are **delivered** as ST-200…ST-216 — recorded in the new §4.1 with each acceptance criterion mapped to the pgTAP file that proves it. E07 (mobile field app & offline sync) is **withdrawn from Phase 1** under **D-022**, taking ST-032 and ST-033 with it; the offline obligation moved to the PWA queue and is delivered inside the same band. §8 records the **D-027** scope trade explicitly: approved hours came *into* Phase 1, the payroll ledger and any payroll provider stay Phase 2+.
+
+> **Change note (v1.2, Aug 13 2026):** §4.2 gains a **drift note** — five Front Door surfaces recorded there as shipped are absent from `apps/web` at HEAD, recorded as an observation for founder verification rather than resolved by editing the table. New **§4.3 (W-ONB, ST-246..ST-249)**: a first-run welcome surface built dark behind `onboarding.welcome` and blocking on **PD-5** (docs/00 §3), which is a *proposal* — nothing in §4.3 may be cited as ratified scope until the founder acts on it.
 
 > **Purpose.** The execution spine: who builds what, in what order, with acceptance criteria — Phase 1 planned to the story level for the first four sprints and to the epic level thereafter. This plan assumes the Doc 00 §4 verification checklist starts **day one**, because BAAs and state EVV onboarding are the true critical path, not code.
 
@@ -149,6 +151,54 @@ Execution order W0 → W8 → WE → W1 → W3 → W5 → W2 → W6a → W4 → 
 | **ST-237** W4 form import | Digital-text PDF → structure detection → DRAFT `form_version` → human publish | Per-field confidence with "check this" markers; scans get honest copy + stored for later (OCR deferred); flag `front_door.form_import` |
 | **ST-241** W7 family drafts | `family.weekly_draft` (T2), coordinator-triggered, drafts into `ai_proposal` | Consent pre-check deterministic; approval is what inserts `family_update` (0012's insert-audit fires at the right moment); flag `front_door.family_weekly` |
 | **ST-243/244** docs + journeys | Docs deltas (10/11/13/15/16, DEPLOY.md) + Playwright journeys incl. the prompt-injection suite | Every new surface: four-state doctrine + a11y sweep coverage |
+
+**Drift note (observed 2026-08-13 at commit `9568e4d` — requires founder verification, not
+an accusation).** Five of the surfaces the table above records as shipped are not present
+in `apps/web` at HEAD, and this section should not be read as evidence that they are until
+someone confirms where they went. Absent: the global command bar (**ST-232** — no `cmdk`,
+`command_bar` or composer module anywhere under `apps/web/src`), the note coach
+(**ST-235/236** — no `note_coach` or `quality_coach` call site; `src/lib/ai/` holds
+`client.ts`, `huddle.ts`, `registry.ts`, `tools.ts` and `visit-intelligence.ts` and
+nothing else), form import (**ST-237** — no `form_import` call site), the install page
+(**ST-240a** — `apps/web/src/app/install/` does not exist), and family weekly drafts
+(**ST-241** — no `family_weekly` or `weekly_draft` call site). Genuinely present and
+verified by inspection: `/inbox` and `/office/evidence` as routes, `scripts/evals/`, and
+migrations `0053_pg_net_schema` … `0057_front_door_capabilities` — including 0057's seed
+of all six `front_door.*` flags, dark with stated reasons. So the **data plane of the
+Front Door landed, and five of the six flag-gated surfaces docs/10 §10 names are not in
+the tree** — the attention queue is the one that is. A dark flag explains why nothing
+renders; it does not explain a missing route or a missing module, so this is a different
+claim from the one this table makes. Plausible explanations
+include an unmerged branch, a worktree, or a table written to the program plan rather than
+to the tree; the point of recording it is that the corpus and the code currently disagree,
+and under §6 conventions documentation drift is a bug. **Do not resolve it by editing this
+table** — locate the work or reclassify the rows, and log which happened.
+
+### §4.3 · W-ONB — first-run welcome (ST-246..ST-249) — built dark, pending PD-5 ratification
+
+Decision basis: **PD-5 (docs/00 §3) — a proposal, not a decision.** The wave is built to
+the point of being flippable and no further: `onboarding.welcome` is seeded **disabled**
+with a stated reason, and until the founder ratifies PD-5 the flag does not flip, so the
+root redirect behaves exactly as it does today and `/welcome` is unreachable. This is the
+§8 shape — a named decision, a stated boundary — applied *before* the build rather than
+after it, because first-run UX is net-new scope against a corpus that specifies none and a
+docs/14 §6 doctrine that must be extended rather than overridden. There is no
+`docs/designs/` note for this wave; PD-5 and this section are its written contract.
+
+Story IDs continue from the corpus maximum in use at HEAD (ST-245, §4.2).
+
+| Story | Scope | Acceptance evidence |
+|---|---|---|
+| **ST-246** Onboarding data plane | Migration `0058`: `public.onboarding_milestone` (append-only, one row per user per milestone, RLS enabled + forced, no direct table grants); `app.record_onboarding_milestone` and `app.my_onboarding_milestones` (AAL2, caller-scoped, idempotent, audit event in the same transaction); `onboarding.welcome` seeded disabled per tenant on the 0057 idiom | `supabase/tests/database/0058_user_onboarding.sql` — RLS matrix (own milestones via RPC yes, cross-user read no, AAL1 refused, direct INSERT/UPDATE/DELETE refused), duplicate record idempotent, milestone outside the allowlist refused, flag row present and disabled, audit row emitted. Matrix entry per D-018/D-019 |
+| **ST-247** `/welcome` surface | The route (AAL2, outside the app shell), the role-to-checklist mapping, the flag and milestone reads, the root-redirect branch, and the `/mfa` post-enrolment landing corrected from a hardcoded office route to the role-aware root | Route registered in `apps/web/e2e/support/routes.ts`, so both a11y specs walk it (axe + status-not-colour-alone). Four states present on the route itself: skeleton, error with retry and progress-preserving copy, degraded (milestone read failed → checklist renders unchecked and says so), and no-checklist → straight through, never a blank screen. **Stated honestly: this story ships with no journey spec of its own**, so its behavioural evidence is typecheck, the a11y sweep, and manual walk-through — the same evidence class as ST-211..ST-216, and the same debt |
+| **ST-248** First-run empty-state coaching | The true-empty states on `/today` and the unlinked-preview state on `/family` upgraded from bare emptiness to what-appears-here plus one next action (docs/10 §8) | The docs/10 §8 AAL1 probe preserved verbatim — an empty caused by session level must still never render as "nothing to do"; caregiver-visible copy holds D-030's closed vocabulary; both states reachable in the a11y sweep through their existing routes |
+| **ST-249** Onboarding copy deck | The `onboarding.*` namespace in the shared dictionary, `en` + `es`, covering the greeting, per-role intros, every checklist step, progress and completion, skip, and the error and degraded notes | The dictionary type fails the build on a missing `es` key, which is the coverage assertion; docs/10 §1 voice — what happened, what's saved, what to do next; no regulation named, no compliance claim made, no dark feature named |
+
+**Carried out of the wave, stated plainly:** the flag flip itself is not a story here — it
+is PD-5's ratification plus the `app.set_feature_flag` act; there is no journey spec for
+`/welcome` (above); and `onboarding_milestone` records that a step was *interacted with*,
+not that a person understood anything, so no claim about training, competency or
+compliance may be built on it.
 
 ## 5. Definition of Done (every story)
 

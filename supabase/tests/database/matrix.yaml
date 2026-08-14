@@ -117,6 +117,10 @@ tables:
   public.payroll_period:    { scope: tenant, authenticated: select-payroll.read, writes: rpc, no_delete: true }
   public.payroll_export:    { scope: tenant, authenticated: select-payroll.read, writes: rpc, delete: none, append_only: true }
   public.alert_ack:         { scope: tenant, authenticated: select-own, writes: rpc, delete: none, append_only: true }
+  # ── First-run welcome (0058) ──
+  # Zero client grants (the 0027 domain_event posture): both sides are definer RPCs —
+  # app.my_onboarding_milestones reads, app.record_onboarding_milestone writes, both AAL2.
+  public.onboarding_milestone: { scope: tenant, authenticated: none-rpc-read-only, writes: rpc, delete: none, append_only: true }
 tests:
   - 001_schema_invariants.sql
   - 002_rls_matrix.sql
@@ -161,3 +165,5 @@ tests:
   - 0051_workforce_analytics.sql
   - 0052_visit_ai_capabilities.sql
   - 0054_alert_ack.sql
+  # ── First-run welcome (0058) ──
+  - 0058_user_onboarding.sql

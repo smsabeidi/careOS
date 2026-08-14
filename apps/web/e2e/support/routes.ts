@@ -30,6 +30,21 @@ export type Surface = {
 
 export const NEW_SURFACES: Surface[] = [
   {
+    path: "/welcome",
+    /* The h1 is `onboarding.title`, which interpolates the reader's own first name, so the
+     * anchor is the stable half of it. `getByRole` matches an accessible name by substring,
+     * which is what makes that work — do not tighten it to an exact match.
+     *
+     * LANDING DEPENDS ON A FLAG. /welcome redirects to `/` unless `onboarding.welcome` is
+     * enabled for the tenant, and 0058 seeds it disabled (dark until PD-5). The sweep can
+     * only reach this surface once the E2E tenant has the flag on; until then a failure
+     * here is the flag, not the screen. */
+    heading: "Welcome",
+    persona: "caregiver",
+    permission: null,
+    note: "First-run welcome — the first screen a new person sees, ahead of any role home.",
+  },
+  {
     path: "/today",
     heading: "Today",
     persona: "caregiver",

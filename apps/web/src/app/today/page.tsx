@@ -196,11 +196,33 @@ export default async function TodayPage() {
         <section className="mb-6">
           <SectionTitle icon={<IconCalendar width={16} height={16} />}>{t("today.yourVisits")}</SectionTitle>
           {!todays.length ? (
-            <EmptyState
-              icon={<IconCalendar />}
-              title={t("today.noVisitsTitle")}
-              body={t("today.noVisitsBody")}
-            />
+            /* Two different emptinesses used to share one line of copy. A caregiver who has
+               visits later in the week only needs "nothing today" — the Upcoming section is
+               directly below and answers the rest. A caregiver whose whole list is empty is
+               almost always new here, and a blank first screen reads as a broken one, so
+               that case gets the coaching instead: what lands on this screen, who puts it
+               there, and one live place to go now (docs/10 §8).
+               The AAL2 probe above has already returned for an unverified session, so
+               reaching this branch with no visits means the session IS verified and the
+               emptiness is real — never RLS quietly filtering a day the caregiver has. */
+            !visits.length ? (
+              <EmptyState
+                icon={<IconCalendar />}
+                title={t("today.emptyCoach.title")}
+                body={t("today.emptyCoach.body")}
+                action={
+                  <Link href="/office/clients" className="btn btn-primary btn-sm">
+                    {t("nav.myClients")}
+                  </Link>
+                }
+              />
+            ) : (
+              <EmptyState
+                icon={<IconCalendar />}
+                title={t("today.noVisitsTitle")}
+                body={t("today.noVisitsBody")}
+              />
+            )
           ) : (
             <div className="stagger flex flex-col gap-3">
               {todays.map((v) => {

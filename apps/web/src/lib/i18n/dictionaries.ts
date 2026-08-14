@@ -170,6 +170,13 @@ export const en = {
   "today.noDrafts": "No open drafts. Drafts are saved automatically and appear here.",
   "today.noteFallback": "Note",
   "today.savedAt": "saved {time}",
+  /* First-run coaching for a genuinely empty day (W-ONB). Distinct from
+     `today.noVisitsTitle`: this one is only shown on a verified session that really
+     has zero visits, so it may say the day is clear — the AAL1 probe keeps its own
+     copy above and must never be answered with this. */
+  "today.emptyCoach.title": "Your day is clear",
+  "today.emptyCoach.body":
+    "When a visit is scheduled for you, it appears here with the time, the address, and the tasks that go with it. If you were expecting one today, call your coordinator — whatever they add shows up here on its own.",
 
   /* ── The clock (docs/17 §7.1) ──
      Two actions, ever: Clock in → Clocked in · 9:02 AM · Visit in progress →
@@ -244,6 +251,12 @@ export const en = {
     "{count} came back needing your attention. Open the visit and clock it again — you'll be asked what happened.",
 
   /* ── Family portal ── */
+  /* The first thing a relative reads before the portal is linked (W-ONB). It says
+     what this place is, who decides what appears, and what has to happen next —
+     without promising a feature that isn't on yet. */
+  "family.welcome.title": "Welcome to the family portal",
+  "family.welcome.body":
+    "This is where the care team shares what your family member has agreed to share with you: approved updates, the visit calendar, and documents, in one place. It opens once the agency links your account — nothing appears here without consent.",
   "family.sub": "Your family member's care, shared with their consent.",
   "family.notActiveTitle": "Family portal not yet active",
   "family.notActiveBody":
@@ -306,6 +319,85 @@ export const en = {
   "auth.mfaCodeLabel": "6-digit code",
   "auth.mfaVerifying": "Verifying…",
   "auth.mfaVerifyCta": "Verify and continue",
+
+  /* ── First run: the welcome surface (W-ONB) ──
+     Guided real work, not a tour (docs/14 §6): every step points at a screen that
+     exists today, so the copy promises nothing dark — no command bar, no coaching,
+     no imports, no notifications. The caregiver lines obey D-030 the same way the
+     clock does: what is recorded, when, and what to do if it goes wrong. Nothing
+     here names a regulation; nothing here is PHI. */
+  "onboarding.title": "Welcome, {name}",
+  "onboarding.intro.owner":
+    "You can see the whole agency from here. These steps open the views that answer the questions you get asked most.",
+  "onboarding.intro.coordinator":
+    "Your desk holds the people, the paperwork, and the days ahead. These steps open the screens you'll use most.",
+  "onboarding.intro.rn":
+    "Your clinical desk is ready. These steps show you where your signatures, your reviews, and your caseload live.",
+  "onboarding.intro.caregiver":
+    "Everything you need for a visit is on one screen. Start with the steps below — each one takes about a minute.",
+  "onboarding.intro.family":
+    "This is your window into your family member's care. These steps explain what you can see and who to call with a question.",
+  "onboarding.progress": "{done} of {total} steps finished",
+  "onboarding.ready": "Continue to CareOS",
+  "onboarding.skip": "Skip for now",
+  "onboarding.savedNote":
+    "Your progress saves as you go. If you close this page, you can pick up where you left off.",
+  "onboarding.error.title": "Couldn't open your welcome page",
+  "onboarding.error.body":
+    "Nothing was lost, and anything you already finished is saved. Try again, or carry on into CareOS and set the rest up later.",
+
+  /* Steps — caregiver */
+  "onboarding.step.first_look.title": "See your day",
+  "onboarding.step.first_look.body":
+    "Your visits for today, in order, with the time, the client, and the address. This is the screen you'll open the most.",
+  "onboarding.step.language.title": "Choose your language",
+  "onboarding.step.language.body":
+    "CareOS speaks English and Spanish. Pick the one you'd rather read — you can change it whenever you like.",
+  "onboarding.step.home_screen.title": "Put CareOS on your phone",
+  "onboarding.step.home_screen.body":
+    "Add it to your home screen and it opens like an app — straight to your day, with no web address to remember.",
+  "onboarding.step.home_screen.ios":
+    "On iPhone: open CareOS in Safari, tap the share button, then tap Add to Home Screen.",
+  "onboarding.step.home_screen.android":
+    "On Android: open CareOS in Chrome, tap the three-dot menu, then tap Add to Home screen.",
+  "onboarding.step.how_visits_work.title": "How a visit is recorded",
+  "onboarding.step.how_visits_work.body":
+    "You open the visit, clock in when you arrive, and complete it when you leave. Your phone confirms you're at the address on file once at the start and once at the end, and not in between. If something isn't right, you can say why and carry on — the visit is never blocked, and nothing you record is lost.",
+
+  /* Steps — family */
+  "onboarding.step.what_you_see.title": "What you can see here",
+  "onboarding.step.what_you_see.body":
+    "Updates, visits, and documents your family member has agreed to share with you, and nothing else. Your family member chooses what is shared, and can change it at any time.",
+  "onboarding.step.who_to_contact.title": "Who to talk to",
+  "onboarding.step.who_to_contact.body":
+    "For anything about day-to-day care, call the agency and ask for the care coordinator, the same as always. This page shows you what's shared; it doesn't replace talking to the team.",
+
+  /* Steps — coordinator and HR */
+  "onboarding.step.clients.title": "Open your client roster",
+  "onboarding.step.clients.body":
+    "Everyone the agency serves, in one list. Open a client to see their chart, their schedule, and what's due.",
+  "onboarding.step.intake.title": "Follow a referral through intake",
+  "onboarding.step.intake.body":
+    "New referrals start here and move forward one step at a time. You can see where each one stands and what it's waiting on.",
+  "onboarding.step.compliance.title": "See what's coming due",
+  "onboarding.step.compliance.body":
+    "Credentials, visits, and paperwork that carry a date, ordered by what needs attention first, so nothing slips quietly.",
+
+  /* Steps — nurse */
+  "onboarding.step.clinical_home.title": "Start at your clinical desk",
+  "onboarding.step.clinical_home.body":
+    "Records waiting for your signature, flags to review, and the clients on your caseload — one screen, in the order that matters.",
+  "onboarding.step.reviews.title": "Your scheduled reviews",
+  "onboarding.step.reviews.body":
+    "Visits you're scheduled to review appear on your desk with their due dates and stay there until you sign. Your signature adds a new record — nothing you write is ever overwritten.",
+
+  /* Steps — owner and admin */
+  "onboarding.step.exec_overview.title": "See the agency at a glance",
+  "onboarding.step.exec_overview.body":
+    "Census, staffing, and what needs attention today — the numbers your team works from, on one screen.",
+  "onboarding.step.evidence.title": "Show your work when you're asked",
+  "onboarding.step.evidence.body":
+    "Every signature, visit, and change is kept with its date and the person behind it. When someone asks to see how care was delivered, it is already gathered.",
 
 } as const;
 
@@ -468,6 +560,10 @@ export const es: Dictionary = {
     "No hay borradores abiertos. Los borradores se guardan automáticamente y aparecen aquí.",
   "today.noteFallback": "Nota",
   "today.savedAt": "guardado a las {time}",
+  /* Acompañamiento del primer día cuando la agenda está realmente vacía (W-ONB). */
+  "today.emptyCoach.title": "Su día está libre",
+  "today.emptyCoach.body":
+    "Cuando le programen una visita, aparecerá aquí con la hora, la dirección y las tareas que la acompañan. Si esperaba una para hoy, llame a su coordinador: lo que le añada aparecerá aquí solo.",
 
   /* ── El reloj de la visita (docs/17 §7.1) ── */
   "clock.in": "Marcar entrada",
@@ -538,6 +634,10 @@ export const es: Dictionary = {
     "{count} necesita(n) su atención. Abra la visita y márquela de nuevo; se le preguntará qué pasó.",
 
   /* ── Portal familiar ── */
+  /* Lo primero que lee un familiar antes de que el portal esté vinculado (W-ONB). */
+  "family.welcome.title": "Le damos la bienvenida al portal familiar",
+  "family.welcome.body":
+    "Aquí el equipo de cuidado comparte lo que su familiar ha aceptado compartir con usted: novedades aprobadas, el calendario de visitas y los documentos, en un solo lugar. Se abre cuando la agencia vincula su cuenta; aquí no aparece nada sin consentimiento.",
   "family.sub": "El cuidado de su familiar, compartido con su consentimiento.",
   "family.notActiveTitle": "El portal familiar aún no está activo",
   "family.notActiveBody":
@@ -603,6 +703,84 @@ export const es: Dictionary = {
   "auth.mfaCodeLabel": "Código de 6 dígitos",
   "auth.mfaVerifying": "Verificando…",
   "auth.mfaVerifyCta": "Verificar y continuar",
+
+  /* ── Primer inicio: la pantalla de bienvenida (W-ONB) ──
+     Trabajo real guiado, no un recorrido: cada paso apunta a una pantalla que ya
+     existe. El tratamiento es de usted, igual que en el resto del corpus, y las
+     líneas del cuidador respetan D-030: qué se registra, cuándo, y qué hacer si
+     algo falla. Aquí no se cita ninguna norma y no hay datos de ningún cliente. */
+  "onboarding.title": "Le damos la bienvenida, {name}",
+  "onboarding.intro.owner":
+    "Desde aquí puede ver toda la agencia. Estos pasos abren las vistas que responden a las preguntas que más le hacen.",
+  "onboarding.intro.coordinator":
+    "Su escritorio reúne a las personas, los documentos y los días que vienen. Estos pasos abren las pantallas que más va a usar.",
+  "onboarding.intro.rn":
+    "Su escritorio clínico ya está listo. Estos pasos le muestran dónde están sus firmas, sus revisiones y sus casos asignados.",
+  "onboarding.intro.caregiver":
+    "Todo lo que necesita para una visita está en una sola pantalla. Empiece por los pasos de abajo: cada uno le lleva un minuto.",
+  "onboarding.intro.family":
+    "Esta es su ventana al cuidado de su familiar. Estos pasos le explican qué puede ver y a quién llamar si tiene una pregunta.",
+  "onboarding.progress": "{done} de {total} pasos completados",
+  "onboarding.ready": "Continuar a CareOS",
+  "onboarding.skip": "Omitir por ahora",
+  "onboarding.savedNote":
+    "Su progreso se guarda solo. Si cierra esta página, puede continuar donde lo dejó.",
+  "onboarding.error.title": "No se pudo abrir su página de bienvenida",
+  "onboarding.error.body":
+    "No se perdió nada y lo que ya completó está guardado. Vuelva a intentarlo, o continúe a CareOS y configure el resto más tarde.",
+
+  /* Pasos — cuidador */
+  "onboarding.step.first_look.title": "Vea su día",
+  "onboarding.step.first_look.body":
+    "Sus visitas de hoy, en orden, con la hora, el cliente y la dirección. Es la pantalla que más va a abrir.",
+  "onboarding.step.language.title": "Elija su idioma",
+  "onboarding.step.language.body":
+    "CareOS está en inglés y en español. Elija el idioma en el que prefiera leer; puede cambiarlo cuando quiera.",
+  "onboarding.step.home_screen.title": "Ponga CareOS en su teléfono",
+  "onboarding.step.home_screen.body":
+    "Añádalo a su pantalla de inicio y se abrirá como una aplicación: directo a su día, sin ninguna dirección web que recordar.",
+  "onboarding.step.home_screen.ios":
+    "En iPhone: abra CareOS en Safari, toque el botón de compartir y luego toque Añadir a pantalla de inicio.",
+  "onboarding.step.home_screen.android":
+    "En Android: abra CareOS en Chrome, toque el menú de tres puntos y luego toque Añadir a pantalla de inicio.",
+  "onboarding.step.how_visits_work.title": "Cómo se registra una visita",
+  "onboarding.step.how_visits_work.body":
+    "Usted abre la visita, marca la entrada al llegar y la finaliza al salir. Su teléfono confirma que está en la dirección registrada una vez al empezar y otra al terminar, y no entre medias. Si algo no cuadra, puede decir por qué y continuar: la visita nunca se bloquea y nada de lo que registra se pierde.",
+
+  /* Pasos — familia */
+  "onboarding.step.what_you_see.title": "Qué puede ver aquí",
+  "onboarding.step.what_you_see.body":
+    "Novedades, visitas y documentos que su familiar ha aceptado compartir con usted, y nada más. Su familiar decide qué se comparte y puede cambiarlo en cualquier momento.",
+  "onboarding.step.who_to_contact.title": "Con quién hablar",
+  "onboarding.step.who_to_contact.body":
+    "Para cualquier asunto del cuidado diario, llame a la agencia y pregunte por el coordinador de cuidado, igual que siempre. Esta página le muestra lo que se comparte; no sustituye hablar con el equipo.",
+
+  /* Pasos — coordinación y recursos humanos */
+  "onboarding.step.clients.title": "Abra su lista de clientes",
+  "onboarding.step.clients.body":
+    "Todas las personas a las que atiende la agencia, en una sola lista. Abra un cliente para ver su expediente, su programación y lo que está pendiente.",
+  "onboarding.step.intake.title": "Siga una referencia por el proceso de admisión",
+  "onboarding.step.intake.body":
+    "Las nuevas referencias empiezan aquí y avanzan paso a paso. Puede ver en qué punto está cada una y qué le falta.",
+  "onboarding.step.compliance.title": "Vea lo que está por vencer",
+  "onboarding.step.compliance.body":
+    "Credenciales, visitas y documentos con fecha, ordenados por lo que necesita atención primero, para que nada se pase por alto.",
+
+  /* Pasos — enfermería */
+  "onboarding.step.clinical_home.title": "Empiece en su escritorio clínico",
+  "onboarding.step.clinical_home.body":
+    "Registros que esperan su firma, alertas por revisar y los clientes de sus casos asignados: una sola pantalla, en el orden que importa.",
+  "onboarding.step.reviews.title": "Sus revisiones programadas",
+  "onboarding.step.reviews.body":
+    "Las visitas que le toca revisar aparecen en su escritorio con su fecha límite y siguen ahí hasta que usted firme. Su firma añade un registro nuevo: nada de lo que escribe se sobrescribe.",
+
+  /* Pasos — dirección */
+  "onboarding.step.exec_overview.title": "Vea la agencia de un vistazo",
+  "onboarding.step.exec_overview.body":
+    "El censo, el personal y lo que necesita atención hoy: las cifras con las que trabaja su equipo, en una sola pantalla.",
+  "onboarding.step.evidence.title": "Muestre su trabajo cuando se lo pidan",
+  "onboarding.step.evidence.body":
+    "Cada firma, cada visita y cada cambio se guarda con su fecha y con la persona que lo hizo. Cuando alguien pida ver cómo se prestó el cuidado, ya está reunido.",
 
 };
 

@@ -1,7 +1,7 @@
 import { AppShell } from "@/components/shell";
-import { Avatar, Badge, EmptyState, PageHeader, SectionTitle, TintTile } from "@/components/ui";
+import { Avatar, Badge, PageHeader, SectionTitle, TintTile } from "@/components/ui";
 import {
-  IconBell, IconCalendar, IconCheck, IconClipboard, IconHeart, IconShield, IconUsers,
+  IconBell, IconCalendar, IconCheck, IconClipboard, IconClock, IconHeart, IconShield, IconUsers,
 } from "@/components/icons";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getLocale, getT } from "@/lib/i18n/server";
@@ -50,17 +50,43 @@ export default async function FamilyPage() {
   const link = links?.[0];
 
   // Not linked (or a non-family user landed here): the honest preview.
+  //
+  // This is the only CareOS screen a client's family ever sees, and for most of them it
+  // arrives before there is a single row to read — so it opens with a welcome rather than
+  // an absence. Three beats, in this order: what this place is (with its current state as
+  // a quiet chip, not a paragraph), what will appear once it opens, and what stays private.
+  // Nothing here claims the portal is live, and nothing offers an action they cannot take:
+  // enabling the portal belongs to the agency and consent belongs to their family member.
   if (!link) {
     return (
       <AppShell active="/family">
         <div className="rise mx-auto max-w-xl">
           <PageHeader title={t("page.family")} sub={t("family.sub")} />
-          <EmptyState
-            icon={<IconHeart />}
-            title={t("family.notActiveTitle")}
-            body={t("family.notActiveBody")}
-          />
-          <section className="mt-6">
+
+          {/* The welcome. Same accent wash as the linked hero below, so a family member who
+              is linked later recognises the screen they already met — the portal turning on
+              should feel like the same room filling up, not a different product.
+              The state of play rides as a chip rather than a second paragraph: the welcome
+              copy already says the portal opens once the agency links the account, and
+              saying it twice on a screen this quiet reads as a system apologising. */}
+          <div
+            className="card mb-6 px-6 py-8 text-center"
+            style={{ background: "linear-gradient(180deg, var(--accent-soft) 0%, var(--panel) 140px)" }}
+          >
+            <div className="flex flex-col items-center gap-3">
+              <TintTile icon={<IconHeart />} size={56} />
+              <h2 className="title-lg text-[22px]">{t("family.welcome.title")}</h2>
+              <p
+                className="max-w-sm text-[15px] leading-relaxed"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {t("family.welcome.body")}
+              </p>
+              <Badge tone="neutral" icon={<IconClock />}>{t("family.notActiveTitle")}</Badge>
+            </div>
+          </div>
+
+          <section className="mb-6">
             <SectionTitle>{t("family.whatIncluded")}</SectionTitle>
             <div className="card stagger divide-y hairline overflow-hidden">
               {PREVIEW.map((item) => (
@@ -72,6 +98,22 @@ export default async function FamilyPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </section>
+
+          {/* The promise that matters most to a family member, made before they have any
+              data to read: consent is the gate and their family member holds it. Same card
+              as the linked view's closing note, with the neutral stand-in the dictionary
+              already keeps for the case where we cannot name anyone. */}
+          <section>
+            <div className="card flex items-start gap-4 p-5">
+              <TintTile icon={<IconShield width={20} height={20} />} size={40} />
+              <div className="min-w-0">
+                <p className="text-[15px] font-semibold tracking-[-0.01em]">{t("family.privateTitle")}</p>
+                <p className="mt-1 text-[13.5px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                  {t("family.privateBody", { name: t("family.privateFallbackName") })}
+                </p>
+              </div>
             </div>
           </section>
         </div>
