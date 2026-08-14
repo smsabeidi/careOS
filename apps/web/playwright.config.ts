@@ -87,6 +87,16 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
     {
+      /* The Front Door wave's surfaces (docs/designs/intelligent-front-door.md). Projects
+         here are an explicit allowlist of directories, so `e2e/specs/front-door` had no
+         project and every spec in it was silently undiscovered — a spec that cannot be
+         selected is not a gate. Desk work on a desktop; the field surfaces this wave adds
+         keep their own viewport in the caregiver project. */
+      name: "front-door-desktop",
+      testDir: "./e2e/specs/front-door",
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
       name: "a11y",
       testDir: "./e2e/specs/a11y",
       use: { ...devices["Desktop Chrome"] },
