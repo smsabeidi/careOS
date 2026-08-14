@@ -174,6 +174,33 @@ to the tree; the point of recording it is that the corpus and the code currently
 and under §6 conventions documentation drift is a bug. **Do not resolve it by editing this
 table** — locate the work or reclassify the rows, and log which happened.
 
+**Resolution (2026-08-14, commit `b0eab14`).** The note was right, the cause was the
+second explanation it offered, and it was resolved by locating the work rather than by
+editing the table above. What happened: the wave table was written when the surfaces were
+dispatched, not when they landed, and the build fleet that was to deliver them died three
+times — twice on subagent session limits and once on a transient classifier error —
+leaving nothing in the tree while the table already claimed six shipped rows. That is a
+documentation-drift bug of exactly the kind §6 names, and the author of the table (the
+agent running the Front Door program) caused it by recording intent as fact.
+
+All five are now present and merged, each on its own branch and each typecheck-clean at
+commit: the command bar and its NL scheduling draft lane (`src/components/command-bar/`,
+ST-232/233/234), the note coach plus the voice delta that closes the invariant-10 gap in
+`api/voice-note/route.ts` (`app/today/coach-*`, ST-235/236), PDF form import
+(`app/office/forms/import/`, ST-237), the install page (`app/install/`, ST-240a), and
+family weekly drafts (`app/office/clients/[id]/family-*`, ST-241). The attention queue
+(ST-238/239) was already present, as the note said. Every one ships behind its `front_door.*`
+flag, all still dark.
+
+Two things the note's own discipline earned, recorded because they outlived the drift:
+`e2e/specs/front-door/` was enumerated by no Playwright project, so the wave specs — the
+W8 exemplar included — were collected by nothing and could never have failed; a
+`front-door-desktop` project now enumerates them (73 tests across 18 files, up from 33).
+And running the suite properly surfaced two real defects fixed under ST-244: a
+`router.refresh()` issued inside a pending transition, which meant an accepted clock-in
+never offered "Complete visit" without a manual reload, and a fixture that aborted its
+whole arrangement the moment a spec had raised one `visit_exception`.
+
 ### §4.3 · W-ONB — first-run welcome (ST-246..ST-249) — built dark, pending PD-5 ratification
 
 Decision basis: **PD-5 (docs/00 §3) — a proposal, not a decision.** The wave is built to
