@@ -46,6 +46,17 @@ export const SYNTHESIS_MODEL = "gpt-5.6-terra";
 export const EMBEDDING_MODEL = "text-embedding-3-small";
 
 /**
+ * The speech-to-text pin (D-013, docs/16 §3.1), stated here rather than read from
+ * `ai_capability.model` — that column pins a capability's CHAT model, and a voice note
+ * resolves two models from one row. This is the same treatment EMBEDDING_MODEL already
+ * gets: the registry MODULE is the pin for models that have no column of their own, so
+ * changing one is a reviewed code change rather than an environment variable nobody
+ * remembers setting. Everything else about a transcription — kill switch, budget, tier,
+ * prompt version, ledger row — still resolves through the capability's registry row.
+ */
+export const TRANSCRIPTION_MODEL = "gpt-transcribe";
+
+/**
  * Built-in fallbacks so a missing registry row can never take a surface down.
  * Tier + requires_human mirror the seeded registry (supabase/seeds/zz_ai.sql,
  * zz_ai_governance.sql) so a capability degrades to its RATIFIED posture, not to a
@@ -107,6 +118,17 @@ const BUILT_IN: Record<
     requires_human: true,
     model: SYNTHESIS_MODEL,
     prompt_version: "visit.profile.builtin",
+  },
+  // ── Intelligent Front Door (docs/designs/intelligent-front-door.md, migration 0057) ──
+  // Mirrors app.seed_front_door_capabilities exactly: T1, no human disposer, luna pinned.
+  // No disposer is required because the coach writes nothing — it asks the author
+  // questions about their own draft, and every suggestion is advisory by construction
+  // (invariant 8 is satisfied by there being no execute path at all, not by a gate).
+  "note.quality_coach": {
+    tier: "T1",
+    requires_human: false,
+    model: DEFAULT_MODEL,
+    prompt_version: "note.coach.builtin",
   },
 };
 

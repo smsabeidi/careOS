@@ -17,10 +17,11 @@
  *   · The template is the schema. Field keys, labels, types and select options are read
  *     from form_template (key = 'visit_note') under RLS, and the strict JSON schema is
  *     built from them — the model can only emit keys the template actually has.
- *   · One governed ledger row per request. Structuring rides runCapability (invariant 10):
- *     registry model pin, kill switch, budget gate, registry-versioned prompt, and the
- *     ai_interaction row. Transcription spend is folded into that same row via
- *     extraCostUsd — the pattern askBrain already uses for retrieval embeddings.
+ *   · Two model calls, two governed ledger rows (invariant 10). Transcription rides
+ *     `transcribeAudio()` and structuring rides `runCapability()`; both resolve THIS
+ *     capability's registry row first, so the kill switch, the monthly budget and the
+ *     versioned prompt apply to the audio call as well as the text one, and each call's
+ *     spend is attributed to itself rather than folded into a neighbour's row.
  *   · PHI discipline (invariant 5). The digest this route hands the ledger carries counts
  *     and an id prefix only — never a word of what was said. Nothing is logged. The audio
  *     is never written to disk, never stored, and is dropped when the request ends.
@@ -33,14 +34,21 @@
  * Vendor note: audio and transcript go to OpenAI. Synthetic (Meadowbrook) universe only
  * until the BAA is executed and registered in docs/09 §6 (docs/16 §3.5).
  *
- * KNOWN GAP (raised, not silently accepted): transcription is a model call made here
- * rather than through lib/ai/client.ts, because that chokepoint exposes no audio helper
- * yet. Its cost lands on this capability's ledger row; a `transcribeAudio()` helper in
- * lib/ai/client.ts is the correct home and is proposed in the task result.
+ * GAP CLOSED (ST-236, was: "transcription is a model call made here rather than through
+ * lib/ai/client.ts"). The chokepoint now exposes `transcribeAudio()`, and this route uses
+ * it: there is no raw provider fetch left in this file. What that bought, concretely —
+ *   · the STT model is pinned in lib/ai/registry.ts (TRANSCRIPTION_MODEL, D-013) instead
+ *     of being a const in a route handler, so changing it is a reviewed code change;
+ *   · the capability's KILL SWITCH and monthly BUDGET now gate the audio call too. Before,
+ *     a switched-off capability still transcribed and still spent; now the audio never
+ *     leaves the building and the caregiver is told plainly to type the note;
+ *   · transcription writes its OWN ai_interaction row (one row per model call), so this
+ *     route no longer folds audio spend into the structuring row via extraCostUsd —
+ *     doing both would double-count the same minute of audio.
  */
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
-import { digest, runCapability } from "@/lib/ai/client";
+import { digest, runCapability, transcribeAudio } from "@/lib/ai/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -50,11 +58,14 @@ const CAPABILITY = "note.voice_draft";
  *  Module-local on purpose: a route module may only export handlers, config, and types —
  *  a stray value export fails Next's generated route validator at build time. */
 const VISIT_NOTE_TEMPLATE_KEY = "visit_note";
-const TRANSCRIBE_MODEL = "gpt-transcribe";
-const TRANSCRIBE_USD_PER_MIN = 0.0045; // docs/16 §5
 const MAX_SECONDS = 90;
 const MAX_AUDIO_BYTES = 12 * 1024 * 1024;
-const TRANSCRIBE_TIMEOUT_MS = 60_000;
+/** Domain vocabulary only — generic care words, never a client name or any identifier
+ *  (docs/16 §3.1: the biasing hint stays inside the capability's PHI allowlist). */
+const TRANSCRIBE_VOCABULARY =
+  "Home care visit note. Vocabulary: caregiver, care plan, transfer, ambulation, walker, " +
+  "incontinence care, range of motion, medication reminder, blood pressure, blood sugar, " +
+  "meal prep, light housekeeping, respite.";
 /** Maryland RSA — visit dates are agency-local, not UTC, or a 9pm visit files a day late. */
 const AGENCY_TZ = "America/New_York";
 
@@ -289,57 +300,45 @@ export async function POST(req: Request): Promise<NextResponse> {
   const clockOut =
     events.filter((e) => e.event_type === "clock_out").at(-1)?.occurred_at ?? null;
 
-  // ── Transcription (OpenAI audio) ────────────────────────────────────────────
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
+  // ── Transcription, through the governed chokepoint (invariant 10) ───────────
+  // The blob is forwarded straight through — never buffered to disk, never retained.
+  const ext = (audio.type || "audio/webm").includes("mp4") ? "mp4" : "webm";
+  const stt = await transcribeAudio(supabase, CAPABILITY, {
+    audio,
+    filename: `visit-note.${ext}`,
+    seconds,
+    vocabulary: TRANSCRIBE_VOCABULARY,
+    // PHI-safe: an id prefix and a duration. Nothing about what was said (invariant 5).
+    inputDigest: digest(`voice audio · visit ${visitId.slice(0, 8)} · ${seconds}s`, 200),
+  });
+
+  // Each outcome gets its own sentence, because "unavailable" and "switched off" are
+  // different facts and a caregiver deciding what to do next deserves the real one.
+  if (stt.status === "blocked") {
     return problem(
       503,
       "CAREOS_UNAVAILABLE",
-      "Voice notes are unavailable right now. Your recording wasn't kept — you can type this note instead."
+      stt.reason === "budget"
+        ? "Voice notes are paused for this month's AI budget. Nothing was saved and the recording wasn't kept — you can type this note instead."
+        : "Voice notes are switched off for your agency. Nothing was saved and the recording wasn't kept — you can type this note instead."
     );
   }
-
-  let transcript = "";
-  try {
-    // The blob is forwarded straight through — it is never buffered to disk or retained.
-    const ext = (audio.type || "audio/webm").includes("mp4") ? "mp4" : "webm";
-    const payload = new FormData();
-    payload.append("file", audio, `visit-note.${ext}`);
-    payload.append("model", TRANSCRIBE_MODEL);
-    payload.append("response_format", "json");
-    // Domain vocabulary only — generic care words, never a client name or any identifier
-    // (docs/16 §3.1: the biasing hint stays inside the capability's PHI allowlist).
-    payload.append(
-      "prompt",
-      "Home care visit note. Vocabulary: caregiver, care plan, transfer, ambulation, walker, incontinence care, " +
-        "range of motion, medication reminder, blood pressure, blood sugar, meal prep, light housekeeping, respite."
-    );
-
-    const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}` },
-      body: payload,
-      signal: AbortSignal.timeout(TRANSCRIBE_TIMEOUT_MS),
-    });
-    if (!res.ok) throw new Error(`transcribe ${res.status}`);
-    const data = (await res.json()) as { text?: unknown };
-    transcript = typeof data.text === "string" ? data.text.trim() : "";
-  } catch {
-    // 429 / timeout / 5xx. Honest, non-blocking, and the audio dies with this request.
+  if (stt.status === "error") {
+    // 429 / timeout / 5xx / no provider configured. Honest, and never an error wall.
     return problem(
       503,
       "CAREOS_UNAVAILABLE",
       "We couldn't turn that recording into words just now. Nothing was saved and the audio wasn't kept — you can type this note instead."
     );
   }
-
-  if (!transcript) {
+  if (stt.status === "abstained" || !stt.text) {
     return problem(
       422,
       "CAREOS_EMPTY_TRANSCRIPT",
       "We didn't catch any speech in that recording. Nothing was saved — try again somewhere quieter, or type the note."
     );
   }
+  const transcript = stt.text;
 
   // ── Structuring through the governed chokepoint (invariant 10) ──────────────
   const modelFields = fields.filter((f) => f.type !== "date");
@@ -387,8 +386,8 @@ export async function POST(req: Request): Promise<NextResponse> {
     // Empty on purpose: the degrade below is assembled here from the transcript, so the
     // ledger's output_digest never carries note content on a failure path.
     fallback: () => ({ text: "", abstained: true }),
-    // Transcription spend folded into this capability's ledger row (askBrain's precedent).
-    extraCostUsd: Number(((seconds / 60) * TRANSCRIBE_USD_PER_MIN).toFixed(6)),
+    // No extraCostUsd: transcription carries its own ai_interaction row now (one row per
+    // model call), so folding its spend in here would bill the same minute twice.
   });
 
   // ── Assemble the draft ──────────────────────────────────────────────────────

@@ -4,6 +4,9 @@
  * Responsibilities enforced here so no caller can skip them:
  *   - Registry-governed calls: every capability resolves model / kill switch / tier /
  *     budget / active prompt version through lib/ai/registry.ts before any request.
+ *     THREE call shapes ride this rail and there is no fourth: chat completions
+ *     (runCapability), embeddings (retrieval, below) and speech-to-text
+ *     (transcribeAudio). A raw provider fetch anywhere else is an invariant-10 defect.
  *   - Retrieval runs AS THE USER (invariant 9): corpus + live-data tools read through
  *     the caller's RLS-scoped Supabase client; there is no privileged retrieval path.
  *   - PHI-minimizer (invariant 5): the ai_interaction ledger stores PHI-safe digests,
@@ -22,6 +25,7 @@ import {
   checkBudget,
   EMBEDDING_MODEL,
   DEFAULT_MODEL,
+  TRANSCRIPTION_MODEL,
   type CapabilityEntry,
 } from "./registry";
 import { BRAIN_TOOLS, makeBrainToolExecutor, type ChatToolDef } from "./tools";
@@ -393,6 +397,189 @@ export async function runCapability(
       provider: "mock",
       model: `${entry.model} (fallback)`,
       toolCalls,
+      interactionId: id,
+      reason,
+    };
+  }
+}
+
+// ── transcribeAudio — speech-to-text on the same governed rail ───────────────
+/**
+ * The audio half of invariant 10 (ST-236, Front Door W3).
+ *
+ * Until this existed, /api/voice-note reached OpenAI's audio endpoint with a raw fetch
+ * and a hardcoded model, because the chokepoint had no audio door — the route's own
+ * header named that as a KNOWN GAP rather than pretending it wasn't one. This is the
+ * door. A transcription now resolves its capability's registry row exactly as a chat
+ * completion does, so the kill switch, the monthly budget and the tier all apply to the
+ * FIRST model call in the chain rather than only to the second, and the spend lands on
+ * its own `ai_interaction` row instead of being folded into someone else's.
+ *
+ * Two deliberate choices:
+ *   · The model is TRANSCRIPTION_MODEL (registry.ts, D-013), not `entry.model`. A voice
+ *     note resolves two models from one registry row and `ai_capability.model` pins the
+ *     chat one; the STT pin lives beside EMBEDDING_MODEL for the same reason.
+ *   · The kill switch stops transcription, not just structuring. A capability switched
+ *     off must not spend a cent or send a second of audio anywhere; the caller renders
+ *     the honest "you can type this note instead" path, which never depended on AI.
+ *
+ * PHI discipline (invariant 5): the audio Blob is forwarded straight to the provider and
+ * never buffered to disk, never stored, never logged. The ledger row carries the caller's
+ * PHI-safe digest and a word COUNT — never a word of what was said.
+ */
+
+const TRANSCRIBE_TIMEOUT_MS = 60_000;
+/** docs/16 §5 — audio price per minute of recording, in USD. */
+const TRANSCRIBE_USD_PER_MINUTE = 0.0045;
+
+export type TranscribeOptions = {
+  /** Forwarded as-is. Never written to disk, never retained past the request. */
+  audio: Blob;
+  /** Filename the provider sees; its extension is the container hint. No PHI in it. */
+  filename: string;
+  /** Recording length in seconds — used for COST only, never as a content signal. */
+  seconds: number;
+  /** Domain-vocabulary bias. Must stay inside the capability's declared allowlist. */
+  vocabulary?: string;
+  /** PHI-safe digest recorded as ai_interaction.input_digest. */
+  inputDigest: string;
+};
+
+export type TranscribeResult = {
+  /** `abstained` = the provider heard no speech. Never an error; the caller says so. */
+  status: "ok" | "abstained" | "blocked" | "error";
+  /** The spoken words. "" on every non-ok path — a failure never invents speech. */
+  text: string;
+  provider: "openai" | "mock";
+  model: string;
+  /** What this transcription cost, already on its own ledger row. Never double-count it. */
+  costUsd: number;
+  interactionId: string | null;
+  /** 'disabled' | 'budget' | 'not configured' | 'openai 429' | … — null on success. */
+  reason: string | null;
+};
+
+export async function transcribeAudio(
+  supabase: SupabaseClient,
+  key: string,
+  opts: TranscribeOptions
+): Promise<TranscribeResult> {
+  const t0 = Date.now();
+  const [entry, ctx] = await Promise.all([getCapability(supabase, key), userContext(supabase)]);
+  const seconds = Math.max(0, opts.seconds);
+  const costUsd = Number(((seconds / 60) * TRANSCRIBE_USD_PER_MINUTE).toFixed(6));
+
+  const base = (row: Partial<LedgerRow>): LedgerRow => ({
+    capability_key: key,
+    provider: "openai",
+    model: TRANSCRIPTION_MODEL,
+    prompt_version: entry.prompt_version,
+    tier: entry.tier,
+    status: "ok",
+    tokens_in: 0,
+    tokens_out: 0,
+    cost_usd: 0,
+    latency_ms: Date.now() - t0,
+    input_digest: opts.inputDigest,
+    output_digest: "",
+    ...row,
+  });
+
+  const refuse = async (
+    reason: string,
+    outputDigest: string,
+    status: "blocked" | "error"
+  ): Promise<TranscribeResult> => {
+    const id = await logInteraction(supabase, ctx, base({ status, output_digest: outputDigest }));
+    return {
+      status,
+      text: "",
+      provider: "mock",
+      model: TRANSCRIPTION_MODEL,
+      costUsd: 0,
+      interactionId: id,
+      reason,
+    };
+  };
+
+  // Kill switch — off means no audio leaves the building.
+  if (!entry.enabled) return refuse("disabled", "capability disabled", "blocked");
+
+  // Soft budget gate, the same one runCapability applies (docs/16 §6).
+  if (ctx && entry.monthly_budget_usd !== null) {
+    const budget = await checkBudget(supabase, ctx.tenantId, key, entry.monthly_budget_usd);
+    if (!budget.allowed) {
+      return refuse(
+        "budget",
+        `budget: $${budget.spent.toFixed(2)} of $${entry.monthly_budget_usd.toFixed(2)} this month`,
+        "blocked"
+      );
+    }
+  }
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  // No key: there is no deterministic mock for speech, so this is an honest refusal
+  // rather than a fabricated transcript. The caller falls back to the typed note.
+  if (!apiKey) return refuse("not configured", "no transcription provider configured", "error");
+
+  try {
+    const payload = new FormData();
+    payload.append("file", opts.audio, opts.filename);
+    payload.append("model", TRANSCRIPTION_MODEL);
+    payload.append("response_format", "json");
+    if (opts.vocabulary) payload.append("prompt", opts.vocabulary);
+
+    const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: payload,
+      signal: AbortSignal.timeout(TRANSCRIBE_TIMEOUT_MS),
+    });
+    if (!res.ok) throw new Error(`openai ${res.status}`);
+    const data = (await res.json()) as { text?: unknown };
+    const text = typeof data.text === "string" ? data.text.trim() : "";
+    const words = text.split(/\s+/).filter(Boolean).length;
+    const status: "ok" | "abstained" = words > 0 ? "ok" : "abstained";
+
+    const id = await logInteraction(
+      supabase,
+      ctx,
+      base({
+        status,
+        cost_usd: costUsd,
+        latency_ms: Date.now() - t0,
+        // Counts only. A transcript is the note; the ledger is PHI-safe (invariant 5).
+        output_digest: `${words} word${words === 1 ? "" : "s"} transcribed`,
+      })
+    );
+    return {
+      status,
+      text: status === "ok" ? text : "",
+      provider: "openai",
+      model: TRANSCRIPTION_MODEL,
+      costUsd,
+      interactionId: id,
+      reason: status === "ok" ? null : "no speech",
+    };
+  } catch (e) {
+    // 429 / timeout / 5xx. Cost is recorded as zero rather than guessed: a call that
+    // never returned a transcript is an attempt in the ledger, not an imagined charge.
+    const reason = e instanceof Error ? digest(e.message, 80) : "openai error";
+    const id = await logInteraction(
+      supabase,
+      ctx,
+      base({
+        status: "error",
+        latency_ms: Date.now() - t0,
+        output_digest: digest(`${reason}; no transcript produced`, 200),
+      })
+    );
+    return {
+      status: "error",
+      text: "",
+      provider: "mock",
+      model: TRANSCRIPTION_MODEL,
+      costUsd: 0,
       interactionId: id,
       reason,
     };
