@@ -29,7 +29,22 @@ header). Until set, the workflow prints a loud **UNARMED** warning every 30 minu
 proves nothing; it never fakes green. Set via the GitHub UI → Settings → Secrets, or an
 authenticated `gh secret set`.
 
-## 4 · One CI secret — arms the eval gate
+## 4 · OpenAI billing — the eval gate is armed but the account has no quota
+
+**Status as of 2026-08-14: the secret is set and the gate runs, but every call comes back
+`HTTP 429 insufficient_quota` — "You exceeded your current quota, please check your plan
+and billing details."** Nothing regressed and nothing was evaluated. Add credit to the
+OpenAI account and the 120 cases start gating on the next push; no code change is needed.
+
+CI is green meanwhile, deliberately and visibly: a provider that refuses service is
+classified the same as having no key at all (loud `Eval gate unarmed (provider refused)`
+warning), because a build that stays red on every push for an unpaid balance is how a team
+learns to ignore red. A genuine prompt regression still fails the build.
+
+**Rotate the key you pasted into chat before adding billing to it** — a key in a transcript
+should be treated as public.
+
+## 4b · One CI secret — arms the eval gate
 
 `OPENAI_API_KEY` as a GitHub Actions secret. With it, any prompt change that regresses
 its case set (`scripts/evals/`, 120 cases) fails the merge; without it the stage reports
