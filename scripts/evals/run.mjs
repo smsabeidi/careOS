@@ -36,6 +36,18 @@ function annotate(level, title, message) {
   console.log(`::${level} title=${title}::${one}`);
 }
 
+// ST-244: provider ACCESS failures are a different animal from provider errors. A 401,
+// 403 or 429/insufficient_quota means the account cannot call the model at all — which is
+// the same situation as having no key, and the code under test cannot influence it. The
+// first armed run of this gate went red on `insufficient_quota` (an unpaid balance), and a
+// gate that stays red on every push for a billing state no contributor can fix is how a
+// team learns to scroll past red. So this class reports UNARMED and does not fail the
+// build; a genuine prompt regression, a missing registry row and a missing threshold all
+// still fail. The distinction is what is being proven, not how loud the message is.
+function isProviderAccessError(message) {
+  return /HTTP (401|403|429)\b/.test(message) || /insufficient_quota|billing|exceeded your current quota/i.test(message);
+}
+
 function unarmed(reason) {
   const line = `UNARMED — ${reason}. This run proved nothing about any prompt.`;
   console.log(line);
@@ -169,7 +181,7 @@ for (const cap of targets) {
     // OWN vocabulary (D-013), which is not guaranteed to be a provider-side model name.
     // CAREOS_EVALS_MODEL overrides the pin for evaluation only — it never touches the
     // registry, so what SHIPS stays exactly what the registry says.
-    results.push({ cap, status: CAP_STATUS.UNEVALUATED,
+    results.push({ cap, status: CAP_STATUS.UNEVALUATED, access: isProviderAccessError(firstError ?? ""),
       why: `all ${files.length} call(s) failed before any assertion ran, using model ` +
            `'${model}'. First error: ${firstError}. If the provider does not serve that ` +
            `model id, set CAREOS_EVALS_MODEL to one it does.` });
@@ -199,6 +211,17 @@ if (regressed.length) {
   annotate("error", "Prompt regression", summary);
   process.exit(1);
 }
+// Every capability blocked purely by provider ACCESS ⇒ the same standing as no key at all.
+if (unevaluated.length && unevaluated.every((r) => r.access)) {
+  const line =
+    "PROVIDER UNAVAILABLE — every capability was refused by the provider before a single " +
+    "assertion ran, so nothing was evaluated and nothing regressed. This is an account " +
+    "problem, not a code one: " + (unevaluated[0].why.split("First error:")[1] ?? "").trim();
+  console.error(`\n${line}`);
+  annotate("warning", "Eval gate unarmed (provider refused)", line);
+  process.exit(0);
+}
+
 if (unevaluated.length) {
   // Proving nothing must never read as green — the same rule the deadman workflow follows.
   // In CI (REQUIRED) that is fatal; locally it is a loud notice so unrelated work is not
