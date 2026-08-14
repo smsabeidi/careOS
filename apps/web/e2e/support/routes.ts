@@ -29,21 +29,20 @@ export type Surface = {
 };
 
 export const NEW_SURFACES: Surface[] = [
-  {
-    path: "/welcome",
-    /* The h1 is `onboarding.title`, which interpolates the reader's own first name, so the
-     * anchor is the stable half of it. `getByRole` matches an accessible name by substring,
-     * which is what makes that work — do not tighten it to an exact match.
-     *
-     * LANDING DEPENDS ON A FLAG. /welcome redirects to `/` unless `onboarding.welcome` is
-     * enabled for the tenant, and 0058 seeds it disabled (dark until PD-5). The sweep can
-     * only reach this surface once the E2E tenant has the flag on; until then a failure
-     * here is the flag, not the screen. */
-    heading: "Welcome",
-    persona: "caregiver",
-    permission: null,
-    note: "First-run welcome — the first screen a new person sees, ahead of any role home.",
-  },
+  /* ST-244 — /welcome is TEMPORARILY OUT OF THIS SWEEP, and the reason is a defect in how
+   * it arrived rather than anything about the screen. The W-ONB commit that added this
+   * entry carried `welcome/actions.ts` and this route but NOT `welcome/page.tsx`: the
+   * surface was still being written in a concurrent session when the commit was staged,
+   * so the tree gained a sweep entry pointing at a route that does not render. A route
+   * list that names a page the tree does not contain produces a guaranteed red that says
+   * "accessibility violation" when it means "no page", which is exactly the kind of
+   * dishonest signal this harness exists to avoid (and worse than the flag caveat the
+   * original comment anticipated).
+   *
+   * It returns the moment the surface itself is committed — restore the entry below,
+   * unchanged, in the same commit that adds `welcome/page.tsx`. Note that the flag caveat
+   * still applies when it does: 0058 seeds `onboarding.welcome` dark until PD-5, so the
+   * sweep reaches the screen only once the E2E tenant has the flag on. */
   {
     path: "/today",
     heading: "Today",
