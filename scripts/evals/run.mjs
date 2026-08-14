@@ -21,6 +21,9 @@ const CASES = join(ROOT, "cases");
 const REQUIRED = process.env.CAREOS_EVALS_REQUIRED === "1";
 const DB_CONTAINER = process.env.CAREOS_EVALS_DB_CONTAINER ?? "supabase_db_careOS";
 const only = process.argv[2] ?? null;
+// Evaluation-only model override. The registry pin is what SHIPS; this exists because the
+// pin is CareOS vocabulary and the evaluating provider may not serve that exact id.
+const MODEL_OVERRIDE = process.env.CAREOS_EVALS_MODEL || null;
 
 function unarmed(reason) {
   console.log(`UNARMED — ${reason}. This run proved nothing about any prompt.`);
@@ -92,28 +95,98 @@ const capDirs = existsSync(CASES)
 const targets = only ? capDirs.filter((c) => c === only) : capDirs;
 if (targets.length === 0) unarmed(only ? `no case directory for ${only}` : "no case sets exist yet");
 
-let gateFailed = false;
+// ── The run ───────────────────────────────────────────────────────────────────
+// ST-244: the first CI run of this gate went red and the message could not tell anybody
+// WHY, because the loop below used to fold three different outcomes into one counter.
+// A case can (a) fail its assertions — the prompt regressed, which is the only thing this
+// gate exists to catch; (b) never reach the model at all — an unknown capability, a model
+// the provider rejects, a network refusal; or (c) pass. Counting (b) as (a) produces the
+// exact lie this repo refuses everywhere else: a red that says "the prompt regressed" when
+// the truth is "nothing was evaluated". They are now separate, and the summary says which.
+const CAP_STATUS = { REGRESSED: "regressed", UNEVALUATED: "unevaluated", OK: "ok" };
+const results = [];
+
 for (const cap of targets) {
   const entry = registry.get(cap);
   const threshold = thresholds[cap]?.pass_rate;
-  if (!entry) { console.error(`✗ ${cap}: not in the registry — a case set for an unregistered capability`); gateFailed = true; continue; }
-  if (threshold === undefined) { console.error(`✗ ${cap}: no threshold in thresholds.json — unlisted capabilities fail by design`); gateFailed = true; continue; }
 
+  if (!entry) {
+    // An empty registry is the shape a FRESH database has: 0057 seeds capabilities per
+    // tenant (`select app.seed_front_door_capabilities(t.id) from public.tenant t`), and a
+    // database with migrations but no seeds has no tenants, so it has no capabilities
+    // either. That is a harness-setup fact, never a prompt regression — hence UNEVALUATED
+    // and a message that names the fix rather than blaming the prompt.
+    results.push({ cap, status: CAP_STATUS.UNEVALUATED,
+      why: "no registry row — the database has migrations but no seeded tenant, so " +
+           "0057 registered nothing. Seed it (supabase db reset) before gating." });
+    continue;
+  }
+  if (threshold === undefined) {
+    results.push({ cap, status: CAP_STATUS.UNEVALUATED,
+      why: "no threshold in thresholds.json — add one before this capability can gate" });
+    continue;
+  }
+
+  const model = MODEL_OVERRIDE ?? entry.model;
   const files = readdirSync(join(CASES, cap)).filter((f) => f.endsWith(".json")).sort();
-  let passed = 0;
+  let passed = 0, assertionFailures = 0, transportErrors = 0, firstError = null;
+
   for (const f of files) {
     const c = JSON.parse(readFileSync(join(CASES, cap, f), "utf8"));
-    let failures;
+    let output;
     try {
-      const output = await callModel(entry.model, entry.prompt, c.input);
-      failures = judge(output, c.expect ?? {});
-    } catch (e) { failures = [String(e.message ?? e)]; }
+      output = await callModel(model, entry.prompt, c.input);
+    } catch (e) {
+      transportErrors += 1;
+      firstError ??= String(e.message ?? e);
+      continue;                       // never reached the model — not the prompt's fault
+    }
+    const failures = judge(output, c.expect ?? {});
     if (failures.length === 0) passed += 1;
-    else console.log(`  ✗ ${cap}/${c.name ?? f}\n      ${failures.join("\n      ")}`);
+    else {
+      assertionFailures += 1;
+      console.log(`  ✗ ${cap}/${c.name ?? f}\n      ${failures.join("\n      ")}`);
+    }
   }
-  const rate = files.length ? passed / files.length : 0;
+
+  const evaluated = passed + assertionFailures;
+  if (evaluated === 0) {
+    // Every call failed before the prompt was ever exercised. The overwhelmingly common
+    // cause is a model id the provider does not serve: `ai_capability.model` pins CareOS's
+    // OWN vocabulary (D-013), which is not guaranteed to be a provider-side model name.
+    // CAREOS_EVALS_MODEL overrides the pin for evaluation only — it never touches the
+    // registry, so what SHIPS stays exactly what the registry says.
+    results.push({ cap, status: CAP_STATUS.UNEVALUATED,
+      why: `all ${files.length} call(s) failed before any assertion ran, using model ` +
+           `'${model}'. First error: ${firstError}. If the provider does not serve that ` +
+           `model id, set CAREOS_EVALS_MODEL to one it does.` });
+    continue;
+  }
+
+  const rate = passed / evaluated;
   const ok = rate >= threshold;
-  console.log(`${ok ? "✓" : "✗"} ${cap}: ${passed}/${files.length} passed (${(rate * 100).toFixed(1)}% vs ${threshold * 100}% required, model ${entry.model})`);
-  if (!ok) gateFailed = true;
+  const note = transportErrors ? ` — ${transportErrors} case(s) never reached the model` : "";
+  console.log(`${ok ? "✓" : "✗"} ${cap}: ${passed}/${evaluated} evaluated passed ` +
+    `(${(rate * 100).toFixed(1)}% vs ${threshold * 100}% required, model ${model})${note}`);
+  results.push({ cap, status: ok ? CAP_STATUS.OK : CAP_STATUS.REGRESSED });
 }
-process.exit(gateFailed ? 1 : 0);
+
+const regressed = results.filter((r) => r.status === CAP_STATUS.REGRESSED);
+const unevaluated = results.filter((r) => r.status === CAP_STATUS.UNEVALUATED);
+
+for (const r of unevaluated) console.error(`! ${r.cap}: NOT EVALUATED — ${r.why}`);
+
+if (regressed.length) {
+  console.error(`\nGATE FAILED: ${regressed.length} capability(ies) regressed against their case set.`);
+  process.exit(1);
+}
+if (unevaluated.length) {
+  // Proving nothing must never read as green — the same rule the deadman workflow follows.
+  // In CI (REQUIRED) that is fatal; locally it is a loud notice so unrelated work is not
+  // blocked by a provider or seeding problem.
+  console.error(`\n${unevaluated.length} capability(ies) could not be evaluated. ` +
+    `No prompt regressed — but nothing was proven either.`);
+  process.exit(REQUIRED ? 1 : 0);
+}
+console.log(`\nGATE PASSED: ${results.length} capability(ies) held their case sets.`);
+process.exit(0);

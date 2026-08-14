@@ -59,10 +59,21 @@ jobs:
         with: { node-version: 20 }
       - name: Start local database (registry prompts are rows, not literals)
         run: supabase db start
+      # ST-244: migrations alone are NOT enough here. 0057 registers capabilities per
+      # tenant — `select app.seed_front_door_capabilities(t.id) from public.tenant t` — so
+      # a database with the chain applied and no seeded tenant registers nothing at all,
+      # and the gate then reports every capability as unregistered. Seeding is what gives
+      # this job something to evaluate.
+      - name: Seed it (the capability registry is per-tenant)
+        run: supabase db reset
       - name: Run the eval gate
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           CAREOS_EVALS_DB_CONTAINER: supabase_db_careOS
+          # Optional repo variable. `ai_capability.model` pins CareOS's own vocabulary
+          # (D-013); if the evaluating provider does not serve that exact id, set this to
+          # one it does. It changes what the GATE calls, never what SHIPS.
+          CAREOS_EVALS_MODEL: ${{ vars.CAREOS_EVALS_MODEL }}
         # REQUIRED=1 iff the secret exists: with it, regressions fail the merge; without
         # it the runner prints UNARMED and exits 0 — a fork or a repo without the secret
         # must not hard-fail every PR, but it must also never print "passed".
