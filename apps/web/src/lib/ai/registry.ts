@@ -31,6 +31,14 @@ export type CapabilityEntry = {
   system_prompt: string | null;
   /** Version label recorded in ai_interaction.prompt_version. */
   prompt_version: string;
+  /**
+   * Kind-specific capability contract (migration 0055). For an action-drafting
+   * capability this carries the ACTION ALLOWLIST — `{"actions": {"<rpc>": {...}}}` — and
+   * it lives in the database on purpose: the allowlist must be governed in the same row
+   * as the tier, kill switch and budget, or the registry stops being the single unit of
+   * governance. null when the column is absent (pre-0055) or the row sets none.
+   */
+  config: Record<string, unknown> | null;
 };
 
 export type BudgetCheck = {
@@ -120,15 +128,44 @@ const BUILT_IN: Record<
     prompt_version: "visit.profile.builtin",
   },
   // ── Intelligent Front Door (docs/designs/intelligent-front-door.md, migration 0057) ──
-  // Mirrors app.seed_front_door_capabilities exactly: T1, no human disposer, luna pinned.
-  // No disposer is required because the coach writes nothing — it asks the author
-  // questions about their own draft, and every suggestion is advisory by construction
-  // (invariant 8 is satisfied by there being no execute path at all, not by a gate).
+  // Same rule as 0052: tier, human-disposer and model pin mirror
+  // app.seed_front_door_capabilities exactly, so an unprovisioned tenant degrades to the
+  // RATIFIED posture rather than to a guess. Note what a built-in CANNOT carry: the
+  // action allowlist. `config` is read from the row or it is absent, and an absent
+  // allowlist means nothing is draftable (see actionAllowlist below) — a capability may
+  // never acquire the right to act by falling back to code.
+  // note.quality_coach carries no disposer because it writes nothing: it asks the author
+  // questions about their own draft, so invariant 8 is satisfied by there being no
+  // execute path at all rather than by a gate in front of one.
   "note.quality_coach": {
     tier: "T1",
     requires_human: false,
     model: DEFAULT_MODEL,
     prompt_version: "note.coach.builtin",
+  },
+  "command.schedule_draft": {
+    tier: "T2",
+    requires_human: true,
+    model: DEFAULT_MODEL,
+    prompt_version: "command.schedule.builtin",
+  },
+  "schedule.preflight": {
+    tier: "T1",
+    requires_human: false,
+    model: DEFAULT_MODEL,
+    prompt_version: "schedule.preflight.builtin",
+  },
+  "form.import_pdf": {
+    tier: "T2",
+    requires_human: true,
+    model: SYNTHESIS_MODEL,
+    prompt_version: "form.import.builtin",
+  },
+  "family.weekly_draft": {
+    tier: "T2",
+    requires_human: true,
+    model: SYNTHESIS_MODEL,
+    prompt_version: "family.weekly.builtin",
   },
 };
 
@@ -142,6 +179,29 @@ function asNumber(v: unknown): number | null {
 
 function isTier(v: unknown): v is CapabilityTier {
   return v === "T0" || v === "T1" || v === "T2" || v === "T3";
+}
+
+/** A plain JSON object, or null. Arrays and scalars are not a capability contract. */
+function asConfigObject(v: unknown): Record<string, unknown> | null {
+  return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+}
+
+/**
+ * The RPCs an action-drafting capability is allowed to draft, read from its registry row
+ * (migration 0055 `ai_capability.config`). This is the shape validation 0055's header
+ * defers to the loader: `{"actions": {"<rpc key>": {...}}}`.
+ *
+ * Fail-closed by construction. A missing column, a missing row, a null config, a config
+ * with no `actions` object, or an `actions` object with no keys all return an EMPTY list,
+ * and an empty allowlist means nothing may be drafted. There is deliberately no built-in
+ * fallback: an allowlist that application code could supply would be an allowlist the
+ * database does not govern, which is the tier-laundering failure this column exists to
+ * prevent. The model never widens it either — it only ever names an action, and the
+ * caller checks that name against this list.
+ */
+export function actionAllowlist(entry: CapabilityEntry): string[] {
+  const actions = asConfigObject(entry.config?.actions);
+  return actions ? Object.keys(actions) : [];
 }
 
 /**
@@ -162,12 +222,14 @@ export async function getCapability(
     monthly_budget_usd: null,
     system_prompt: null,
     prompt_version: builtIn?.prompt_version ?? `${key}.builtin`,
+    config: null,
   };
 
-  // Capability row (CFG table, no PHI). Explicit columns, never select(*). The 0015
-  // columns (enabled, model, monthly_budget_usd) are requested first; a pre-0015
-  // environment errors on those names, so we retry with the 0014 column set rather
-  // than losing the ratified tier/requires_human posture entirely.
+  // Capability row (CFG table, no PHI). Explicit columns, never select(*). Column sets
+  // are tried newest-first and each rung is a whole migration's worth of columns: 0055
+  // added `config`, 0015 added enabled/model/monthly_budget_usd, 0014 is the floor. An
+  // environment that has not run one of them errors on the unknown NAME, so a narrower
+  // retry keeps the ratified tier/requires_human posture instead of losing it entirely.
   const applyCapabilityRow = (row: Record<string, unknown>) => {
     // Either flag off means off: `enabled` is the 0015 kill switch, `active` the 0014
     // lifecycle flag. A column absent from the row is undefined and changes nothing.
@@ -177,23 +239,31 @@ export async function getCapability(
     if (typeof row.model === "string" && row.model) entry.model = row.model;
     const budget = asNumber(row.monthly_budget_usd);
     if (budget !== null && budget > 0) entry.monthly_budget_usd = budget;
+    if ("config" in row) entry.config = asConfigObject(row.config);
   };
 
+  const COLUMN_SETS = [
+    "tier, requires_human, active, enabled, model, monthly_budget_usd, config",
+    "tier, requires_human, active, enabled, model, monthly_budget_usd",
+    "tier, requires_human, active",
+  ];
+
   try {
-    const { data, error } = await supabase
-      .from("ai_capability")
-      .select("tier, requires_human, active, enabled, model, monthly_budget_usd")
-      .eq("key", key)
-      .maybeSingle();
-    if (data) {
-      applyCapabilityRow(data as Record<string, unknown>);
-    } else if (error) {
-      const { data: legacy } = await supabase
+    for (const columns of COLUMN_SETS) {
+      const { data, error } = await supabase
         .from("ai_capability")
-        .select("tier, requires_human, active")
+        .select(columns)
         .eq("key", key)
         .maybeSingle();
-      if (legacy) applyCapabilityRow(legacy as Record<string, unknown>);
+      if (data) {
+        // Through `unknown`: the column list is a variable, so PostgREST's generated
+        // types cannot narrow the row shape and infer a parse-error placeholder instead.
+        applyCapabilityRow(data as unknown as Record<string, unknown>);
+        break;
+      }
+      // No row and no error means the capability is simply not registered for this
+      // tenant — retrying with fewer columns would ask the same question again.
+      if (!error) break;
     }
   } catch {
     // Table absent / transient failure → built-in defaults.

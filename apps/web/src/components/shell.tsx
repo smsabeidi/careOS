@@ -8,6 +8,7 @@ import { getT } from "@/lib/i18n/server";
 import type { TranslationKey } from "@/lib/i18n/dictionaries";
 import { BrandLogo } from "./logo";
 import { ChromeControls } from "./chrome-controls";
+import { CommandBarMount } from "./command-bar";
 import { StatusChip, Avatar } from "./ui";
 import {
   IconUsers, IconClipboard, IconActivity, IconHome, IconHeart, IconLogOut,
@@ -283,6 +284,10 @@ export async function AppShell({
           })}
         </nav>
       </div>
+
+      {/* The command bar (ST-232). Its own tree, its own server-side flag: this renders
+          nothing at all when `front_door.command_bar` is off. */}
+      <CommandBarMount />
     </div>
   );
 }
