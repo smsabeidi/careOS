@@ -25,8 +25,21 @@ const only = process.argv[2] ?? null;
 // pin is CareOS vocabulary and the evaluating provider may not serve that exact id.
 const MODEL_OVERRIDE = process.env.CAREOS_EVALS_MODEL || null;
 
+// ST-244: a gate whose failure reason is only in the log is a gate only an admin can
+// diagnose — GitHub returns 403 on job logs to everyone else, so the first two red runs
+// of this gate showed nothing but "Process completed with exit code 1". Annotations are
+// readable by anyone who can see the run, so every outcome that matters is emitted as one.
+// Newlines must be encoded; a raw \n truncates an annotation at the first line.
+function annotate(level, title, message) {
+  if (process.env.GITHUB_ACTIONS !== "true") return;
+  const one = String(message).replace(/\r?\n/g, "%0A").replace(/::/g, ": ");
+  console.log(`::${level} title=${title}::${one}`);
+}
+
 function unarmed(reason) {
-  console.log(`UNARMED — ${reason}. This run proved nothing about any prompt.`);
+  const line = `UNARMED — ${reason}. This run proved nothing about any prompt.`;
+  console.log(line);
+  annotate(REQUIRED ? "error" : "warning", "Eval gate unarmed", line);
   process.exit(REQUIRED ? 1 : 0);
 }
 
@@ -168,16 +181,22 @@ for (const cap of targets) {
   const note = transportErrors ? ` — ${transportErrors} case(s) never reached the model` : "";
   console.log(`${ok ? "✓" : "✗"} ${cap}: ${passed}/${evaluated} evaluated passed ` +
     `(${(rate * 100).toFixed(1)}% vs ${threshold * 100}% required, model ${model})${note}`);
-  results.push({ cap, status: ok ? CAP_STATUS.OK : CAP_STATUS.REGRESSED });
+  results.push({ cap, status: ok ? CAP_STATUS.OK : CAP_STATUS.REGRESSED,
+    detail: `${passed}/${evaluated} passed (${(rate * 100).toFixed(1)}% vs ${threshold * 100}% required, model ${model})` });
 }
 
 const regressed = results.filter((r) => r.status === CAP_STATUS.REGRESSED);
 const unevaluated = results.filter((r) => r.status === CAP_STATUS.UNEVALUATED);
 
-for (const r of unevaluated) console.error(`! ${r.cap}: NOT EVALUATED — ${r.why}`);
+for (const r of unevaluated) {
+  console.error(`! ${r.cap}: NOT EVALUATED — ${r.why}`);
+  annotate("error", `Not evaluated: ${r.cap}`, r.why);
+}
 
 if (regressed.length) {
+  const summary = regressed.map((r) => `${r.cap}: ${r.detail}`).join("\n");
   console.error(`\nGATE FAILED: ${regressed.length} capability(ies) regressed against their case set.`);
+  annotate("error", "Prompt regression", summary);
   process.exit(1);
 }
 if (unevaluated.length) {
@@ -186,6 +205,9 @@ if (unevaluated.length) {
   // blocked by a provider or seeding problem.
   console.error(`\n${unevaluated.length} capability(ies) could not be evaluated. ` +
     `No prompt regressed — but nothing was proven either.`);
+  annotate(REQUIRED ? "error" : "warning", "Eval gate proved nothing",
+    `${unevaluated.length} capability(ies) could not be evaluated:\n` +
+    unevaluated.map((r) => `${r.cap} — ${r.why}`).join("\n"));
   process.exit(REQUIRED ? 1 : 0);
 }
 console.log(`\nGATE PASSED: ${results.length} capability(ies) held their case sets.`);

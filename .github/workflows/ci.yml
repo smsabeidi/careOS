@@ -56,7 +56,7 @@ jobs:
       - uses: supabase/setup-cli@v1
         with: { version: latest }
       - uses: actions/setup-node@v4
-        with: { node-version: 20 }
+        with: { node-version: 24 }
       - name: Start local database (registry prompts are rows, not literals)
         run: supabase db start
       # ST-244: migrations alone are NOT enough here. 0057 registers capabilities per
