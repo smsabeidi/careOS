@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { needsWelcome } from "@/lib/onboarding";
+import { needsWelcome } from "@/lib/onboarding.server";
 import { getProfile, homeFor } from "@/lib/profile";
 
 export default async function Home() {

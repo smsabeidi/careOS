@@ -8,8 +8,13 @@
 
    Progress lives in Postgres, not in the browser: a caregiver who signs in on a
    borrowed phone sees the work they already finished, and "progress is never
-   lost" stays true across devices. Milestones are append-only rows recorded by
-   `app.record_onboarding_milestone`; this module only ever reads them.
+   lost" stays true across devices.
+
+   THIS MODULE IS CLIENT-SAFE, and must stay that way. The checklist renders in a
+   client island, so anything it imports as a VALUE travels to the browser — and
+   a type-only import that becomes a value import is enough to drag `next/headers`
+   into a client bundle and fail the build. Everything that needs a session lives
+   in ./onboarding.server.ts; nothing here touches Supabase.
 
    NOTHING HERE IS PHI. A step carries a dictionary key, a route, and a shape —
    the reader's own name and role are the only personal facts on the surface.
@@ -21,21 +26,23 @@
    read, an RPC, or a migration was in a bad state.
 ──────────────────────────────────────────────────────────────────────────── */
 
-import { featureEnabled } from "@/lib/flags";
 import type { TranslationKey } from "@/lib/i18n/dictionaries";
-import { supabaseServer } from "@/lib/supabase/server";
 
-/** The database's milestone allowlist (0058). Anything else is refused by the RPC. */
+/**
+ * The database's milestone allowlist (0058, widened per-step by 0059).
+ *
+ * Derived from the step keys rather than listed again, because the two lists that must
+ * agree are this one and the SQL CHECK — adding a third copy in between is just somewhere
+ * else for them to drift apart.
+ */
 export type OnboardingMilestone =
   | "welcome_completed"
   | "welcome_skipped"
-  | "step_language"
-  | "step_home_screen"
-  | "step_first_look";
+  | `step_${OnboardingStepKey}`;
 
-export type OnboardingStep = {
-  key:
-    | "first_look"
+/** Every step the checklist can return. One `step_<key>` milestone exists for each. */
+export type OnboardingStepKey =
+  | "first_look"
     | "language"
     | "home_screen"
     | "how_visits_work"
@@ -48,6 +55,9 @@ export type OnboardingStep = {
     | "reviews"
     | "exec_overview"
     | "evidence";
+
+export type OnboardingStep = {
+  key: OnboardingStepKey;
   titleKey: TranslationKey;
   bodyKey: TranslationKey;
   /** Live surfaces only — a step must never point at a feature that is still dark. */
@@ -59,9 +69,37 @@ export type OnboardingStep = {
    *   guide    — an expandable explainer that stays on /welcome
    */
   kind: "link" | "language" | "guide";
-  /** Recorded when the reader interacts with the row. Absent = nothing to record. */
-  milestone?: OnboardingMilestone;
 };
+
+/**
+ * The milestone a step records when somebody interacts with it.
+ *
+ * Every step has one (0059). Before that only three did, which meant an owner or a
+ * coordinator could open every row on their checklist, come back, and be shown "0 of 3"
+ * again — "progress is never lost" (docs/10 §1) was not true for two of the five roles.
+ */
+export function milestoneFor(step: OnboardingStep): OnboardingMilestone {
+  return `step_${step.key}`;
+}
+
+/** The complete allowlist, in the order 0059's CHECK states it. Restated at the edges. */
+export const ONBOARDING_MILESTONES: readonly OnboardingMilestone[] = [
+  "welcome_completed",
+  "welcome_skipped",
+  "step_first_look",
+  "step_language",
+  "step_home_screen",
+  "step_how_visits_work",
+  "step_what_you_see",
+  "step_who_to_contact",
+  "step_clients",
+  "step_intake",
+  "step_compliance",
+  "step_clinical_home",
+  "step_reviews",
+  "step_exec_overview",
+  "step_evidence",
+];
 
 /** The flag the whole first-run surface hangs from. Seeded disabled until PD-5. */
 export const WELCOME_FLAG = "onboarding.welcome";
@@ -141,7 +179,6 @@ const RN_STEPS: OnboardingStep[] = [
     titleKey: "onboarding.step.language.title",
     bodyKey: "onboarding.step.language.body",
     kind: "language",
-    milestone: "step_language",
   },
 ];
 
@@ -152,21 +189,18 @@ const CAREGIVER_STEPS: OnboardingStep[] = [
     bodyKey: "onboarding.step.first_look.body",
     href: "/today",
     kind: "link",
-    milestone: "step_first_look",
   },
   {
     key: "language",
     titleKey: "onboarding.step.language.title",
     bodyKey: "onboarding.step.language.body",
     kind: "language",
-    milestone: "step_language",
   },
   {
     key: "home_screen",
     titleKey: "onboarding.step.home_screen.title",
     bodyKey: "onboarding.step.home_screen.body",
     kind: "guide",
-    milestone: "step_home_screen",
   },
   {
     key: "how_visits_work",
@@ -188,7 +222,6 @@ const FAMILY_STEPS: OnboardingStep[] = [
     titleKey: "onboarding.step.language.title",
     bodyKey: "onboarding.step.language.body",
     kind: "language",
-    milestone: "step_language",
   },
   {
     key: "who_to_contact",
@@ -198,6 +231,23 @@ const FAMILY_STEPS: OnboardingStep[] = [
   },
 ];
 
+/**
+ * The opening line for a set of role keys, or null when no role matches.
+ *
+ * Deliberately no default: there is no honest sentence to write for somebody whose
+ * roles we do not recognise, and `checklistFor` returns an empty list for exactly the
+ * same people, so the surface is skipped rather than fudged. Precedence is kept beside
+ * `checklistFor` because the greeting and the checklist must describe one job.
+ */
+export function introKeyFor(roles: string[]): TranslationKey | null {
+  if (roles.includes("owner") || roles.includes("admin")) return "onboarding.intro.owner";
+  if (roles.includes("coordinator") || roles.includes("hr")) return "onboarding.intro.coordinator";
+  if (roles.includes("rn")) return "onboarding.intro.rn";
+  if (roles.includes("caregiver")) return "onboarding.intro.caregiver";
+  if (roles.includes("family")) return "onboarding.intro.family";
+  return null;
+}
+
 /** The first-run checklist for a set of role keys. Empty when no role matches. */
 export function checklistFor(roles: string[]): OnboardingStep[] {
   if (roles.includes("owner") || roles.includes("admin")) return OWNER_STEPS;
@@ -206,58 +256,4 @@ export function checklistFor(roles: string[]): OnboardingStep[] {
   if (roles.includes("caregiver")) return CAREGIVER_STEPS;
   if (roles.includes("family")) return FAMILY_STEPS;
   return [];
-}
-
-/* ── Progress ────────────────────────────────────────────────────────────── */
-
-/**
- * The caller's own milestones, or null when the read itself failed.
- *
- * The two callers below want opposite things from a failure — a checklist would
- * rather render unchecked than not at all, while the router would rather skip the
- * whole surface — so the distinction between "no milestones" and "could not ask"
- * is kept here and each caller collapses it its own way.
- */
-async function readMilestones(): Promise<string[] | null> {
-  try {
-    const supabase = await supabaseServer();
-    const { data, error } = await supabase.schema("app").rpc("my_onboarding_milestones");
-    if (error || !Array.isArray(data)) return null;
-    return data.filter((m): m is string => typeof m === "string");
-  } catch {
-    return null;
-  }
-}
-
-/**
- * The milestones this user has already recorded.
- *
- * A failed read answers with an empty set: the checklist then renders every row
- * unchecked, which is a screen somebody can still finish. Recording is idempotent
- * in the database, so re-doing a step that was already done costs nothing.
- */
-export async function getMilestones(): Promise<Set<string>> {
-  return new Set((await readMilestones()) ?? []);
-}
-
-/**
- * Should this person see /welcome before their home screen?
- *
- * True only when all of it is provable: the flag is on, the roles yield a checklist
- * worth showing, and the person has neither finished nor skipped the welcome. Every
- * other outcome — flag off, RPC gone, no matching role, unreadable progress — is
- * false, and false means the root route sends them straight to `homeFor`.
- */
-export async function needsWelcome(roles: string[]): Promise<boolean> {
-  try {
-    if (!(await featureEnabled(WELCOME_FLAG, false))) return false;
-    // No checklist for these roles means /welcome would be a blank screen. The four-state
-    // doctrine says skip straight through rather than show an empty one.
-    if (checklistFor(roles).length === 0) return false;
-    const done = await readMilestones();
-    if (done === null) return false; // could not read progress → do not hold anybody up
-    return !done.includes("welcome_completed") && !done.includes("welcome_skipped");
-  } catch {
-    return false;
-  }
 }

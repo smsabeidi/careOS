@@ -4,13 +4,8 @@
     {
       "name": "careos-web",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": [
-        "--filter",
-        "@careos/web",
-        "dev"
-      ],
-      "port": 3000,
-      "autoPort": true
+      "runtimeArgs": ["--dir", "apps/web", "exec", "next", "dev", "--port", "3100"],
+      "port": 3100
     }
   ]
 }

@@ -340,6 +340,9 @@ export const en = {
   "onboarding.progress": "{done} of {total} steps finished",
   "onboarding.ready": "Continue to CareOS",
   "onboarding.skip": "Skip for now",
+  /* Read out beside a finished row: the tick is a shape and a colour, and this is
+     the same fact in words, so "done" never depends on seeing green. */
+  "onboarding.stepDone": "Done",
   "onboarding.savedNote":
     "Your progress saves as you go. If you close this page, you can pick up where you left off.",
   "onboarding.error.title": "Couldn't open your welcome page",
@@ -723,6 +726,7 @@ export const es: Dictionary = {
   "onboarding.progress": "{done} de {total} pasos completados",
   "onboarding.ready": "Continuar a CareOS",
   "onboarding.skip": "Omitir por ahora",
+  "onboarding.stepDone": "Completado",
   "onboarding.savedNote":
     "Su progreso se guarda solo. Si cierra esta página, puede continuar donde lo dejó.",
   "onboarding.error.title": "No se pudo abrir su página de bienvenida",

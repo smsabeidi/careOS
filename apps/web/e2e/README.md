@@ -2,18 +2,32 @@
 
 ## Read this first
 
-**These journeys have never been executed. Not once.**
+**The a11y suite has now been executed. The journeys have not.**
 
-They are specified and wired — every selector was written against the actual page and
-component source in `apps/web/src/app/**`, every assertion traces to a doc section or a
-ratified decision, and `playwright test --list` enumerates all of them without error. That
-is the entire extent of what has been verified.
+`specs/a11y/` ran for the first time on 2026-08-14, against a local Supabase with the
+Meadowbrook seed and the five persona credentials supplied through the variables below:
+**25 passed, 1 skipped, 0 failed** (`axe-sweep` + `status-not-colour-alone`, all four
+personas, every surface in `support/routes.ts` including `/welcome`). The single skip is
+the flagged-visit assertion, which wants a fixture the local seed does not lay.
 
-What has **not** happened: no browser has ever driven them, no assertion has ever been
-evaluated against a running CareOS, and no result — pass or fail — has ever been observed.
-Nothing in this directory is evidence of anything about the product yet.
+That first run earned its keep immediately: it caught a real WCAG violation
+(`aria-progressbar-name` — `ProgressMeter` rendered `role="progressbar"` with its visible
+label as a sibling, so the bar had no accessible name on any screen that used it). Fixed in
+`src/components/ui.tsx`; the fix names every existing call site, not just the new one.
 
-The reason is stated plainly rather than buried: the machine they were authored on runs a
+**Everything under `specs/caregiver/` and `specs/operations/` remains unexecuted.** They are
+specified and wired — every selector was written against the actual page and component
+source in `apps/web/src/app/**`, every assertion traces to a doc section or a ratified
+decision, and `playwright test --list` enumerates them without error. That is still the
+entire extent of what has been verified about them, and they additionally need the
+geographic anchors and the self-approver fixture that the a11y specs do not.
+
+What has **not** happened for those journeys: no browser has driven them, no assertion has
+been evaluated against a running CareOS, and no result — pass or fail — has been observed.
+Nothing under `specs/caregiver/` or `specs/operations/` is evidence about the product yet.
+
+The reason was stated plainly rather than buried, and still explains the shape of this
+directory: the machine they were authored on runs a
 bare Postgres harness (`scripts/local-pg`) and nothing else. There is no Supabase Auth, no
 GoTrue, no PostgREST. **The web app cannot talk to it.** It cannot sign a persona in, cannot
 read a row, and cannot render a single one of the surfaces below. A test that needs a live
@@ -25,9 +39,10 @@ silent pass — a green tick over an empty run is a lie told to whoever ships on
 hard failure either, because "somebody forgot a variable" and "the product is broken" must
 not produce the same red light.
 
-When you first run these against a real environment, **expect failures.** Selectors written
-from source and never exercised are a hypothesis, not a fact. Fix them, then delete this
-paragraph and record the first real pass in the commit message.
+When you first run the remaining journeys against a real environment, **expect failures.**
+Selectors written from source and never exercised are a hypothesis, not a fact. Fix them,
+then narrow the paragraph above and record the first real pass in the commit message —
+that is what the a11y entry above is.
 
 ---
 

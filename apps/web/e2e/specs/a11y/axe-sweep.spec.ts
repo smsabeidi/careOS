@@ -1,8 +1,10 @@
 /**
  * A11Y — axe on every screen this layer added. Zero serious, zero critical.
  *
- * ⚠ NEVER EXECUTED. Specified and wired against the real route list; not proven.
- * See apps/web/e2e/README.md.
+ * FIRST EXECUTED 2026-08-14 against a local Supabase + Meadowbrook seed: 25 passed,
+ * 1 skipped, 0 failed across this file and status-not-colour-alone.spec.ts. The run
+ * caught aria-progressbar-name on ProgressMeter — a real violation on every surface
+ * that used it. See apps/web/e2e/README.md.
  *
  * WHAT THIS PROVES (docs/12 §4 "axe-clean on gated flows", docs/17 §12, docs/10 §7):
  *   Every new surface passes WCAG 2.0/2.1 A and AA at serious and critical impact. The

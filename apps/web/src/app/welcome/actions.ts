@@ -29,7 +29,7 @@ import { redirect } from "next/navigation";
 
 import { getT } from "@/lib/i18n/server";
 import type { TranslationKey } from "@/lib/i18n/dictionaries";
-import type { OnboardingMilestone } from "@/lib/onboarding";
+import { ONBOARDING_MILESTONES, type OnboardingMilestone } from "@/lib/onboarding";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export type ActionResult = { ok: boolean; error?: string };
@@ -42,13 +42,7 @@ export type ActionResult = { ok: boolean; error?: string };
  * unknown value anyway; refusing it here means an obviously-bogus call never becomes a
  * database round trip.
  */
-const MILESTONES: ReadonlySet<string> = new Set<OnboardingMilestone>([
-  "welcome_completed",
-  "welcome_skipped",
-  "step_language",
-  "step_home_screen",
-  "step_first_look",
-]);
+const MILESTONES: ReadonlySet<string> = new Set<string>(ONBOARDING_MILESTONES);
 
 /**
  * CAREOS_* → plain language (docs/10 voice: what happened · what is kept · what to do).
