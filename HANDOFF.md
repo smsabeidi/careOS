@@ -58,6 +58,20 @@ class the advisors can raise. No API path exists without a management token.
 
 ## 6 · After the soak: flip the flags
 
+**One file now does all of it: `scripts/enable-all-features.sql`.** It resolves the
+tenant's `platform.manage` holder, flips all nine dark flags through the audited RPC, and
+enables the AI registry's kill switches. Read its header first: it states what it
+deliberately does *not* touch (Maryland's ISAS adapter — the real outbound gate, which
+stays off per D-026) and what changes the moment `onboarding.welcome` is on.
+
+**Every flag was run enabled end-to-end locally on 2026-08-16, and that run found a real
+defect** — see §7. Production is still dark: an agent cannot flip it, because the RPC
+requires an AAL2 session for a `platform.manage` holder and that is a signed-in human by
+design. Running the file above is the whole act.
+
+Everything below explains what each flag buys.
+
+
 When the soak clears and you want each surface live, per tenant and audited:
 
 ```sql
@@ -86,6 +100,31 @@ kill switch is per-key precisely so one bad capability never takes the door down
 AI capabilities additionally need their registry kill switches enabled
 (`ai_capability.enabled = true` per key — deliberately a separate, owner-level act).
 Rollback of anything is the same call with `false` — instant, audited, data intact.
+
+## 7 · What lighting every flag actually found (2026-08-16)
+
+Enabling all eleven flags + all twenty-four AI capabilities on the local Meadowbrook stack
+made the Front Door E2E specs **run instead of skip for the first time**. That run was
+worth having: 6 journeys failed, and one was a real product defect.
+
+**Fixed and shipped (`ec58bc5`).** The command bar's ⌘K shortcut did nothing during any
+page load. `AppShell` mounts the bar and eleven `loading.tsx` skeletons render `AppShell`,
+so while a route streamed there were *two* islands, each with a document keydown listener —
+and since the chord toggles, one press opened the bar and closed it in the same tick. A DOM
+probe confirmed two trigger nodes during streaming, one after settle. Skeletons no longer
+mount it. That fixed the attention-queue journey and three of four command-bar journeys;
+the fourth was a genuine pre-hydration race in the test and is fixed as one.
+
+**Still open, stated plainly: 1 front-door journey fails.** `note-coach.spec.ts` — "recording
+is stopped, and explained, when there is no connection". The Voice note control is *absent*
+from the caregiver's first visit card (element not found, not merely disabled), so the
+journey never reaches the offline state it exists to measure. Granting the harness a fake
+microphone (`playwright.config.ts`) was necessary but did not resolve it; the cause is
+upstream of the mic and is not yet diagnosed. **Plus the 3 pre-existing ST-221 failures**
+(`approve-hours`, `payroll-close-export`, `visit-policy-version`) which predate this work.
+
+Everything else is green with every feature lit: a11y **25 passed / 0 failed**, Front Door
+desktop **12 passed / 1 failed**, pgTAP 43 files, 304 unit tests, all four CI checks.
 
 ## What is already live and verified (nothing to do)
 
