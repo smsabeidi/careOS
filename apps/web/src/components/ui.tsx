@@ -469,6 +469,7 @@ export function ProgressMeter({
   tone = "accent",
   showValue = true,
   valueLabel,
+  ariaLabel,
 }: {
   value: number;
   max?: number;
@@ -476,6 +477,11 @@ export function ProgressMeter({
   tone?: "accent" | "success" | "warning" | "danger";
   showValue?: boolean;
   valueLabel?: string;
+  /**
+   * Accessible name for the bar itself. Only needed when `label` is markup rather
+   * than a plain string — a string label is used automatically (see below).
+   */
+  ariaLabel?: string;
 }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, Math.round((value / max) * 100))) : 0;
   const fill =
@@ -494,6 +500,13 @@ export function ProgressMeter({
       <div
         className="h-2 w-full overflow-hidden rounded-full"
         role="progressbar"
+        // A progressbar needs a name, and the visible label is a SIBLING of this
+        // element rather than its content, so nothing associates the two on its own:
+        // axe raises aria-progressbar-name and a screen reader announces a bare
+        // percentage with no idea what it measures. A plain-string label is reused
+        // here automatically so existing call sites are named without changing them;
+        // markup labels supply `ariaLabel` instead.
+        aria-label={ariaLabel ?? (typeof label === "string" ? label : undefined)}
         aria-valuenow={value}
         aria-valuemin={0}
         aria-valuemax={max}
