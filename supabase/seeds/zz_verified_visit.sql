@@ -111,6 +111,11 @@ select app.seed_visit_feature_flags(t.id)   from public.tenant t;
 -- migrations run, so the Front Door registry + dark flags need the seed lane too.
 select app.seed_front_door_capabilities(t.id) from public.tenant t;
 select app.seed_front_door_flags(t.id)        from public.tenant t;
+-- 0058's dark first-run flag, same reasoning again. Without this lane the row is simply
+-- absent locally: `app.feature_enabled` then resolves it to the caller's default, which
+-- is `false` and therefore still dark — but "absent" and "off, and here is why" are not
+-- the same fact, and only the second one an owner can read before deciding to flip it.
+select app.seed_onboarding_flags(t.id)        from public.tenant t;
 
 do $vv$
 declare

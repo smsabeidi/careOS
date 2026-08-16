@@ -167,3 +167,4 @@ tests:
   - 0054_alert_ack.sql
   # ── First-run welcome (0058) ──
   - 0058_user_onboarding.sql
+  - 0059_onboarding_milestone_per_step.sql
