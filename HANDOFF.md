@@ -1,4 +1,4 @@
-# Founder handoff — production-readiness closeout (2026-08-13)
+# Founder handoff — production-readiness closeout (updated 2026-08-16)
 
 Everything an agent could finish is finished. This file is the exhaustive list of what
 remains, and every item here is yours **because it is structurally yours** — a legal act,
@@ -71,7 +71,13 @@ select app.set_feature_flag('front_door.family_weekly',true, 'soak clear');
 select app.set_feature_flag('onboarding.welcome',       true, 'PD-5 ratified');
 ```
 
-Each flag has a surface behind it as of `b0eab14`: command bar + NL scheduling drafts,
+`onboarding.welcome` now has its whole surface behind it as of `efea96b` (2026-08-16):
+`/welcome` renders a per-role checklist, every step records a milestone (migration 0059,
+live on hosted), and the a11y sweep walks the screen — 25 passed / 1 skipped / 0 failed
+against a production build. It is dark, and flipping it is PD-5's ratification plus the
+call below; nothing else about it is outstanding.
+
+Each other flag has a surface behind it as of `b0eab14`: command bar + NL scheduling drafts,
 note coach, attention queue, form import, family drafts, and the install page (public, no
 flag). Flip them one at a time and watch the acceptance-rate metric per capability — a
 capability whose drafts are mostly rejected is telling you its prompt is wrong, and the
@@ -83,10 +89,12 @@ Rollback of anything is the same call with `false` — instant, audited, data in
 
 ## What is already live and verified (nothing to do)
 
-Hosted `dabxajszjhfzivxxxamg` runs the full 57-migration chain: the entire Verified Visit
+Hosted `dabxajszjhfzivxxxamg` runs the full 59-migration chain: the entire Verified Visit
 layer, the Front Door data plane (`alert_ack`, capability `config`, `evidence_summary`),
-and the five Front Door capabilities registered with eval-gated prompts — every kill
-switch off, every flag dark, advisors at zero errors, health ok, the visit sweep green on
-its 5-minute cron. Vercel prod serves the merged build; unauthenticated traffic fails
-closed to /login. The pgTAP suite stands at 41 files / 1,735 assertions green, matrix at
-75 tables, drift gate clean.
+the five Front Door capabilities registered with eval-gated prompts, and the first-run
+onboarding plane (0058 + 0059) — every kill switch off, every flag dark, advisors at zero
+errors and zero warnings, health ok, the visit sweep green on its 5-minute cron. Vercel
+prod serves the merged build; unauthenticated traffic fails closed to /login, `/welcome`
+included. The pgTAP suite stands at 43 files / 1,800+ assertions green, matrix at 76
+tables, drift gate clean, and the a11y sweep has been executed rather than merely wired
+(25 passed / 1 skipped / 0 failed on a production build, all four personas).
