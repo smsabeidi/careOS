@@ -11,7 +11,7 @@ import { PageHeader } from "@/components/ui";
  */
 export default function Loading() {
   return (
-    <AppShell active="/operations">
+    <AppShell active="/operations" skeleton>
       <div aria-busy="true" aria-label="Loading today's operations board">
         <PageHeader title="Operations" sub="Today" />
 

@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/ui";
 /** Layout-mirroring skeleton (docs/10 §8) — no spinner walls. */
 export default async function Loading() {
   return (
-    <AppShell active="/schedule">
+    <AppShell active="/schedule" skeleton>
       <div aria-busy="true" aria-label="Loading the schedule">
         <PageHeader title="Schedule" sub="Week at a glance" />
 

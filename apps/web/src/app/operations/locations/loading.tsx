@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/ui";
  */
 export default function Loading() {
   return (
-    <AppShell active="/operations/locations">
+    <AppShell active="/operations/locations" skeleton>
       <div aria-busy="true" aria-label="Loading places of care">
         <PageHeader title="Places of care" sub="Where visits happen, and who confirmed each pin" />
 

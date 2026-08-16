@@ -12,7 +12,7 @@ import { PageHeader } from "@/components/ui";
  */
 export default function Loading() {
   return (
-    <AppShell active="/operations">
+    <AppShell active="/operations" skeleton>
       <div aria-busy="true" aria-label="Loading the findings queue">
         <PageHeader title="Findings" sub="What the automatic checks want a person to look at" />
 

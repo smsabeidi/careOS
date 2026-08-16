@@ -14,7 +14,7 @@ import { AppShell } from "@/components/shell";
  */
 export default function Loading() {
   return (
-    <AppShell active="/today">
+    <AppShell active="/today" skeleton>
       <div className="mx-auto max-w-xl" aria-busy="true" aria-label="Loading today">
         {/* Page header + connection chip */}
         <div className="mb-7 flex flex-wrap items-end justify-between gap-4">

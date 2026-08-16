@@ -94,7 +94,20 @@ export default defineConfig({
          keep their own viewport in the caregiver project. */
       name: "front-door-desktop",
       testDir: "./e2e/specs/front-door",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        /* The voice note asks the browser whether it can record at all
+           (`navigator.mediaDevices.getUserMedia`) and disables its control when the answer
+           is no. A stock headless Chromium has no microphone, so that control was disabled
+           for a reason that says nothing about CareOS — the offline journey could never
+           reach the state it exists to measure. A synthetic device and a pre-granted
+           permission give the harness the capability the journey assumes; nothing about
+           the product's own behaviour is stubbed. */
+        permissions: ["microphone"],
+        launchOptions: {
+          args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"],
+        },
+      },
     },
     {
       name: "a11y",

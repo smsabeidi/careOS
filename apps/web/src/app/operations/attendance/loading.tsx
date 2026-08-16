@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/ui";
  */
 export default function Loading() {
   return (
-    <AppShell active="/operations/attendance">
+    <AppShell active="/operations/attendance" skeleton>
       <div aria-busy="true" aria-label="Loading attendance">
         <PageHeader title="Attendance" sub="Scheduled against actual" />
 

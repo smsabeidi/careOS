@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/ui";
  */
 export default function Loading() {
   return (
-    <AppShell active="/operations/workforce">
+    <AppShell active="/operations/workforce" skeleton>
       <div aria-busy="true" aria-label="Loading workforce figures">
         <PageHeader title="Workforce" sub="Visit performance across the agency" />
 

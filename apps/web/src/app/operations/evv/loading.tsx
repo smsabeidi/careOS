@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/ui";
  */
 export default function Loading() {
   return (
-    <AppShell active="/operations/evv">
+    <AppShell active="/operations/evv" skeleton>
       <div aria-busy="true" aria-label="Loading EVV records">
         <PageHeader title="EVV records" sub="What CareOS asserts about each visit, and what has been sent" />
 

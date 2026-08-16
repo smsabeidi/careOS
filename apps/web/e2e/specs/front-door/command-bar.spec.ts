@@ -92,9 +92,16 @@ test.describe("Front Door · command bar", () => {
     test.skip(await barIsDark(page), DARK_REASON);
 
     /* ── The chord ────────────────────────────────────────────────────────────── */
-    await page.keyboard.press("ControlOrMeta+k");
+    // Pressed on a retry rather than once, because the listener lives in a client island:
+    // a chord fired between first paint and hydration lands on a document that is not
+    // listening yet, and a keypress — unlike a click, which Playwright waits to be
+    // actionable — is never retried on the test's behalf. The ASSERTION is unchanged and
+    // still the real contract: if ⌘K does not open the bar, this fails.
     const panel = dialog(page);
-    await expect(panel, "⌘K / Ctrl-K opens the bar from any authenticated surface.").toBeVisible();
+    await expect(async () => {
+      await page.keyboard.press("ControlOrMeta+k");
+      await expect(panel).toBeVisible({ timeout: 1_000 });
+    }, "⌘K / Ctrl-K opens the bar from any authenticated surface.").toPass({ timeout: 20_000 });
     await expect(
       panel,
       "It is a real modal dialog, so assistive technology treats the page behind it as inert."

@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/ui";
  */
 export default function Loading() {
   return (
-    <AppShell active="/settings/visit-policy">
+    <AppShell active="/settings/visit-policy" skeleton>
       <div aria-busy="true" aria-label="Loading the visit policy">
         <PageHeader title="Visit policy" sub="The rules every visit is measured against" />
 

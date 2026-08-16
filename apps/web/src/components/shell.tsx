@@ -147,9 +147,21 @@ async function signInAsPersona(formData: FormData) {
 export async function AppShell({
   children,
   active,
+  skeleton = false,
 }: {
   children: ReactNode;
   active: string;
+  /**
+   * True when this shell is a `loading.tsx` placeholder rather than the real page.
+   *
+   * A skeleton and its page COEXIST in the DOM while a route streams, so anything
+   * interactive the shell mounts is mounted twice for that window. For the command bar
+   * that was not cosmetic: two islands meant two `keydown` listeners, and since ⌘K
+   * TOGGLES, each press opened the bar and closed it again in the same tick — the
+   * shortcut did nothing at all until the skeleton was torn down. A placeholder has no
+   * business owning a global shortcut, so it renders the chrome and stops there.
+   */
+  skeleton?: boolean;
 }) {
   const profile = await getProfile();
   const t = await getT();
@@ -286,8 +298,9 @@ export async function AppShell({
       </div>
 
       {/* The command bar (ST-232). Its own tree, its own server-side flag: this renders
-          nothing at all when `front_door.command_bar` is off. */}
-      <CommandBarMount />
+          nothing at all when `front_door.command_bar` is off — and nothing in a streaming
+          skeleton either, so the real page's island is the only one that owns ⌘K. */}
+      {!skeleton && <CommandBarMount />}
     </div>
   );
 }

@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/ui";
  */
 export default function Loading() {
   return (
-    <AppShell active="/inbox">
+    <AppShell active="/inbox" skeleton>
       <div aria-busy="true" aria-label="Loading the approvals inbox">
         <PageHeader title="Approvals" sub="Every AI proposal, decided by a person" />
 

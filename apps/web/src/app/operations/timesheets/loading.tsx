@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/ui";
  */
 export default function Loading() {
   return (
-    <AppShell active="/operations/timesheets">
+    <AppShell active="/operations/timesheets" skeleton>
       <div aria-busy="true" aria-label="Loading timesheets">
         <PageHeader title="Timesheets" sub="Hours a person approves, then a file with a fingerprint on it" />
 
