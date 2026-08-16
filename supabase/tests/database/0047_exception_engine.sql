@@ -263,10 +263,23 @@ select ok(
 
 select is((select count(*)::int from cron.job where jobname = 'careos_visit_sweep'),
   1, 'cron: the five-minute visit sweep is registered (0034 idiom)');
+-- The local stack runs the real pg_cron, so on any machine where a five-minute boundary
+-- has passed since the reset, the sweep has already run and earned its heartbeat —
+-- asserting "still RED" here failed by wall clock, not by regression. The invariant was
+-- never "the sweep has not run"; it is "green is only ever EARNED": the heartbeat is
+-- either still the RED the migration seeded, or it is green because a sweep run actually
+-- succeeded. A heartbeat born green with no run behind it — the lie 0039 H1 exists to
+-- prevent — still fails this test, in CI and on a laptop alike.
 select is(
   (select count(*)::int from public.job_heartbeat
-    where job_key = 'visit_sweep' and last_ok_at is null),
-  1, 'cron: the sweep heartbeat starts RED and must be earned (0039 H1)');
+    where job_key = 'visit_sweep'
+      and (last_ok_at is null
+           or exists (select 1
+                        from cron.job_run_details d
+                        join cron.job j on j.jobid = d.jobid
+                       where j.jobname = 'careos_visit_sweep'
+                         and d.status = 'succeeded'))),
+  1, 'cron: the sweep heartbeat starts RED and green is only ever earned (0039 H1)');
 
 -- ═══ Function surface: who may call what ═══════════════════════════════════
 select ok(has_function_privilege('authenticated',

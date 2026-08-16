@@ -634,6 +634,16 @@ select is(
   'unassigned',
   'observability +: a visit with no service type is its own bucket, never dropped');
 
+-- The local stack runs the real pg_cron, so by the time this file executes the sweep may
+-- already have run and set last_ok_at — and this assertion then failed by wall clock, not
+-- by regression. What it proves is the FUNCTION's semantics: a null heartbeat must read
+-- as stale, never as unknown. Recreate the never-run state inside this rolled-back
+-- transaction and ask again; whether this machine's cron beat the test runner to a
+-- boundary is not part of the claim.
+reset role;
+update public.job_heartbeat set last_ok_at = null where job_key = 'visit_sweep';
+select pg_temp.login('aaaaaaaa-0000-0000-0000-0000000000ad', 'aal2');
+
 select is(
   app.evv_observability('2026-03-01', '2026-03-31') -> 'sweep' ->> 'job_key',
   'visit_sweep', 'observability +: the 0047 sweep heartbeat is reported');
