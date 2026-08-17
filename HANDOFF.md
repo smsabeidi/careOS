@@ -64,10 +64,14 @@ enables the AI registry's kill switches. Read its header first: it states what i
 deliberately does *not* touch (Maryland's ISAS adapter — the real outbound gate, which
 stays off per D-026) and what changes the moment `onboarding.welcome` is on.
 
-**Every flag was run enabled end-to-end locally on 2026-08-16, and that run found a real
-defect** — see §7. Production is still dark: an agent cannot flip it, because the RPC
-requires an AAL2 session for a `platform.manage` holder and that is a signed-in human by
-design. Running the file above is the whole act.
+**PRODUCTION IS LIT as of 2026-08-17** — all 11 flags on, all 24 AI kill switches armed,
+flipped through the audited RPC (9 `config.feature_flag` audit rows). Advisors stayed at
+0 error / 0 warning; unauthenticated traffic still fails closed to `/login`.
+
+**But lighting it is not the same as it demoing well — read §8 before any pitch.** The
+hosted tenant's visit data ran 2026-07-29 → 08-04 and had aged entirely into the past, so
+every day-scoped surface renders empty no matter how many flags are on.
+`scripts/refresh-demo-day.sql` fixes that and must be run *on the day you demo*.
 
 Everything below explains what each flag buys.
 
@@ -125,6 +129,31 @@ upstream of the mic and is not yet diagnosed. **Plus the 3 pre-existing ST-221 f
 
 Everything else is green with every feature lit: a11y **25 passed / 0 failed**, Front Door
 desktop **12 passed / 1 failed**, pgTAP 43 files, 304 unit tests, all four CI checks.
+
+## 8 · Before you pitch on production — the honest pre-flight
+
+Three things are true about the hosted tenant that a lit flag does not fix.
+
+**1 · The demo day must be refreshed, on the day.** Hosted visits ran 07-29 → 08-04: 115
+missed, 17 completed, 8 in progress, **0 scheduled and 0 today**. Day-scoped surfaces
+(`/today`, the operations board, the exception inbox) render the current day, so they come
+up empty. Run `scripts/refresh-demo-day.sql` — it re-anchors three of the caregiver
+persona's visits to the agency day as completed / in-progress / upcoming, touches only
+visits with no `visit_event` ledger, and refuses outright on a non-synthetic tenant.
+
+**2 · Every AI answer on production is the deterministic fallback, not a model.** The
+OpenAI account has no quota (§4), so `runCapability` degrades and records
+`provider: 'mock'` honestly in `ai_interaction`. The surfaces work and demo end-to-end —
+but if an investor asks "is that really the model?", the truthful answer today is no. Add
+billing and the same code path returns real output with no deploy.
+
+**3 · `onboarding.welcome` now intercepts the first login.** No user has a milestone, so
+everyone lands on `/welcome` before their home screen. That is a good first-run story to
+show deliberately — just do not be surprised by it mid-pitch. Finish or skip it once per
+account and it never returns.
+
+Rollback for any of it is the same call with `false` and a reason: instant, audited, and
+no data changes shape.
 
 ## What is already live and verified (nothing to do)
 
