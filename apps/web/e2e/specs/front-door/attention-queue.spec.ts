@@ -86,6 +86,12 @@ test.describe("Front Door · /inbox — the unified attention queue", () => {
     await expect(page.getByRole("heading", { name: "Approvals", level: 1 })).toBeVisible();
 
     queue = page.getByRole("region", { name: "Needs your attention" });
+    // `count()` does not wait. Asking the instant the h1 appears answered "0" for a
+    // section that was still streaming, and the suite then skipped eight journeys with a
+    // message blaming the flag — a green run that had asserted nothing about the queue,
+    // which is the exact dishonesty this harness exists to avoid. Give the region a
+    // bounded chance to arrive; only a real absence still means the flag is off.
+    await queue.first().waitFor({ state: "attached", timeout: 5_000 }).catch(() => {});
     if ((await queue.count()) === 0) {
       await assertNothingLeaks(page);
       test.skip(true, FLAG_OFF);
